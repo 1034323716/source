@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nosql>
+	
+	<mongodb>
+		<ip>192.168.9.60</ip>
+		<port>8888</port>
+		<database>pns</database>
+		<username>pns</username>
+		<password>pns123</password>
+		<maxSize>200</maxSize>
+	</mongodb>
+</nosql>

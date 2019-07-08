@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rh-frame xmlns="http://www.richinfo.cn/schema/rh-frame"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.richinfo.cn/schema/rh-frame 
+	       http://192.168.9.60/schema/rh-frame-3.0.xsd">
+	       
+	<actions>
+	</actions>
+	
+</rh-frame>

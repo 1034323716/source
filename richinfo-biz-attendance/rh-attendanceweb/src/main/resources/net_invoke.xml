@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+<!-- Socket长连接器(连接池的方式) -->
+	<connector id="SocketConnector"
+		class="richinfo.components.invoke.client.connector.ShortSocketConnector"
+		 connetTimeOut="3000" readTimeOut="3000"/>
+	 <process id="TCPProcess"
+		class="richinfo.components.invoke.process.imp.ClientProcess"
+		connectorId="SocketConnector" inTransformId=""
+		outTransformId="" />
+	 <!-- http长连接器 -->
+	<connector id="HttpConnector"
+		class="richinfo.components.invoke.client.connector.HttpConnector"
+		contentType="text/xml" connetTimeOut="3000" readTimeOut="3000" />
+	<!-- http短连接器 -->
+	<connector id="ShortHttpConnector"
+		class="richinfo.components.invoke.client.connector.ShortHttpConnector"
+		contentType="text/xml" connetTimeOut="3000" readTimeOut="2000" />
+	<!-- 数据转换器 -->
+	<transform id="VoRoutingTrf"
+		class="richinfo.components.invoke.client.transform.VoRoutingTrf" />
+	<!-- 处理过程 用于绑定连接器和数据转换器 -->
+	<process id="HttpProcess"
+		class="richinfo.components.invoke.process.imp.ClientProcess"
+		connectorId="ShortHttpConnector" inTransformId="VoRoutingTrf"
+		outTransformId="" />
+		
+    <!-- 通过匹配URL来选择处理器 -->
+	<processSelt id="ClientProcessSelt"
+		class="richinfo.components.invoke.process.imp.ClientProcessSelt">
+		<rout el="http*" processId="HttpProcess" />
+		<rout el="tcp*" processId="TCPProcess" />	
+	</processSelt>
+
+</root>

@@ -1,0 +1,3679 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap 
+	PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+	"http://www.ibatis.com/dtd/sql-map-2.dtd">
+<sqlMap namespace="attendance">
+
+	<!-- 查询员工一天的考勤记录列表，顺序排列 -->
+	<select id="queryEmployRecord" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.entity.AttendEntity">
+		SELECT
+		recordId,uid,phone,attendanceId,attendanceDate,attendanceTime,location,detailAddr,longitude,latitude,status
+		FROM attendance_record
+		WHERE uid = #uid# and attendanceDate = #attendanceDate#
+		ORDER BY attendanceTime
+	</select>
+	
+	<!-- 查询员工跨天记录列表，顺序排列 -->
+	<select id="queryEmployRecordByCrossDay" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.entity.AttendEntity">
+		
+		SELECT
+		recordId,uid,phone,attendanceId,attendanceDate,attendanceTime,location,detailAddr,longitude,latitude,status
+		FROM attendance_record
+		WHERE uid = #uid# AND
+		((attendanceDate = #startDate# and
+		<![CDATA[ attendanceTime> #startTime# ]]>
+		 )
+	    OR 
+	    (attendanceDate = #endDate#  and 
+	    
+	    <![CDATA[ attendanceTime< #endTime# ]]>
+	    ))
+		ORDER BY attendanceDate,attendanceTime
+	</select>
+	
+	<!-- 查询员工某时间段内记录列表，顺序排列 -->
+	<select id="queryEmployRecordByCrossTime" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.entity.AttendEntity">
+		SELECT
+		recordId,uid,phone,attendanceId,attendanceDate,attendanceTime,location,detailAddr,longitude,latitude,status
+		FROM attendance_record
+		WHERE uid = #uid# 
+		and attendanceDate = #attendanceDate# 
+        and attendanceTime BETWEEN #startTime# AND #endTime#
+		ORDER BY attendanceTime
+	</select>
+
+	<!-- 删除考勤组（软删除） -->
+	<update id="deleteGroup" parameterClass="richinfo.attendance.entity.AttendGroup">
+		UPDATE
+		attendance_group_info
+		SET status = #status#, modifyTime = #modifyTime#
+		WHERE
+		attendanceId = #attendanceId#
+	</update>
+
+	<!-- 删除考勤组时，需D同时删掉考勤组的具体成员 -->
+	<update id="deleteEmployeesOfGroup" parameterClass="java.util.HashMap">
+		UPDATE
+		attendance_employee_info
+		SET status = #afterStatus#, modifyTime = NOW()
+		WHERE attendanceId = #attendanceId# AND status = #beforeStatus#
+	</update>
+	
+	<update id="updateEmployeeByUid" parameterClass="java.util.HashMap">
+		UPDATE
+		attendance_employee_info
+		SET employeeName = #employeeName#, phone = #phone#
+		WHERE uin = #uid# AND enterId = #enterId# AND (employeeName='' or  phone= '')                  
+	</update>
+
+	<!-- 查询考勤组信息 -->
+	<select id="queryAttendGroupInfo" parameterClass="java.util.HashMap"
+		resultClass="richinfo.attendance.entity.AttendGroup">
+		SELECT att.attendanceId,amTime,
+		pmTime,ex.examineName,ex.examineUid,ex.examineContactId,att.adminName,att.adminContactId,att.isAllowedOutRangeClock,att.useFlexibleRule,att.flexitime,
+		att.enterId,enterName,attendanceName,location,detailAddr,longitude,latitude,attendanceRange,attendanceOutRange,adminUid,
+		attendType,fixedAttendRule,freeAttendRule,allowLateTime,relyHoliday
+		FROM attendance_group_info att LEFT JOIN attendance_examine_table ex
+		ON att.attendanceId = ex.attendanceId AND ex.examinerState = 1 AND
+		ex.isDelete = 1
+		WHERE 1=1
+		AND att.attendanceId = #attendanceId#
+		AND
+		att.enterId = #enterId#
+		AND status = #status#
+	</select>
+
+	<!-- 查询所有的企业Id信息 -->
+	<select id="queryAllEnterId" parameterClass="java.lang.Integer"
+		resultClass="java.lang.String">
+		SELECT DISTINCT enterId
+		FROM attendance_group_info
+		WHERE
+		status =
+		#status#
+	</select>
+
+	<!-- 查询考勤组列表 -->
+	<select id="queryAttendGroupList" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.bean.AttendGroupWithEmpRes">
+		select
+		g.attendanceId,g.attendanceName,g.enterId,g.enterName,g.amTime,g.pmTime,g.location,g.detailAddr,g.longitude,g.latitude,g.attendanceRange,g.attendanceOutRange,g.status,g.createTime,g.modifyTime,g.attendType,g.fixedAttendRule,g.freeAttendRule,g.allowLateTime,g.relyHoliday,
+		group_concat(e.employeeName) as employeesName
+		from attendance_group_info g left join attendance_employee_info e on
+		g.attendanceId = e.attendanceId
+		WHERE g.enterId= #enterId# AND g.status =#status# and e.status = #employeeStatus# group by g.attendanceId
+	</select>
+
+	<!-- 查询考勤组列表 -->
+	<select id="queryAttendGroupListOnApp" parameterClass="java.util.Map"
+			resultClass="richinfo.attendance.bean.AttendGroupWithEmpRes">
+		SELECT
+		g.attendanceId,g.attendanceName,g.enterId,g.enterName,g.amTime,g.pmTime,
+        g.location,g.detailAddr,g.longitude,g.latitude,g.attendanceRange,g.adminName,
+        g.attendanceOutRange,g.status,g.createTime,g.modifyTime,g.attendType,
+        g.fixedAttendRule,g.freeAttendRule,g.allowLateTime,g.relyHoliday,g.adminName,g.adminContactId,e.examineName
+		FROM attendance_group_info g
+        LEFT JOIN attendance_employee_info ae
+        ON g.attendanceId = ae.attendanceId
+        LEFT JOIN attendance_examine_table e
+        ON g.attendanceId = e.attendanceId
+        WHERE e.enterId= #enterId#
+        AND g.status = 0
+        AND e.examinerState =#examinerState#
+        <dynamic>
+            <isNotEmpty property="adminUid" prepend="and">
+                g.adminUid = #adminUid#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <!--<isNotEmpty property="roleType" prepend="and">-->
+                <!--ae.roleType = #roleType#-->
+            <!--</isNotEmpty>-->
+            <isNotEmpty property="chargeOn" prepend="and">
+                <isNotEmpty property="attendanceIds">
+                    g.attendanceId in
+                    <iterate property="attendanceIds" open="(" close=")" conjunction=",">
+                        #attendanceIds[]#
+                    </iterate>
+                </isNotEmpty>
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty property="bothIn" prepend="and">
+                g.adminUid = #admin#
+                <isNotEmpty property="attendances" prepend="or">
+                    <!--ae.roleType = #role# and-->
+                    g.attendanceId in
+                    <iterate property="attendances" open="(" close=")" conjunction=",">
+                        #attendances[]#
+                    </iterate>
+                </isNotEmpty>
+            </isNotEmpty>
+        </dynamic>
+        group by g.attendanceId
+	</select>
+
+	<!--查询审批人员信息-->
+	<select id="queryExamineName" parameterClass="java.util.Map"
+			resultClass="richinfo.attendance.bean.AttendGroupWithEmpRes">
+		select g.attendanceName,g.attendType,g.location,g.detailAddr,e.examineName
+		from attendance_examine_table e left join attendance_group_info g on
+		g.attendanceId = e.attendanceId
+		where e.enterId= #enterId# AND e.examinerState =#examinerState#
+	</select>
+
+	<!-- 查询考勤组所有成员信息 -->
+	<select id="queryUserList" parameterClass="java.util.HashMap"
+		resultClass="richinfo.attendance.entity.UserInfo">
+		SELECT
+		employeeId,uid,employeeName,enterId,enterName,deptId,deptName,attendanceId,phone,email
+		FROM attendance_employee_info
+		WHERE attendanceId
+		= #attendanceId# AND
+		status = #status#
+        AND
+        uid NOT IN (
+        SELECT uid FROM attendance_employee_whitelist WHERE STATUS = 0 AND enterId = #enterId# )
+	</select>
+
+	<!-- 查询考勤组所有成员信息 -->
+	<select id="queryUserListAndWhitelist" parameterClass="java.util.HashMap"
+		resultClass="richinfo.attendance.entity.UserInfo">
+		SELECT
+		employeeId,uid,contactId,employeeName,enterId,enterName,deptId,deptName,attendanceId,phone,email
+		FROM attendance_employee_info
+		WHERE attendanceId
+		= #attendanceId# AND
+		status = #status# ORDER BY convert(employeeName using gbk) ASC
+    </select>
+
+
+
+    <!-- 查询企业内所有成员信息 -->
+    <select id="queryEmployeeByEnterid" parameterClass="java.util.HashMap"
+        resultClass="richinfo.attendance.entity.UserInfo">
+        SELECT
+        employeeId,uid,employeeName,enterId,enterName,deptId,deptName,attendanceId,phone,position,email
+        FROM attendance_employee_info
+        WHERE enterId
+        = #enterId# AND
+        status = #status#
+    </select>
+
+	<!-- 根据考勤状态，企业ID，考勤ID查询固定考勤班次规则 -->
+	<select id="queryFixAttendanceRule" parameterClass="java.util.HashMap"
+			resultClass="java.lang.String">
+		SELECT
+		fixedAttendRule
+		FROM attendance_group_info
+		WHERE attendanceId
+		= #attendanceId#
+		AND status = #status#
+		AND attendType = #attendType#
+	</select>
+
+	<!-- 通过企业id和手机号查询考勤组成员信息 兼容硬件打卡 -->
+	<select id="queryUserByPhone" parameterClass="java.util.HashMap"
+		resultClass="richinfo.attendance.entity.UserInfo">
+		SELECT
+		employeeId,uid,employeeName,enterId,enterName,deptId,deptName,attendanceId,phone,email
+		FROM attendance_employee_info
+		WHERE enterId = #enterId# AND phone =
+		#phone# AND
+		status = #status#
+	</select>
+
+	<!-- 查询考勤组所有成员uid信息 -->
+	<select id="queryAttendGroupUid" parameterClass="java.util.HashMap"
+		resultClass="java.lang.String">
+		SELECT uid
+		FROM attendance_employee_info
+		WHERE attendanceId
+		= #attendanceId# AND
+		status = #status#
+	</select>
+
+	<!-- 查询团队日报详情消息总量 -->
+	<select id="queryTeamDailyCount" parameterClass="richinfo.attendance.entity.TeamDailyEntity"
+		resultClass="java.lang.Long">
+		SELECT COUNT(*)
+		FROM employee_month_detail AS mon INNER
+		JOIN attendance_group_info AS att
+		ON mon.attendanceId =
+		att.attendanceId AND mon.attendanceDate =
+		#attendanceDate# and
+		mon.enterId = #enterId#
+		ORDER BY
+		mon.attendanceId
+	</select>
+
+	<!-- 团队日报统计 -->
+	<select id="teamDailyReport" parameterClass="java.util.HashMap"
+		resultClass="richinfo.attendance.entity.TeamDailyReportEntity">
+        SELECT enterId,attendanceId, attendanceDate,
+        SUM(CASE WHEN goWorkDesc = "正常" AND leaveWorkDesc = "正常" THEN 1 ELSE 0 END ) AS normalCount,
+        SUM(CASE WHEN goWorkDesc = "迟到" THEN 1 ELSE 0 END ) AS lateCount,
+        SUM(CASE WHEN leaveWorkDesc = "早退" THEN 1 ELSE 0 END ) AS earlyCount,
+        SUM(CASE WHEN goWorkDesc = "未打卡" AND leaveWorkDesc = "未打卡" THEN 2 WHEN goWorkDesc = "未打卡" THEN 1 WHEN leaveWorkDesc = "未打卡" THEN 1 ELSE 0 END ) AS notClockedCount,
+        SUM(CASE WHEN goWorkDesc = "未打卡" THEN 1 ELSE 0 END ) AS goNotClockedCount,
+        SUM(CASE WHEN leaveWorkDesc = "未打卡" THEN 1 ELSE 0 END ) AS leaveNotClockedCount,
+        SUM(regionStatus = 1) AS outsideCount,
+        SUM(regionStatus = 1) AS outsideDays,
+        SUM(CASE WHEN goWorkDesc = "已申诉" AND leaveWorkDesc = "已申诉" THEN 2 WHEN goWorkDesc = "已申诉" THEN 1 WHEN leaveWorkDesc = "已申诉" THEN 1 ELSE 0 END ) AS appealCount
+        FROM
+        employee_month_detail
+        WHERE
+		attendanceDate = #attendanceDate#
+        AND remark = "工作日"
+        AND enterId = #enterId#
+		GROUP BY attendanceId
+	</select>
+
+	<!-- 团队日报统计入库 -->
+	<insert id="saveTeamDailyInfo" parameterClass="richinfo.attendance.entity.TeamDailyReportEntity">
+		INSERT INTO
+		team_day_report(attendanceId, enterId,
+		attendanceDate, normalCount,
+		outsideCount, lateCount, earlyCount,
+		notClockedCount,goNotClockedCount,leaveNotClockedCount,appealCount,
+		createTime)
+		VALUES(#attendanceId#, #enterId#,
+		#attendanceDate#,
+		#normalCount#,
+		#outsideCount#, #lateCount#,
+		#earlyCount#,
+		#notClockedCount#,#goNotClockedCount#,#leaveNotClockedCount#,#appealCount#,
+        NOW())
+		ON
+		DUPLICATE KEY
+		UPDATE
+		normalCount = #normalCount#,
+		outsideCount = #outsideCount#,
+		lateCount = #lateCount#,
+		earlyCount = #earlyCount#,
+		notClockedCount = #notClockedCount#,
+        goNotClockedCount = #goNotClockedCount#,
+        leaveNotClockedCount = #leaveNotClockedCount#,
+		appealCount = #appealCount#,
+		createTime=NOW()
+	</insert>
+
+	<!--查询团队日报详情 -->
+	<select id="queryTeamDailyInfo" parameterClass="richinfo.attendance.entity.TeamDailyEntity"
+		resultClass="richinfo.attendance.entity.TeamDailyEntity">
+		SELECT mon.goWork AS earlyTime,mon.goWorkDate AS earlyDate,mon.goWorkDesc AS earlyTimeDesc,
+		mon.goLocation AS
+		earlyTimeLocation,
+		mon.leaveWork AS lastTime,
+		mon.leaveWork AS lastDate,
+		mon.leaveWorkDesc AS lastTimeDesc,
+		mon.remark AS remark,
+		mon.phone,
+		mon.leaveLocation AS
+		lastTimeLocation,
+        aei.employeeName, att.attendanceName,
+		att.attendanceId,
+		mon.attendanceDate,
+        aei.contactId,aei.uid,aei.phone
+		FROM
+		employee_month_detail AS mon
+		INNER JOIN
+		attendance_group_info AS att
+		ON
+		mon.attendanceId = att.attendanceId
+        INNER JOIN
+        attendance_employee_info AS aei
+        ON aei.uid = mon.uid
+        WHERE
+		mon.attendanceDate =
+		#attendanceDate# AND
+		mon.enterId = #enterId#
+		ORDER
+		BY mon.attendanceId,mon.uid desc
+		<dynamic prepend="limit">
+			<isNotEqual property="pageSize" compareValue="-1">
+				#offSet#,#pageSize#
+			</isNotEqual>
+		</dynamic>
+	</select>
+
+	<!--查询团队月报统计 -->
+	<select id="queryTeamMonthReport" parameterClass="java.util.HashMap"
+		resultClass="richinfo.attendance.entity.TeamMonthEntity">
+		SELECT
+		tmp.attendanceId,
+		tmp.enterId,
+		tmp.attendanceMonth,
+		tmp.uid,
+		tmp.employeeName,
+		tmp.normalDays,
+		tmp.outsideDays,
+		tmp.lateDays,
+		tmp.earlyDays,
+		tmp.notClockedDays,
+		tmp.appealDays,
+		agi.attendanceName,
+		tmp.phone
+		FROM
+		(SELECT
+		attendanceId,
+		enterId,
+		attendanceMonth,
+		uid,
+		employeeName,
+		normalDays,
+		outsideDays,
+		lateDays,
+		earlyDays,
+		notClockedDays,appealDays,phone
+		FROM
+		team_month_report tmr
+		WHERE
+		tmr.enterId = #enterId#
+		AND
+		tmr.attendanceMonth =
+		#attendanceMonth#
+		ORDER
+		BY
+		tmr.attendanceId,tmr.uid desc) tmp
+		LEFT JOIN
+		attendance_group_info agi
+		ON tmp.attendanceId = agi.attendanceId
+		where
+		agi.status = 0
+		<dynamic prepend="limit">
+			<isNotNull property="pageSize">
+				#begin#,#pageSize#
+			</isNotNull>
+		</dynamic>
+	</select>
+
+	<!--查询团队月报总数 -->
+	<select id="queryTeamMonthCount" parameterClass="java.util.HashMap"
+		resultClass="java.lang.Integer">
+		SELECT count(1)
+		FROM team_month_report tmr
+		WHERE tmr.enterId
+		= #enterId#
+		AND tmr.attendanceMonth = #attendanceMonth#
+	</select>
+
+	<!-- 团队月报统计 -->
+	<select id="teamMonthReportInfo" parameterClass="java.util.HashMap"
+		resultClass="richinfo.attendance.entity.TeamMonthReportEntity">
+		<![CDATA[
+		SELECT emd.enterId,emd.phone,
+		emd.attendanceId, emd.uid, emd.employeeName,
+		emd.attendanceDate,
+		SUM(CASE WHEN goWorkDesc = "正常" AND leaveWorkDesc = "正常" THEN 1 WHEN goWorkDesc = "已申诉" OR leaveWorkDesc = "已申诉" THEN 1 ELSE 0 END ) AS normalDays,
+		SUM(CASE WHEN goWorkDesc ="迟到" THEN 1 ELSE 0 END )AS lateDays,
+		SUM(IFNULL(lateMinutes,0)) AS lateMinutes,
+		SUM(CASE WHEN leaveWorkDesc = "早退" THEN 1 ELSE 0 END )AS earlyDays,
+		SUM(IFNULL(earlyMinutes,0)) AS earlyMinutes,
+		SUM(CASE WHEN goWorkDesc = "未打卡" AND leaveWorkDesc ="未打卡"THEN 2 WHEN goWorkDesc = "未打卡" THEN 1 WHEN leaveWorkDesc = "未打卡" THEN 1 ELSE 0 END ) AS notClockedDays,
+		SUM(CASE WHEN goWorkDesc = "未打卡"THEN 1 ELSE 0 END ) AS goNotClockedDays,
+		SUM(CASE WHEN leaveWorkDesc = "未打卡" THEN 1 ELSE 0 END ) AS leaveNotClockedDays,
+		SUM(regionStatus = 1) AS outsideDays,
+		SUM(CASE WHEN goWorkDesc = "已申诉" AND leaveWorkDesc = "已申诉" THEN 1 WHEN goWorkDesc = "已申诉" THEN 1 WHEN leaveWorkDesc = "已申诉" THEN 1 ELSE 0 END ) AS appealDays,
+		SUM(IFNULL(workMinutes,0)) AS workMinute
+		FROM 
+		employee_month_detail emd
+		WHERE emd.enterId = #enterId#  
+		  AND emd.attendanceDate >= #startDate# AND emd.attendanceDate<= #attendanceDate# 
+		GROUP BY emd.uid,emd.attendanceId ]]>
+	</select>
+
+	<!-- 团队月报统计信息入库 -->
+	<insert id="saveTeamMonthReport" parameterClass="richinfo.attendance.entity.TeamMonthReportEntity">
+		INSERT INTO
+		team_month_report(attendanceId, enterId,
+		attendanceMonth, uid,
+		employeeName, normalDays, outsideDays, lateDays,lateMinutes,
+		earlyDays,earlyMinutes,
+		notClockedDays,goNotClockedDays,leaveNotClockedDays,
+        appealDays,phone,totalWorkTime, createTime, modifyTime)
+		VALUES(#attendanceId#,
+		#enterId#,
+		date_format(#attendanceDate#,'%Y-%m'), #uid#,
+		#employeeName#,#normalDays#,#outsideDays#, #lateDays#,#lateMinutes#,
+        #earlyDays#,#earlyMinutes#,
+		#notClockedDays#,#goNotClockedDays#,#leaveNotClockedDays#,
+        #appealDays#,#phone#,#workMinute#,NOW(), NOW())
+		ON
+		DUPLICATE KEY
+		UPDATE normalDays =
+		#normalDays#, outsideDays =
+		#outsideDays#,
+		lateDays= #lateDays#,
+        lateMinutes = #lateMinutes#,
+		earlyDays = #earlyDays#,
+        earlyMinutes=#earlyMinutes#,
+		notClockedDays =#notClockedDays#,
+        goNotClockedDays =#goNotClockedDays#,
+        leaveNotClockedDays = #leaveNotClockedDays#,
+        appealDays=#appealDays#,
+        phone=#phone#,
+        totalWorkTime=#workMinute#,
+        modifyTime = NOW()
+	</insert>
+
+	<!-- 查询在考勤员工信息表中存在记录的用户uid信息 -->
+	<select id="queryUidRecord" parameterClass="java.util.List"
+		resultClass="richinfo.attendance.entity.AttendEmployee">
+		SELECT uid, enterId
+		FROM attendance_employee_info
+		WHERE uid in
+		<iterate open="(" close=")" conjunction=",">
+			#users[].uid#
+		</iterate>
+	</select>
+
+	<!-- 修改考勤组基本信息 -->
+	<update id="updateGroup" parameterClass="richinfo.attendance.entity.AttendGroup">
+		UPDATE attendance_group_info
+		<dynamic prepend="set">
+			<isNotEmpty property="attendanceName" prepend=",">
+				attendanceName =
+				#attendanceName#
+			</isNotEmpty>
+			<isNotEmpty property="amTime" prepend=",">
+				amTime = #amTime#
+			</isNotEmpty>
+			<isNotEmpty property="pmTime" prepend=",">
+				pmTime =
+				#pmTime#
+			</isNotEmpty>
+			<isNotEmpty property="location" prepend=",">
+				location =
+				#location#
+			</isNotEmpty>
+			<isNotEmpty property="detailAddr" prepend=",">
+				detailAddr =
+				#detailAddr#
+			</isNotEmpty>
+			<isNotEqual property="longitude" compareValue="-1"
+				prepend=",">
+				longitude =
+				#longitude#
+			</isNotEqual>
+			<isNotEqual property="latitude" compareValue="-1" prepend=",">
+				latitude =
+				#latitude#
+			</isNotEqual>
+			<isNotEqual property="attendanceRange" compareValue="-1"
+				prepend=",">
+				attendanceRange =
+				#attendanceRange#
+			</isNotEqual>
+			<isNotEqual property="attendanceOutRange" compareValue="-1"
+				prepend=",">
+				attendanceOutRange =
+				#attendanceOutRange#
+			</isNotEqual>
+			<isNotEmpty property="modifyTime" prepend=",">
+				modifyTime =
+				#modifyTime#
+			</isNotEmpty>
+			<isNotEmpty property="attendType" prepend=",">
+				attendType =
+				#attendType#
+			</isNotEmpty>
+			<isNotEmpty property="fixedAttendRule" prepend=",">
+				fixedAttendRule =
+				#fixedAttendRule#
+			</isNotEmpty>
+			<isNotEmpty property="freeAttendRule" prepend=",">
+				freeAttendRule =
+				#freeAttendRule#
+			</isNotEmpty>
+			<isNotEmpty property="allowLateTime" prepend=",">
+				allowLateTime =
+				#allowLateTime#
+			</isNotEmpty>
+			<isNotEmpty property="relyHoliday" prepend=",">
+				relyHoliday =
+				#relyHoliday#
+			</isNotEmpty>
+            <isNotEmpty property="isAllowedOutRangeClock" prepend=",">
+                isAllowedOutRangeClock =
+                #isAllowedOutRangeClock#
+            </isNotEmpty>
+            <isNotEmpty property="useFlexibleRule" prepend=",">
+                useFlexibleRule =
+                #useFlexibleRule#
+            </isNotEmpty>
+            <isNotEmpty property="flexitime" prepend=",">
+                flexitime =
+                #flexitime#
+            </isNotEmpty>
+		</dynamic>
+		WHERE attendanceId = #attendanceId#
+	</update>
+
+	<!-- 批量对员工做软删除 -->
+	<update id="batchdeleteEmployee" parameterClass="richinfo.attendance.entity.AttendEmployee">
+		UPDATE
+		attendance_employee_info
+		SET status = #status#, modifyTime =
+		#modifyTime#
+		WHERE attendanceId = #attendanceId# AND uid = #uid#
+	</update>
+	
+	<!-- 批量对员工做软删除 -->
+	<update id="batchdeleteEmployeeByContactId" parameterClass="richinfo.attendance.entity.AttendEmployee">
+		UPDATE
+		attendance_employee_info
+		SET status = 1, modifyTime =
+		now()
+		WHERE enterId = #enterId# AND contactId = #contactId#
+	</update>
+    <!--删除考勤组负责人-->
+	<update id="batchDelChargemanContactId" parameterClass="richinfo.attendance.entity.AttendEmployee">
+		UPDATE
+        attendance_chargeman_list
+		SET status = 1, modifyTime =
+		now()
+		WHERE enterId = #enterId# AND contactId = #contactId#
+	</update>
+
+	<!-- 根据考勤组名称，查询企业内的考勤组 -->
+	<select id="queryAttendGroupByName" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.entity.AttendGroup">
+		select
+		attendanceId,attendanceName,enterId,enterName,amTime,pmTime,location,detailAddr,longitude,latitude,attendanceRange,status,createTime,modifyTime
+		from attendance_group_info
+		where enterId=#enterId#
+		and
+		attendanceName=#attendanceName#
+		and status=#status#
+		<dynamic prepend="and">
+			<isNotEqual property="attendanceId" compareValue="-1">
+				attendanceId !=#attendanceId#
+			</isNotEqual>
+		</dynamic>
+	</select>
+
+	<!-- 查询所有有效的考勤组列表 -->
+	<select id="queryAllNormalAttendGroup" parameterClass="java.lang.Integer"
+		resultClass="richinfo.attendance.entity.AttendGroup">
+		select
+		attendanceId,attendanceName,enterId,enterName,amTime,pmTime,location,detailAddr,longitude,latitude,attendanceRange,status,createTime,modifyTime,
+		attendanceOutRange,attendType,fixedAttendRule,freeAttendRule,allowLateTime,relyHoliday,isAllowedOutRangeClock,useFlexibleRule,flexitime
+		from attendance_group_info
+		where status=#status#
+	</select>
+
+	<!-- 按时间查询考勤记录 -->
+	<select id="queryEmployRecordByTime" parameterClass="java.util.Map"
+			resultClass="richinfo.attendance.entity.AttendEntity">
+		SELECT uid FROM attendance_record WHERE attendanceDate = #attendanceDate# AND attendanceTime between #attendanceStartTime# and #attendanceEndTime#
+	</select>
+
+	<!-- 添加考勤组基本信息记录 -->
+	<insert id="saveAttendGroup" parameterClass="richinfo.attendance.entity.AttendGroup">
+		insert into
+		attendance_group_info(attendanceName,enterId,enterName,amTime,pmTime,location,detailAddr,longitude,latitude,attendanceRange,attendanceOutRange,status,adminUid,adminContactId,adminName,createTime,modifyTime,attendType,fixedAttendRule,freeAttendRule,allowLateTime,relyHoliday,isAllowedOutRangeClock,useFlexibleRule,flexitime)
+		values(#attendanceName#,#enterId#,#enterName#,#amTime#,#pmTime#,#location#,#detailAddr#,#longitude#,#latitude#,#attendanceRange#,#attendanceOutRange#,#status#,#adminUid#,#adminContactId#,#adminName#,#createTime#,#modifyTime#,#attendType#,#fixedAttendRule#,#freeAttendRule#,#allowLateTime#,#relyHoliday#,#isAllowedOutRangeClock#,#useFlexibleRule#,#flexitime#)
+		<selectKey resultClass="java.lang.Long" keyProperty="attendanceId">
+			SELECT
+			@@IDENTITY
+			AS attendanceId
+		</selectKey>
+	</insert>
+
+	<!-- 查询已经在其他考勤组的uid列表 -->
+	<select id="queryUidInGroups" parameterClass="java.util.List"
+		resultClass="java.lang.String">
+		select uid as uid
+		from attendance_employee_info
+		where uid in
+		<iterate open="(" close=")" conjunction=",">
+			#users[].uid#
+		</iterate>
+	</select>
+
+	<!-- 查询已经在其他考勤组DepartmentId的列表 -->
+	<select id="queryDepartmentInGroups" parameterClass="java.util.List"
+		resultClass="java.lang.String">
+		SELECT
+		departmentId
+		FROM
+		attendance_department_chooser
+		where departmentId in
+		<iterate open="(" close=")" conjunction=",">
+			#attendDepartmentChoosers[].departmentId#
+		</iterate>
+	</select>
+
+	<!-- 批量新增员工信息 -->
+	<insert id="batchSaveEmployees" parameterClass="richinfo.attendance.entity.AttendEmployee">
+		insert into
+		attendance_employee_info
+		(attendanceId,uid,contactId,employeeName,phone,enterId,enterName,
+		deptId,deptName,email,position,status,createTime,modifyTime)
+		values(
+		#attendanceId#,#uid#,#contactId#,#employeeName#,#phone#,#enterId#,#enterName#,
+		#deptId#,#deptName#,#email#,#position#,#status#,#createTime#,#modifyTime#)
+	</insert>
+
+	<!-- 批量修改员工信息 -->
+	<update id="batchUpdateEmployees" parameterClass="richinfo.attendance.entity.AttendEmployee">
+		update
+		attendance_employee_info
+		set
+		attendanceId=#attendanceId#,contactId=#contactId#,employeeName=#employeeName#,enterName=#enterName#,
+		enterId=#enterId#,status=#status#,modifyTime=#modifyTime#
+		where
+		uid=#uid#
+	</update>
+
+	<!-- 根据企业联系人ID查找员工信息 -->
+	<select id="queryEmployeeByUid" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.entity.AttendEmployee">
+		select
+		attendanceId,uid,employeeName,phone,enterId,enterName,
+		deptId,deptName,email,position,status,createTime,modifyTime,roleType
+		from
+		attendance_employee_info
+		where uid=#uid#
+		and status=#status#
+	</select>
+
+	<!-- 添加考勤打卡记录 -->
+	<insert id="saveAttendRecord" parameterClass="richinfo.attendance.entity.AttendEntity">
+		insert into
+		attendance_record(uid,phone,attendanceId,attendanceDate,attendanceTime,location,detailAddr,longitude,latitude,status,outWorkRemark)
+		values(#uid#,#phone#,#attendanceId#,#attendanceDate#,#attendanceTime#,#location#,#detailAddr#,#longitude#,#latitude#,#status#,#outWorkRemark#)
+	</insert>
+
+	<!-- 员工登录查询员工信息 -->
+	<select id="queryUserInfo" parameterClass="java.util.HashMap"
+		resultClass="richinfo.attendance.entity.UserInfo">
+        SELECT
+        e.uid,
+        e.employeeName as employeeName,e.roleType,e.contactId,
+        e.phone,e.enterId,e.enterName,e.deptId,e.deptName,e.attendanceId,e.status,e.email,e.position
+        FROM attendance_employee_info e
+        WHERE e.uid = #uid#
+        AND e.status = #status#
+        AND e.enterId = #enterId#
+
+<!--
+		SELECT IFNULL(att.examinerState,0) AS examinerState,
+		e.uid,
+		IFNULL(e.employeeName,att.examineName) as employeeName,
+		e.phone,e.enterId,e.enterName,e.deptId,e.deptName,e.attendanceId,e.status,e.email,e.position
+		FROM attendance_employee_info e LEFT JOIN attendance_examine_table att
+		on
+		e.enterId = att.enterId and e.uid = att.examineUid and
+		att.isDelete=1 and att.examinerState = 1 and e.enterId = #enterId#
+		WHERE e.uid = #uid#
+		AND e.status = #status#
+		limit
+		0,1-->
+
+
+		<!--SELECT IFNULL(examinerState,0) as examinerState,
+		uid,
+		employeeName,
+		phone,e.enterId,enterName,deptId,deptName,e.attendanceId,status,email,position
+		FROM attendance_employee_info e left join attendance_examine_table
+		att
+		on
+		e.enterId = att.enterId and e.uid = att.examineUid and
+		att.isDelete
+		=
+		1 and
+		att.examinerState = 1 and e.enterId = #enterId#
+		where uid = #uid# OR  att.examineUid=#uid#
+		and status = #status#
+		limit
+		0,1-->
+	</select>
+
+    <!--查询审批者用户审批者-->
+    <select id="queryExamineUser" parameterClass="java.util.Map" resultClass="richinfo.attendance.entity.AttendExamineEntity">
+        SELECT
+        attExamineId,enterId, examineUid,examineName,examinerState,isDelete
+        FROM attendance_examine_table
+        WHERE enterId = #enterId# AND examineUid= #uid# AND examinerState = 1 AND isDelete= 1 GROUP BY examineUid
+    </select>
+	<!-- 查询员工信息以及所在考勤组信息 -->
+	<select id="queryOwnGroup" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.entity.UserGroupEntity">
+		SELECT
+		e.uid,e.employeeId,
+		e.employeeName,e.phone,e.enterId,e.enterName,e.attendanceId,e.status,ex.examineName,ex.examineUid,e.roleType,
+		g.attendanceName,g.location,g.detailAddr,g.longitude,g.latitude,g.attendanceRange,g.attendanceOutRange,
+		g.attendType,g.fixedAttendRule,g.freeAttendRule,g.allowLateTime,g.relyHoliday,g.isAllowedOutRangeClock
+		FROM
+		(attendance_employee_info e inner join attendance_group_info g on
+		e.attendanceId = g.attendanceId
+		AND e.uid = #uid#
+		AND e.status =
+		#employeeStatus#
+		AND g.status =
+		#groupStatus#) left join
+		attendance_examine_table ex
+		on e.attendanceId = ex.attendanceId and
+		ex.examinerState = 1 and isDelete = 1
+	</select>
+
+	<!-- 根据企业ID、uid查询attendanceId，返回对应关系给前端 -->
+	<select id="queryAttendGroupByUid" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.entity.UserInfo">
+		select uid,attendanceId
+		from
+		attendance_employee_info
+		where uid in
+		<iterate property="users" open="(" close=")" conjunction=",">
+			#users[].uid#
+		</iterate>
+		and status=#status#
+	</select>
+
+	<!-- 根据企业ID、uid查询attendanceId，针对编辑考勤组检查用户是否在其他考勤组 -->
+	<select id="queryAttendGroupByUid2" parameterClass="java.util.Map"
+			resultClass="richinfo.attendance.entity.UserInfo">
+		select uid,attendanceId
+		from
+		attendance_employee_info
+		where uid in
+		<iterate property="users" open="(" close=")" conjunction=",">
+			#users[].uid#
+		</iterate>
+		and status=#status# and attendanceId != #attendanceId#
+	</select>
+
+	<!-- 根据企业ID、departmentId查询attendanceId，返回对应关系给前端 -->
+	<select id="queryAttendGroupByDepartmentId" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.entity.AttendDepartmentChooser">
+		SELECT
+		departmentId,attendanceId
+		FROM
+		attendance_department_chooser
+		where departmentId in
+		<iterate property="departments" open="(" close=")" conjunction=",">
+			#departments[].departmentId#
+		</iterate>
+
+	</select>
+
+	<!-- 根据企业ID、departmentId查询attendanceId，针对编辑考勤组检查部门是否在其他考勤组 -->
+	<select id="queryAttendGroupByDepartmentId2" parameterClass="java.util.Map"
+			resultClass="richinfo.attendance.entity.AttendDepartmentChooser">
+		SELECT
+		departmentId,attendanceId
+		FROM
+		attendance_department_chooser
+		where departmentId in
+		<iterate property="departments" open="(" close=")" conjunction=",">
+			#departments[].departmentId#
+		</iterate>
+		and attendanceId != #attendanceId#
+	</select>
+
+
+	<!-- 根据年份查询公共日历数据 -->
+	<select id="queryCalendarByYear" parameterClass="java.lang.String"
+		resultClass="richinfo.attendance.entity.AttendCalendar">
+		select calendarId,calendarDate,week,remark,status
+		from
+		attendance_public_calendar
+		where date_format(calendarDate,'%Y')=#year#
+	</select>
+
+	<!--根据年份删除公共日历数据 -->
+	<delete id="removeCalendarByYear" parameterClass="java.lang.String">
+		delete
+		from
+		attendance_public_calendar
+		where date_format(calendarDate,'%Y')=#year#
+	</delete>
+
+	<!-- 批量插入公共日历数据 -->
+	<insert id="batchSaveAttendCalendar" parameterClass="richinfo.attendance.entity.AttendCalendar">
+		insert into
+		attendance_public_calendar(calendarDate,week,remark,status,createTime)
+		values(#calendarDate#,#week#,#remark#,#status#,#createTime#)
+	</insert>
+
+	<!--查询员工月报明细列表，时间顺序排列 -->
+	<select id="queryPersonalMonthlyReport" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.entity.EmployeeMonthDetail">
+		select
+        e.monthRcdId,e.attendanceId,aei.employeeName,e.attendanceDate,e.goWork,e.goWorkDate,e.goWorkDesc,e.leaveWork,e.leaveWorkDate,e.leaveWorkDesc,e.remark,recordState,e.scheduleShiftId,e.scheduleShiftName,e.scheduleShiftWorkTime,e.attendType,ifnull(app.appealId,0)
+        as appealId,
+        aei.contactId
+        from
+        employee_month_detail e left join
+        attendance_appeal_record app
+        on e.monthRcdId = app.monthRcdId
+        INNER JOIN
+        attendance_employee_info AS aei
+        ON aei.uid = e.uid
+        where
+        e.uid= #uid#
+        and
+        date_format(e.attendanceDate,'%Y-%m')=
+        #attendanceMonth# and e.enterId = #enterId#
+        order by
+        e.attendanceDate
+	</select>
+
+	<!-- 查询团队日报统计 -->
+	<select id="sumTeamDailyReport" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.entity.TeamDailyReportEntity">
+		select
+		ifnull(sum(normalCount),0) as normalCount,
+		ifnull(sum(outsideCount),0) as outsideCount,
+		ifnull(sum(lateCount),0)
+		as lateCount,
+		ifnull(sum(earlyCount),0) as earlyCount,
+		ifnull(sum(notClockedCount),0) as notClockedCount
+		from
+		team_day_report
+		where enterId=#enterId# and
+		date_format(attendanceDate,'%Y-%m-%d')=#attendanceDate#
+	</select>
+
+	<!-- 根据日期查找公共日历数据 -->
+	<select id="queryAttendCalendarByDate" parameterClass="java.util.Date"
+		resultClass="richinfo.attendance.entity.AttendCalendar">
+		select calendarId,calendarDate,week,remark,status
+		from
+		attendance_public_calendar
+		where
+		datediff(calendarDate,#calendarDate#)=0
+	</select>
+
+	<!-- 入库员工个人月报统计 -->
+	<insert id="batchSaveEmployeeMonthDetail" parameterClass="richinfo.attendance.entity.EmployeeMonthDetail">
+		INSERT
+		INTO
+		employee_month_detail
+		(attendanceId,enterId,uid,employeeName,attendanceDate,goWork,goWorkDate,goLocation,goWorkDesc,leaveWork,leaveWorkDate,leaveLocation,leaveWorkDesc,regionStatus,outWorkRemark,remark,recordState,phone,lateMinutes,earlyMinutes,workMinutes,createTime,scheduleShiftId,scheduleShiftName,scheduleShiftWorkTime,attendType)
+		VALUES
+		(#attendanceId#,#enterId#,#uid#,#employeeName#,#attendanceDate#,#goWork#,#goWorkDate#,#goLocation#,#goWorkDesc#,#leaveWork#,#leaveWorkDate#,#leaveLocation#,#leaveWorkDesc#,#regionStatus#,#outWorkRemark#,#remark#,#recordState#,#phone#,#lateMinutes#,#earlyMinutes#,#workMinutes#,#createTime#,#scheduleShiftId#,#scheduleShiftName#,#scheduleShiftWorkTime#,#attendType#)
+		ON
+		DUPLICATE KEY
+		UPDATE
+		<isNotEmpty property="goWork" prepend="">
+		goWork=#goWork#,
+		</isNotEmpty>
+		<isNotEmpty property="goWorkDate" prepend="">
+		goWorkDate=#goWorkDate#,
+		</isNotEmpty>
+		<isNotEmpty property="goLocation" prepend="">
+		goLocation=#goLocation#,
+		</isNotEmpty>
+		<isNotEmpty property="goWorkDesc" prepend="">
+		goWorkDesc=#goWorkDesc#,
+		</isNotEmpty>
+		<isNotEmpty property="leaveWork" prepend="">
+		leaveWork=#leaveWork#,
+		</isNotEmpty>
+		<isNotEmpty property="leaveWorkDate" prepend="">
+		leaveWorkDate=#leaveWorkDate#,
+		</isNotEmpty>
+		<isNotEmpty property="leaveLocation" prepend="">
+		leaveLocation=#leaveLocation#,
+		</isNotEmpty>
+		<isNotEmpty property="leaveWorkDesc" prepend="">
+		leaveWorkDesc=#leaveWorkDesc#,
+		</isNotEmpty>
+		<isNotEmpty property="regionStatus" prepend="">
+		regionStatus=#regionStatus#,
+		</isNotEmpty>
+        <isNotEmpty property="outWorkRemark" prepend="">
+            outWorkRemark=#outWorkRemark#,
+        </isNotEmpty>
+		<isNotEmpty property="remark" prepend="">
+		remark=#remark#,
+		</isNotEmpty>
+		<isNotEmpty property="recordState" prepend="">
+		recordState=#recordState#,
+		</isNotEmpty>
+		<isNotEmpty property="earlyMinutes" prepend="">
+		earlyMinutes=#earlyMinutes#,
+		</isNotEmpty>
+		<isNotEmpty property="workMinutes" prepend="">
+		workMinutes=#workMinutes#,
+		</isNotEmpty>
+		<isNotEmpty property="lateMinutes" prepend="">
+		lateMinutes=#lateMinutes#,
+		</isNotEmpty>
+		<isNotEmpty property="scheduleShiftId" prepend="">
+		scheduleShiftId=#scheduleShiftId#,
+		</isNotEmpty>
+		<isNotEmpty property="scheduleShiftName" prepend="">
+		scheduleShiftName=#scheduleShiftName#,
+		</isNotEmpty>
+		<isNotEmpty property="scheduleShiftWorkTime" prepend="">
+		scheduleShiftWorkTime=#scheduleShiftWorkTime#,
+		</isNotEmpty>
+		attendType=#attendType#
+	</insert>
+
+	<!-- 查询单个异常申诉单详情 -->
+	<select id="querySingleAppealInfo" parameterClass="java.lang.Long"
+		resultClass="richinfo.attendance.bean.AttendAppealReq">
+		select
+		appealId,enterId,uid,name,reason,goWork,goWorkDesc,leaveWork,leaveWorkDesc,examineUid,examineName,examineState,examineResult,monthRcdId,attendanceId,attendanceDate,appealRecord,remark,createTime,updateTime
+		from attendance_appeal_record
+		where appealId = #appealId#
+	</select>
+
+	<!-- 用户已申诉单总量查询 -->
+	<select id="queryUserAppealListCount" parameterClass="richinfo.attendance.bean.AttendAppealReq"
+		resultClass="java.lang.Long">
+		select count(*)
+		from attendance_appeal_record
+		where uid =
+		#uid# and enterId = #enterId#
+	</select>
+
+	<!-- 用户已申诉单信息查询 -->
+	<select id="queryUserAppealList" parameterClass="richinfo.attendance.bean.AttendAppealReq"
+		resultClass="richinfo.attendance.bean.AttendAppealReq">
+		select
+		appealId,enterId,uid,name,reason,goWork,goWorkDesc,leaveWork,leaveWorkDesc,examineUid,examineName,examineState,examineResult,monthRcdId,attendanceId,attendanceDate,appealRecord,remark,createTime,updateTime
+		from attendance_appeal_record
+		where uid = #uid# and enterId = #enterId#
+		order by updateTime desc
+		limit
+		#offset#,#pageSize#
+	</select>
+
+	<!-- 审批员待审批单总量查询 -->
+	<select id="queryManageAppealListCount" parameterClass="richinfo.attendance.bean.AttendAppealReq"
+		resultClass="java.lang.Long">
+		select count(*)
+		from attendance_appeal_record
+		where
+		examineUid =
+		#examineUid# and examineState = 1 and enterId = #enterId#
+	</select>
+
+	<!-- 审批员待审批单信息查询 -->
+	<select id="queryManageAppealList" parameterClass="richinfo.attendance.bean.AttendAppealReq"
+		resultClass="richinfo.attendance.bean.AttendAppealReq">
+		select
+		appealId,enterId,uid,name,reason,goWork,goWorkDesc,leaveWork,leaveWorkDesc,examineUid,examineName,examineState,examineResult,monthRcdId,attendanceId,attendanceDate,appealRecord,remark,createTime,updateTime
+		from attendance_appeal_record
+		where examineUid = #examineUid# and
+		examineState = 1 and enterId = #enterId#
+		order by updateTime desc
+		limit
+		#offset#,#pageSize#
+	</select>
+
+	<!-- 查询用户个人月报详情某一天的记录 -->
+	<select id="queryUserAttendDetail" parameterClass="richinfo.attendance.bean.AttendAppealReq"
+		resultClass="richinfo.attendance.entity.EmployeeMonthDetail">
+		select
+		monthRcdId,attendanceId,enterId,uid,employeeName,attendanceDate,goWork,goWorkDate,goWorkDesc,leaveWork,leaveWorkDate,leaveWorkDesc,remark
+		from employee_month_detail
+		where monthRcdId = #monthRcdId#
+	</select>
+
+	<!-- 查询考勤组对应的审批员信息 -->
+	<select id="queryExamineUid" parameterClass="richinfo.attendance.bean.AttendAppealReq"
+		resultClass="richinfo.attendance.entity.AttendExamineEntity">
+		select
+		attExamineId,enterId,attendanceId,examineName,examineUid,examinerState
+		from
+		attendance_examine_table
+		where attendanceId = #attendanceId# and
+		examinerState = 1 and isDelete = 1
+	</select>
+
+	<!-- 考勤异常申诉记录录入 -->
+	<insert id="abnormalAppeal" parameterClass="richinfo.attendance.bean.AttendAppealReq">
+		insert into
+		attendance_appeal_record(enterId,uid,name,reason,goWork,goWorkDesc,leaveWork,leaveWorkDesc,examineUid,examineName,examineState,examineResult,monthRcdId,attendanceId,attendanceDate,appealRecord,remark,createTime,updateTime)
+		values(#enterId#,#uid#,#name#,#reason#,#goWork#,#goWorkDesc#,#leaveWork#,#leaveWorkDesc#,#examineUid#,#examineName#,#examineState#,#examineResult#,#monthRcdId#,#attendanceId#,#attendanceDate#,#appealRecord#,#remark#,#createTime#,#updateTime#)
+
+		<selectKey keyProperty="appealId" resultClass="java.lang.Long">
+			SELECT
+			@@IDENTITY
+			AS appealId
+		</selectKey>
+	</insert>
+
+	<!-- 撤销考勤异常申诉单 -->
+	<update id="cancelAppeal" parameterClass="richinfo.attendance.bean.AttendAppealReq">
+		update
+		attendance_appeal_record
+		set examineState = 3,updateTime = now()
+		where
+		appealId =
+		#appealId#
+	</update>
+
+	<!-- 更新审核单审核结果 -->
+	<update id="updateAppealResult" parameterClass="richinfo.attendance.bean.AttendAppealReq">
+		update
+		attendance_appeal_record
+		set examineResult =
+		#examineResult#,examineState = 2,updateTime = now()
+		where
+		appealId =
+		#appealId#
+	</update>
+
+	<!-- 审核同意，更新个人月报详情考勤描述信息为已申诉 -->
+	<update id="updateDescInfo" parameterClass="richinfo.attendance.bean.AttendAppealReq">
+		update employee_month_detail
+		set recordState = 4 ,
+        earlyMinutes = 0 ,
+        lateMinutes = 0
+		<dynamic>
+			<isEqual property="appealRecord" compareValue="1" prepend=",">
+				goWorkDesc = '已申诉'
+			</isEqual>
+			<isEqual property="appealRecord" compareValue="2" prepend=",">
+				leaveWorkDesc = '已申诉'
+			</isEqual>
+			<isEqual property="appealRecord" compareValue="3" prepend=",">
+				goWorkDesc = '已申诉',leaveWorkDesc = '已申诉'
+			</isEqual>
+		</dynamic>
+
+		where monthRcdId = #monthRcdId#
+	</update>
+
+	<!-- 审核同意，更新团队日报统计数据 -->
+	<update id="updateTeamDailyReportData" parameterClass="java.util.Map">
+		update team_day_report
+		<dynamic prepend="set">
+			<isNotEmpty property="late"  prepend=",">
+				lateCount = lateCount - #late#
+			</isNotEmpty>
+			<isNotEmpty property="early" prepend=",">
+				earlyCount =
+				earlyCount - #early#
+			</isNotEmpty>
+			<isNotEmpty property="notClock" prepend=",">
+				notClockedCount =
+				notClockedCount - #notClock#
+			</isNotEmpty>
+		</dynamic>
+		where attendanceId = #attendanceId# and attendanceDate =
+		#attendanceDate#
+	</update>
+
+	<!-- 审核同意，更新团队日报统计数据 -->
+	<update id="updateTeamDailyReportData_2018" parameterClass="java.util.Map">
+		update team_day_report
+		<dynamic prepend="set">
+			<isNotEmpty property="late"  prepend=",">
+				lateCount = lateCount - #late#
+			</isNotEmpty>
+			<isNotEmpty property="early" prepend=",">
+				earlyCount =
+				earlyCount - #early#
+			</isNotEmpty>
+			<isNotEmpty property="notClock" prepend=",">
+				notClockedCount =
+				notClockedCount - #notClock#
+			</isNotEmpty>
+			<isNotEmpty property="goNotClock" prepend=",">
+                goNotClockedCount =
+                goNotClockedCount - #goNotClock#
+			</isNotEmpty>
+			<isNotEmpty property="leaveNotClock" prepend=",">
+                leaveNotClockedCount =
+                leaveNotClockedCount - #leaveNotClock#
+			</isNotEmpty>
+		</dynamic>
+		where attendanceId = #attendanceId# and attendanceDate =
+		#attendanceDate#
+	</update>
+
+	<!-- 审核同意，更新团队月报统计数据 兼容新数据-->
+	<update id="updateTeamMonthReportData_2018" parameterClass="java.util.Map">
+		update team_month_report
+		<dynamic prepend="set">
+			<isNotEmpty property="late"  prepend=",">
+				lateDays = lateDays - #late#
+			</isNotEmpty>
+			<isNotEmpty property="early" prepend=",">
+				earlyDays =
+				earlyDays
+				- #early#
+			</isNotEmpty>
+			<isNotEmpty property="notClock" prepend=",">
+				notClockedDays =
+				notClockedDays - #notClock#
+			</isNotEmpty>
+            <isNotEmpty property="goNotClock" prepend=",">
+                goNotClockedDays =
+                goNotClockedDays - #goNotClock#
+            </isNotEmpty>
+            <isNotEmpty property="leaveNotClock" prepend=",">
+                leaveNotClockedDays =
+                leaveNotClockedDays - #leaveNotClock#
+            </isNotEmpty>
+            <isNotEmpty property="normalDays" prepend=",">
+                normalDays =
+                normalDays + #normalDays#
+            </isNotEmpty>
+            <isNotEmpty property="appealDays" prepend=",">
+                appealDays =
+                appealDays + #appealDays#
+            </isNotEmpty>
+            <isNotEmpty property="lateMinutes" prepend=",">
+                lateMinutes =
+                lateMinutes - #lateMinutes#
+            </isNotEmpty>
+            <isNotEmpty property="earlyMinutes" prepend=",">
+                earlyMinutes =
+                earlyMinutes - #earlyMinutes#
+            </isNotEmpty>
+		</dynamic>
+		where attendanceId = #attendanceId# and uid = #uid# and
+		attendanceMonth = #attendanceMonth#
+	</update>
+
+	<!-- 审核同意，更新团队月报统计数据 -->
+	<update id="updateTeamMonthReportData" parameterClass="java.util.Map">
+		update team_month_report
+		<dynamic prepend="set">
+			<isNotEmpty property="late"  prepend=",">
+				lateDays = lateDays - #late#
+			</isNotEmpty>
+			<isNotEmpty property="early" prepend=",">
+				earlyDays = earlyDays - #early#
+			</isNotEmpty>
+			<isNotEmpty property="notClock" prepend=",">
+				notClockedDays = notClockedDays - #notClock#
+			</isNotEmpty>
+            <isNotEmpty property="normalDays" prepend=",">
+                normalDays = normalDays + #normalDays#
+            </isNotEmpty>
+            <isNotEmpty property="appealDays" prepend=",">
+                appealDays = appealDays + #appealDays#
+            </isNotEmpty>
+		</dynamic>
+		where attendanceId = #attendanceId# and uid = #uid# and
+		attendanceMonth = #attendanceMonth#
+	</update>
+
+	<!-- 审核完成后，更新个人月报详情中考勤记录的数据 -->
+	<update id="updatePersonMonthExamineResult" parameterClass="java.util.Map">
+		update
+		employee_month_detail
+		set recordState = #recordState#
+		where
+		monthRcdId = #monthRcdId#
+	</update>
+
+	<!-- 添加考勤组、审批员管理关系记录 -->
+	<insert id="insertAttendExamine" parameterClass="richinfo.attendance.entity.AttendExamineEntity">
+		insert into
+		attendance_examine_table(enterId,attendanceId,examineUid,examineName,examineContactId,examinerState,isDelete,createTime,updateTime)
+		values(#enterId#,#attendanceId#,#examineUid#,#examineName#,#examineContactId#,#examinerState#,#isDelete#,#createTime#,#updateTime#)
+	</insert>
+
+	<!-- 查询审批员是否还有未审核单的数量 -->
+	<select id="queryNotExamineAppeal" parameterClass="java.util.Map"
+		resultClass="java.lang.Long">
+		select count(*)
+		from attendance_appeal_record
+		where
+		examineUid = #examineUid# 
+		and examineState = 1 
+		and enterId =#enterId#
+		and attendanceId=#attendanceId#
+	</select>
+
+	<!-- 修改考勤组审批员 -->
+	<update id="updateExamineInfo" parameterClass="richinfo.attendance.entity.AttendGroup">
+		update
+		attendance_examine_table
+		set examinerState = 1,isDelete = 1,examineContactId = #examineContactId#,updateTime
+		= now()
+		where attendanceId =
+		#attendanceId# and examineUid =
+		#examineUid# and examinerState = 2
+	</update>
+
+	<!--更新考勤组 旧审批员状态，变成非审批员状态 -->
+	<update id="updateExaminerState" parameterClass="java.lang.Long">
+		update
+		attendance_examine_table
+		set examinerState = 2,updateTime = now()
+		where
+		attendanceId =
+		#attendanceId# and examinerState = 1 and isDelete = 1
+	</update>
+
+	<!--删除考勤组时，同时删掉考勤组与审批员之间的关系 -->
+	<update id="deleteAttendExamine" parameterClass="java.lang.Long">
+		update
+		attendance_examine_table
+		set isDelete = 2,examinerState = 2,updateTime
+		= now() where attendanceId =
+		#attendanceId#
+	</update>
+
+	<!-- 通过uid查询是否为审批员 -->
+	<select id="queryExaminerByUid" parameterClass="java.lang.String"
+		resultClass="richinfo.attendance.entity.AttendExamineEntity">
+		select
+		attExamineId,enterId,attendanceId,examineName,examineUid,examinerState
+		from
+		attendance_examine_table
+		where examineUid = #examineUid# and
+		examinerState = 1 and isDelete = 1
+	</select>
+
+	<!-- 入库待发消息  修改增加appealId-->
+	<insert id="batchSaveMessage" parameterClass="richinfo.attendance.entity.Message">
+		insert
+		into
+		msg_table(attendanceId,appealId,enterId,uid,appId,sender,topic,content,
+		summary,serverNo,msgType,createTime,sendTime,modifyTime)
+		values(#attendanceId#,#appealId#,#enterId#,#uid#,#appId#,#sender#,#topic#,#content#,
+		#summary#,#serverNo#,#msgType#,#createTime#,#sendTime#,#modifyTime#)
+		ON DUPLICATE KEY
+		UPDATE modifyTime = #modifyTime#
+	</insert>
+
+
+	<!--根据考勤组ID删除待发消息 -->
+	<delete id="delMsgByAttendanceId" parameterClass="java.util.Map">
+		delete
+		from
+		msg_table
+		where attendanceId=#attendanceId# 
+		<dynamic>
+			<isNotEqual compareValue="-1" property="msgType"
+				prepend="and">
+				msgType=#msgType#
+			</isNotEqual>
+		</dynamic>
+	</delete>
+
+	<!-- 从数据库查询需要发送的定时消息列表 -->
+	<select id="queryPageNeedSendMsgs" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.entity.Message">
+		select
+		msgId,attendanceId,appealId,enterId,uid,appId,sender,topic,content,
+		summary,serverNo,msgType,createTime,sendTime,modifyTime
+		from msg_table
+		where <![CDATA[ sendTime <= #endDate# ]]>
+		<dynamic>
+			<isNotEqual property="currentServerNo" compareValue="0">
+				and
+				serverNo = #currentServerNo#
+			</isNotEqual>
+		</dynamic>
+		order by msgId
+		limit #skip#, #limit#
+	</select>
+
+	<!-- 批量删除待发消息 -->
+	<delete id="batchDelMessage" parameterClass="richinfo.attendance.entity.Message">
+		delete
+		from
+		msg_table
+		where msgId=#msgId#
+	</delete>
+
+	<!-- 根据UID批量删除待发消息 -->
+	<delete id="batchDelMsgByUids" parameterClass="richinfo.attendance.entity.AttendEmployee">
+		delete
+		from
+		msg_table
+		where uid=#uid#
+	</delete>
+	
+	<!-- 根据UID批量删除待发消息 -->
+	<delete id="batchDelMsgByContactId" parameterClass="richinfo.attendance.entity.AttendEmployee">
+		delete
+		from
+		msg_table
+		where uid = (select uid from attendance_employee_info where enterId = #enterId# AND contactId=#contactId#)
+	</delete>
+	
+	<!-- 根据UID批量排班信息-->
+	<delete id="batchDelScheduleByContactId" parameterClass="richinfo.attendance.entity.AttendEmployee">
+		UPDATE
+		attendance_schedule
+		SET status = 1, modifyTime =now()
+		where uid = (select uid from attendance_employee_info where enterId = #enterId# AND contactId=#contactId#)
+	</delete>
+
+	<!-- 批量入库历史消息 -->
+	<insert id="batchSaveHistoryMessage" parameterClass="richinfo.attendance.entity.HistoryMessage">
+		insert
+		into
+		history_msg_table(msgId,attendanceId,enterId,uid,appId,sender,topic,content,
+		summary,serverNo,msgType,resultCode,resultFlag,requestId,createTime,sendTime)
+		values(#msgId#,#attendanceId#,#enterId#,#uid#,#appId#,#sender#,#topic#,#content#,
+		#summary#,#serverNo#,#msgType#,#resultCode#,#resultFlag#,#requestId#,#createTime#,#sendTime#)
+	</insert>
+
+	<!-- PC端查询团队月报统计数据 -->
+	<select id="queryTeamMonthPc" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="richinfo.attendance.entity.TeamMonthEntity">
+		select
+		t.enterId,t.attendanceId,aei.employeeName,t.normalDays,t.outsideDays,t.lateDays,t.lateMinutes,t.earlyDays,
+        t.earlyMinutes,t.notClockedDays,t.goNotClockedDays,t.leaveNotClockedDays,t.appealDays,t.totalWorkTime,
+        att.attendanceName,aei.contactId
+		from
+		team_month_report t
+		inner join
+		attendance_group_info att
+		on
+		t.attendanceId =
+		att.attendanceId
+        inner JOIN attendance_employee_info aei
+        ON aei.uid = t.uid
+		where
+		t.enterId = #enterId# and
+		t.attendanceMonth =
+		#attendanceMonth#
+		<dynamic>
+			<isNotEqual compareValue="-1" property="attendanceId"
+				prepend="and">
+				t.attendanceId = #attendanceId#
+			</isNotEqual>
+			<isNotEmpty property="employeeName" prepend="and">
+                aei.employeeName LIKE CONCAT('%', #employeeName#, '%')
+			</isNotEmpty>
+		</dynamic>
+		order by t.attendanceId
+		limit #offset#,#pageSize#
+	</select>
+
+	<!-- PC端查询团队月报统计数据总量 -->
+	<select id="queryTeamMonthPcCount" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="java.lang.Integer">
+		select count(*)
+		from team_month_report t
+        inner join
+        attendance_group_info att
+        on
+        t.attendanceId =
+        att.attendanceId
+        inner JOIN attendance_employee_info aei
+        ON aei.uid = t.uid
+		where
+		t.enterId = #enterId# and
+		attendanceMonth =
+		#attendanceMonth#
+		<dynamic>
+			<isNotEqual compareValue="-1" property="attendanceId"
+				prepend="and">
+				t.attendanceId = #attendanceId#
+			</isNotEqual>
+			<isNotEmpty property="employeeName" prepend="and">
+                aei.employeeName LIKE CONCAT('%', #employeeName#, '%')
+			</isNotEmpty>
+		</dynamic>
+	</select>
+
+
+	<!-- PC端查询员工月报明细数据总量 -->
+	<select id="queryEmpMonthPcCount" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="java.lang.Integer">
+		select count(*) from
+        employee_month_detail e
+        inner join
+        attendance_group_info att
+        on
+        e.attendanceId =
+        att.attendanceId
+        inner JOIN attendance_employee_info aei
+        ON aei.uid = e.uid
+		where
+        e.enterId = #enterId# and
+        e.attendanceDate <![CDATA[>=]]>
+		#startDate# and attendanceDate <![CDATA[<=]]>
+		#endDate#
+		<dynamic>
+			<isNotEqual compareValue="-1" property="attendanceId"
+				prepend="and">
+                e.attendanceId = #attendanceId#
+			</isNotEqual>
+			<isNotEmpty property="employeeName" prepend="and">
+                aei.employeeName LIKE CONCAT('%', #employeeName#, '%')
+			</isNotEmpty>
+		</dynamic>
+	</select>
+
+	<!-- PC端查询员工月报明细数据 -->
+	<select id="queryEmpMonthPc" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="richinfo.attendance.entity.EmployeeMonthDetail">
+		select
+		e.enterId,e.attendanceDate,goWork,goWorkDate,goWorkDesc,leaveWork,leaveWorkDate,leaveWorkDesc,
+        goLocation,leaveLocation,aei.employeeName,att.attendanceName,e.attendanceId,e.workMinutes,
+        e.regionStatus,e.outWorkRemark,aei.contactId
+		from
+		employee_month_detail e inner join attendance_group_info att
+		on
+		e.attendanceId = att.attendanceId inner JOIN attendance_employee_info aei
+        ON aei.uid = e.uid
+		where
+		e.enterId = #enterId# and
+		attendanceDate <![CDATA[>=]]>
+		#startDate# and attendanceDate <![CDATA[<=]]>
+		#endDate#
+		<dynamic>
+			<isNotEqual compareValue="-1" property="attendanceId"
+				prepend="and">
+				e.attendanceId = #attendanceId#
+			</isNotEqual>
+			<isNotEmpty property="employeeName" prepend="and">
+                aei.employeeName LIKE CONCAT('%', #employeeName#, '%')
+			</isNotEmpty>
+		</dynamic>
+		order by attendanceDate
+		limit #offset#,#pageSize#
+	</select>
+
+	<!-- 查询需要导出PC端的团队月报信息 -->
+	<select id="queryExportTeamMonthPc" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="richinfo.attendance.entity.TeamMonthEntity">
+		select
+		t.enterId,t.attendanceId,aei.employeeName,aei.phone,t.normalDays,t.outsideDays,t.lateDays,t.lateMinutes,t.earlyDays,t.earlyMinutes,
+		t.notClockedDays,t.goNotClockedDays,t.leaveNotClockedDays,t.appealDays,t.totalWorkTime,att.attendanceName,aei.contactId
+		from
+		team_month_report t
+		inner join
+		attendance_group_info att
+		on
+		t.attendanceId =
+		att.attendanceId
+        INNER JOIN
+        attendance_employee_info aei
+        ON aei.uid = t.uid
+		where
+		t.enterId = #enterId# and
+		t.attendanceMonth =
+		#attendanceMonth#
+		<dynamic>
+			<isNotEqual compareValue="-1" property="attendanceId"
+				prepend="and">
+				t.attendanceId = #attendanceId#
+			</isNotEqual>
+			<isNotEmpty property="employeeName" prepend="and">
+                aei.employeeName LIKE CONCAT('%', #employeeName#, '%')
+			</isNotEmpty>
+		</dynamic>
+	</select>
+
+	<!-- 查询需要导出PC端的团队月报信息总量 -->
+	<select id="queryExportTeamMonthPcCount" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="java.lang.Integer">
+		select count(*)
+		from team_month_report t inner join
+		attendance_group_info att
+		on
+		t.attendanceId =
+		att.attendanceId
+        INNER JOIN
+        attendance_employee_info AS aei
+        ON aei.uid = t.uid
+		where
+		t.enterId = #enterId# and
+		t.attendanceMonth =
+		#attendanceMonth#
+		<dynamic>
+			<isNotEqual compareValue="-1" property="attendanceId"
+				prepend="and">
+				t.attendanceId = #attendanceId#
+			</isNotEqual>
+			<isNotEmpty property="employeeName" prepend="and">
+                aei.employeeName LIKE CONCAT('%', #employeeName#, '%')
+			</isNotEmpty>
+		</dynamic>
+	</select>
+
+	<!-- 查询需要导出PC端的员工月报信息 -->
+	<select id="queryExportEmpMonthPc" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="richinfo.attendance.entity.EmployeeMonthDetail">
+		select
+		e.enterId,e.attendanceDate,goWork,goWorkDate,goWorkDesc,leaveWork,leaveWorkDate,leaveWorkDesc,goLocation,leaveLocation,aei.employeeName,remark,
+		att.attendanceName,e.attendanceId,e.workMinutes,e.regionStatus,aei.contactId,aei.phone
+		from
+		employee_month_detail e inner join attendance_group_info att
+		on
+		e.attendanceId = att.attendanceId
+        INNER JOIN
+        attendance_employee_info AS aei
+        ON aei.uid = e.uid
+		where
+		e.enterId = #enterId# and
+		attendanceDate <![CDATA[>=]]>
+		#startDate# and attendanceDate <![CDATA[<=]]>
+		#endDate#
+		<dynamic>
+			<isNotEqual compareValue="-1" property="attendanceId"
+				prepend="and">
+				e.attendanceId = #attendanceId#
+			</isNotEqual>
+			<isNotEmpty property="employeeName" prepend="and">
+                aei.employeeName LIKE CONCAT('%', #employeeName#, '%')
+			</isNotEmpty>
+		</dynamic>
+		order by attendanceDate desc
+	</select>
+
+	<!-- 查询需要导出PC端的员工月报信息总量 -->
+	<select id="queryExportEmpMonthPcCount" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="java.lang.Integer">
+		select count(*)
+		from employee_month_detail e inner join
+		attendance_group_info att
+		on e.attendanceId = att.attendanceId
+        INNER JOIN
+        attendance_employee_info AS aei
+        ON aei.uid = e.uid
+		where
+		e.enterId = #enterId# and
+		attendanceDate <![CDATA[>=]]>
+		#startDate# and attendanceDate <![CDATA[<=]]>
+		#endDate#
+		<dynamic>
+			<isNotEqual compareValue="-1" property="attendanceId"
+				prepend="and">
+				e.attendanceId = #attendanceId#
+			</isNotEqual>
+			<isNotEmpty property="employeeName" prepend="and">
+                aei.employeeName LIKE CONCAT('%', #employeeName#, '%')
+			</isNotEmpty>
+		</dynamic>
+	</select>
+
+	<!-- 报表优化分项迟到数据总量查询 -->
+	<select id="queryLateItemCount" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="java.lang.Integer">
+		select count(*) from employee_month_detail
+		where enterId =
+		#enterId# and attendanceDate = #attendanceDate#
+		and goWorkDesc = '迟到'
+	</select>
+
+	<!-- 报表优化分项迟到数据总量查询 -->
+	<select id="queryLateItem" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="richinfo.attendance.entity.EmployeeMonthDetail">
+		select lateMinutes,employeeName,attendanceName,uid from
+		employee_month_detail e
+		INNER JOIN attendance_group_info att ON
+		e.attendanceId =
+		att.attendanceId
+		where e.enterId =
+		#enterId# and
+		attendanceDate =
+		#attendanceDate#
+		and
+		goWorkDesc = '迟到'
+		order by
+		e.attendanceId
+		limit
+		#offset#,#pageSize#
+	</select>
+
+	<!-- 报表优化分项早退数据总量查询 -->
+	<select id="queryEarlyItemCount" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="java.lang.Integer">
+		select count(*) from employee_month_detail
+		where enterId =
+		#enterId# and attendanceDate = #attendanceDate#
+		and leaveWorkDesc =
+		'早退'
+	</select>
+
+	<!-- 报表优化分项早退数据总量查询 -->
+	<select id="queryEarlyItem" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="richinfo.attendance.entity.EmployeeMonthDetail">
+		select earlyMinutes,employeeName,attendanceName,uid from
+		employee_month_detail e
+		INNER JOIN attendance_group_info att ON
+		e.attendanceId =
+		att.attendanceId
+		where e.enterId =
+		#enterId# and
+		attendanceDate =
+		#attendanceDate#
+		and
+		leaveWorkDesc = '早退'
+		order by
+		e.attendanceId
+		limit
+		#offset#,#pageSize#
+	</select>
+
+	<!-- 报表优化分项未打卡数据总量查询 -->
+	<select id="queryNotClockedItemCount" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="java.lang.Integer">
+		select count(*) from employee_month_detail
+		where enterId =
+		#enterId# and attendanceDate = #attendanceDate#
+		and (goWorkDesc = '未打卡'
+		or leaveWorkDesc = '未打卡')
+	</select>
+
+	<!-- 报表优化分项未打卡数据总量查询 -->
+	<select id="queryNotClockedItem" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="richinfo.attendance.entity.EmployeeMonthDetail">
+		select (
+		CASE
+		WHEN goWorkDesc = "未打卡"
+		AND leaveWorkDesc =
+		"未打卡" THEN
+		2
+		WHEN goWorkDesc = "未打卡" THEN 1
+		WHEN leaveWorkDesc = "未打卡"
+		THEN 1
+		END
+		) AS
+		count,employeeName,attendanceName,uid from
+		employee_month_detail e
+		INNER JOIN attendance_group_info att ON
+		e.attendanceId =
+		att.attendanceId
+		where e.enterId =
+		#enterId# and
+		attendanceDate =
+		#attendanceDate#
+		and (goWorkDesc = '未打卡'
+		or
+		leaveWorkDesc
+		= '未打卡')
+		order by e.attendanceId
+		limit
+		#offset#,#pageSize#
+	</select>
+
+	<!-- 查询团队日报个人月列表考勤数据统计 -->
+	<select id="queryEmpMonthList" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="richinfo.attendance.entity.TeamMonthEntity">
+		select enterId,attendanceId,
+		normalDays,outsideDays,lateDays,earlyDays,notClockedDays
+		from
+		team_month_report
+		where enterId = #enterId# and
+		attendanceMonth =
+		#attendanceMonth# and uid = #uid#
+	</select>
+
+	<!-- 查询团队日报分项个人迟到详细信息 -->
+	<select id="queryLateDetailInfo" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="richinfo.attendance.entity.EmployeeMonthDetail">
+		select lateMinutes,attendanceDate,goWork,goWorkDate
+		from
+		employee_month_detail
+		where enterId = #enterId# and
+		date_format(attendanceDate,'%Y-%m') =
+		#attendanceMonth# and uid = #uid#
+		and goWorkDesc
+		= '迟到'
+	</select>
+	<!-- 查询团队日报分项个人早退详细信息 -->
+	<select id="queryEarlyDetailInfo" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="richinfo.attendance.entity.EmployeeMonthDetail">
+		select earlyMinutes,attendanceDate,leaveWork,leaveWorkDate
+		from
+		employee_month_detail
+		where enterId = #enterId# and
+		date_format(attendanceDate,'%Y-%m') =
+		#attendanceMonth# and uid = #uid#
+		and
+		leaveWorkDesc = '早退'
+	</select>
+	<!-- 查询团队日报分项个人未打卡详细信息 -->
+	<select id="queryNotClockedDetailInfo" parameterClass="richinfo.attendance.bean.AttendReportReq"
+		resultClass="richinfo.attendance.entity.EmployeeMonthDetail">
+		select attendanceDate,(CASE WHEN
+		goWorkDesc = "未打卡" AND
+		leaveWorkDesc = "未打卡" THEN 3
+		when goWorkDesc = "未打卡" then 1
+		when
+		leaveWorkDesc = "未打卡" THEN 2
+		END) as
+		attendanceState,goWorkDesc,leaveWorkDesc
+		from
+		employee_month_detail
+		where
+		enterId = #enterId# and
+		date_format(attendanceDate,'%Y-%m') =
+		#attendanceMonth# and uid = #uid#
+		and (goWorkDesc
+		= '未打卡' or
+		leaveWorkDesc = '未打卡')
+	</select>
+	
+	<!-- 根据考勤组ID查询排班班次 -->
+	<select id="queryShiftByAttendanceId" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.entity.AttendanceScheduleShift">
+		select
+		scheduleShiftId,attendanceId,scheduleShiftName,workTime,status,createTime,modifyTime
+		from attendance_schedule_shift
+		where attendanceId=#attendanceId#
+		and status=#status#
+	</select>
+	
+	<!-- 插入考勤组排班班次信息 -->
+	<insert id="insertAttendanceScheduleShift" parameterClass="richinfo.attendance.entity.AttendanceScheduleShift">
+		insert into
+		attendance_schedule_shift(attendanceId,scheduleShiftName,workTime,createTime,modifyTime)
+		values
+		(#attendanceId#,#scheduleShiftName#,#workTime#,#createTime#,#modifyTime#)
+	</insert>
+	
+	<!-- 更新考勤组排班班次信息 -->
+	<update id="updateAttendanceScheduleShift" parameterClass="richinfo.attendance.entity.AttendanceScheduleShift">
+		update attendance_schedule_shift set modifyTime = now()
+			<dynamic>
+				<isNotEmpty property="scheduleShiftName" prepend=",">
+					scheduleShiftName = #scheduleShiftName#
+				</isNotEmpty>
+				<isNotEmpty property="workTime" prepend=",">
+					workTime = #workTime#
+				</isNotEmpty>
+				<isNotEmpty property="status" prepend=",">
+					status = #status#
+				</isNotEmpty>
+			</dynamic>
+		where scheduleShiftId = #scheduleShiftId#
+	</update>
+
+	<!-- 批量更新考勤组排班班次信息状态 -->
+	<update id="updateAttScheduleShiftStatus" parameterClass="java.util.Map">
+		update
+		attendance_schedule_shift set
+		status = #status#,modifyTime = now()
+		where scheduleShiftId in
+		<iterate property="allIds" open="(" close=")" conjunction=",">
+			#allIds[]#
+		</iterate>
+	</update>
+	
+	<!-- 通过考勤组ID获取对应所有有效班次ID -->
+	<select id="queryAttScheduleShiftIdByAttendanceId"
+		parameterClass="java.lang.Long" resultClass="java.lang.Long">
+		select scheduleShiftId
+		from attendance_schedule_shift where attendanceId = #attendanceId#
+		and status = 0
+	</select>
+
+	<!-- 通过考勤组ID查询排班班次列表 -->
+	<select id="queryAttendanceScheduleShift" parameterClass="richinfo.attendance.bean.AttendScheduleShiftReq"
+		resultClass="richinfo.attendance.entity.AttendanceScheduleShift">
+		select
+		scheduleShiftId,attendanceId,scheduleShiftName,workTime,status,createTime,modifyTime
+		from attendance_schedule_shift
+		where attendanceId = #attendanceId# and status = #status#
+		order by
+		scheduleShiftId
+		limit
+		#offset#,#pageSize#
+	</select>
+
+	<!-- 通过考勤组ID查询排班班次列表 -->
+	<select id="queryAttendanceSchedule" parameterClass="richinfo.attendance.bean.AttendScheduleShiftReq"
+		resultClass="richinfo.attendance.entity.AttendanceSchedule">
+		select 
+		scheduleId, attendanceId, attendMonth, uid, employeeName, day1, day2, day3, day4,
+		day5, day6, day7, day8, day9, day10, day11, day12, day13, day14,
+		day15, day16, day17,
+		day18, day19, day20, day21, day22, day23, day24, day25, day26, day27, day28,
+		day29,
+		day30, day31, status, createTime, modifyTime
+		from attendance_schedule where  attendanceId = #attendanceId# and status = #status# and attendMonth = #attendMonth# 
+		limit
+		#offset#,#pageSize#
+	</select>
+	
+	<!-- 查询考勤组ID排班班次列表数量 -->
+	<select id="queryAttendanceScheduleShiftCount" parameterClass="java.util.Map"
+		resultClass="java.lang.Long">
+		select count(*)
+		from attendance_schedule_shift where attendanceId = #attendanceId# and status = #status#
+	</select>
+	
+	<!-- 根据月份,考勤组ID查询排班列表数量 -->
+	<select id="queryAttendanceScheduleCount" parameterClass="java.util.Map"
+		resultClass="java.lang.Long">
+		select count(*)
+		from attendance_schedule where attendanceId = #attendanceId# and status = #status# and attendMonth = #attendMonth#
+	</select>
+
+	<!-- 查询排班 -->
+	<select id="querySchedule" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.entity.AttendanceSchedule">
+		select
+			scheduleId,attendanceId,attendMonth,uid,employeeName,
+			day1,day2,day3,day4,day5,day6,day7,day8,day9,day10,
+			day11,day12,day13,day14,day15,day16,day17,day18,day19,day20,
+			day21,day22,day23,day24,day25,day26,day27,day28,day29,day30,day31,
+			status,createTime,modifyTime
+		from
+		attendance_schedule
+		where attendanceId=#attendanceId#
+		and attendMonth=#attendMonth#
+		<dynamic>
+			<isNotEmpty property="uid" prepend="and">
+				uid=#uid#
+			</isNotEmpty>
+		</dynamic>
+		and status=#status#
+	</select>
+
+	<!-- 更新排班  -->
+	<insert id="batchSaveAttendanceSchedule" parameterClass="richinfo.attendance.entity.AttendanceSchedule">
+		insert into attendance_schedule(
+		<dynamic prepend=" "> 
+			<isNotEmpty property="attendanceId" prepend=",">
+				attendanceId
+			</isNotEmpty>
+			<isNotEmpty property="attendMonth" prepend=",">
+				attendMonth
+			</isNotEmpty>
+			<isNotEmpty property="uid" prepend=",">
+				uid
+			</isNotEmpty>
+			<isNotEmpty property="employeeName" prepend=",">
+				employeeName
+			</isNotEmpty>
+			<isNotEmpty property="day1" prepend=",">
+				day1
+			</isNotEmpty>
+			<isNotEmpty property="day2" prepend=",">
+				day2
+			</isNotEmpty>
+			<isNotEmpty property="day3" prepend=",">
+				day3
+			</isNotEmpty>
+			<isNotEmpty property="day4" prepend=",">
+				day4
+			</isNotEmpty>
+			<isNotEmpty property="day5" prepend=",">
+				day5
+			</isNotEmpty>
+			<isNotEmpty property="day6" prepend=",">
+				day6
+			</isNotEmpty>
+			<isNotEmpty property="day7" prepend=",">
+				day7
+			</isNotEmpty>
+			<isNotEmpty property="day8" prepend=",">
+				day8
+			</isNotEmpty>
+			<isNotEmpty property="day9" prepend=",">
+				day9
+			</isNotEmpty>
+			<isNotEmpty property="day10" prepend=",">
+				day10
+			</isNotEmpty>
+			<isNotEmpty property="day11" prepend=",">
+				day11
+			</isNotEmpty>
+			<isNotEmpty property="day12" prepend=",">
+				day12
+			</isNotEmpty>
+			<isNotEmpty property="day13" prepend=",">
+				day13
+			</isNotEmpty>
+			<isNotEmpty property="day14" prepend=",">
+				day14
+			</isNotEmpty>
+			<isNotEmpty property="day15" prepend=",">
+				day15
+			</isNotEmpty>
+			<isNotEmpty property="day16" prepend=",">
+				day16
+			</isNotEmpty>
+			<isNotEmpty property="day17" prepend=",">
+				day17
+			</isNotEmpty>
+			<isNotEmpty property="day18" prepend=",">
+				day18
+			</isNotEmpty>
+			<isNotEmpty property="day19" prepend=",">
+				day19
+			</isNotEmpty>
+			<isNotEmpty property="day20" prepend=",">
+				day20
+			</isNotEmpty>
+			<isNotEmpty property="day21" prepend=",">
+				day21
+			</isNotEmpty>
+			<isNotEmpty property="day22" prepend=",">
+				day22
+			</isNotEmpty>
+			<isNotEmpty property="day23" prepend=",">
+				day23
+			</isNotEmpty>
+			<isNotEmpty property="day24" prepend=",">
+				day24
+			</isNotEmpty>
+			<isNotEmpty property="day25" prepend=",">
+				day25
+			</isNotEmpty>
+			<isNotEmpty property="day26" prepend=",">
+				day26
+			</isNotEmpty>
+			<isNotEmpty property="day27" prepend=",">
+				day27
+			</isNotEmpty>
+			<isNotEmpty property="day28" prepend=",">
+				day28
+			</isNotEmpty>
+			<isNotEmpty property="day29" prepend=",">
+				day29
+			</isNotEmpty>
+			<isNotEmpty property="day30" prepend=",">
+				day30
+			</isNotEmpty>
+			<isNotEmpty property="day31" prepend=",">
+				day31
+			</isNotEmpty>
+			<isNotEmpty property="status" prepend=",">
+				status
+			</isNotEmpty>
+			<isNotEmpty property="createTime" prepend=",">
+				createTime
+			</isNotEmpty>
+			<isNotEmpty property="modifyTime" prepend=",">
+				modifyTime
+			</isNotEmpty>
+		</dynamic>
+		  <![CDATA[ 
+			 ) VALUES ( 
+		  ]]> 
+		<dynamic prepend=" ">
+			<isNotEmpty property="attendanceId" prepend=",">
+				#attendanceId#
+			</isNotEmpty>
+			<isNotEmpty property="attendMonth" prepend=",">
+				#attendMonth#
+			</isNotEmpty>
+			<isNotEmpty property="uid" prepend=",">
+				#uid#
+			</isNotEmpty>
+			<isNotEmpty property="employeeName" prepend=",">
+				#employeeName#
+			</isNotEmpty>
+			<isNotEmpty property="day1" prepend=",">
+				#day1#
+			</isNotEmpty>
+			<isNotEmpty property="day2" prepend=",">
+				#day2#
+			</isNotEmpty>
+			<isNotEmpty property="day3" prepend=",">
+				#day3#
+			</isNotEmpty>
+			<isNotEmpty property="day4" prepend=",">
+				#day4#
+			</isNotEmpty>
+			<isNotEmpty property="day5" prepend=",">
+				#day5#
+			</isNotEmpty>
+			<isNotEmpty property="day6" prepend=",">
+				#day6#
+			</isNotEmpty>
+			<isNotEmpty property="day7" prepend=",">
+				#day7#
+			</isNotEmpty>
+			<isNotEmpty property="day8" prepend=",">
+				#day8#
+			</isNotEmpty>
+			<isNotEmpty property="day9" prepend=",">
+				#day9#
+			</isNotEmpty>
+			<isNotEmpty property="day10" prepend=",">
+				#day10#
+			</isNotEmpty>
+			<isNotEmpty property="day11" prepend=",">
+				#day11#
+			</isNotEmpty>
+			<isNotEmpty property="day12" prepend=",">
+				#day12#
+			</isNotEmpty>
+			<isNotEmpty property="day13" prepend=",">
+				#day13#
+			</isNotEmpty>
+			<isNotEmpty property="day14" prepend=",">
+				#day14#
+			</isNotEmpty>
+			<isNotEmpty property="day15" prepend=",">
+				#day15#
+			</isNotEmpty>
+			<isNotEmpty property="day16" prepend=",">
+				#day16#
+			</isNotEmpty>
+			<isNotEmpty property="day17" prepend=",">
+				#day17#
+			</isNotEmpty>
+			<isNotEmpty property="day18" prepend=",">
+				#day18#
+			</isNotEmpty>
+			<isNotEmpty property="day19" prepend=",">
+				#day19#
+			</isNotEmpty>
+			<isNotEmpty property="day20" prepend=",">
+				#day20#
+			</isNotEmpty>
+			<isNotEmpty property="day21" prepend=",">
+				#day21#
+			</isNotEmpty>
+			<isNotEmpty property="day22" prepend=",">
+				#day22#
+			</isNotEmpty>
+			<isNotEmpty property="day23" prepend=",">
+				#day23#
+			</isNotEmpty>
+			<isNotEmpty property="day24" prepend=",">
+				#day24#
+			</isNotEmpty>
+			<isNotEmpty property="day25" prepend=",">
+				#day25#
+			</isNotEmpty>
+			<isNotEmpty property="day26" prepend=",">
+				#day26#
+			</isNotEmpty>
+			<isNotEmpty property="day27" prepend=",">
+				#day27#
+			</isNotEmpty>
+			<isNotEmpty property="day28" prepend=",">
+				#day28#
+			</isNotEmpty>
+			<isNotEmpty property="day29" prepend=",">
+				#day29#
+			</isNotEmpty>
+			<isNotEmpty property="day30" prepend=",">
+				#day30#
+			</isNotEmpty>
+			<isNotEmpty property="day31" prepend=",">
+				#day31#
+			</isNotEmpty>
+			<isNotEmpty property="status" prepend=",">
+				#status#
+			</isNotEmpty>
+			<isNotEmpty property="createTime" prepend=",">
+				#createTime#
+			</isNotEmpty>
+			<isNotEmpty property="modifyTime" prepend=",">
+				#modifyTime#
+			</isNotEmpty>
+		</dynamic>
+		<![CDATA[ 
+       		 ) 
+   		 ]]>  
+		ON DUPLICATE KEY
+		UPDATE
+		<dynamic prepend=" ">
+			<isNotEmpty property="employeeName" prepend=",">
+				employeeName = #employeeName#
+			</isNotEmpty>
+			<isNotEmpty property="day1" prepend=",">
+				day1 = #day1#
+			</isNotEmpty>
+			<isNotEmpty property="day2" prepend=",">
+				day2 = #day2#
+			</isNotEmpty>
+			<isNotEmpty property="day3" prepend=",">
+				day3 = #day3#
+			</isNotEmpty>
+			<isNotEmpty property="day4" prepend=",">
+				day4 = #day4#
+			</isNotEmpty>
+			<isNotEmpty property="day5" prepend=",">
+				day5 = #day5#
+			</isNotEmpty>
+			<isNotEmpty property="day6" prepend=",">
+				day6 = #day6#
+			</isNotEmpty>
+			<isNotEmpty property="day7" prepend=",">
+				day7 = #day7#
+			</isNotEmpty>
+			<isNotEmpty property="day8" prepend=",">
+				day8 = #day8#
+			</isNotEmpty>
+			<isNotEmpty property="day9" prepend=",">
+				day9 = #day9#
+			</isNotEmpty>
+			<isNotEmpty property="day10" prepend=",">
+				day10 = #day10#
+			</isNotEmpty>
+			<isNotEmpty property="day11" prepend=",">
+				day11 = #day11#
+			</isNotEmpty>
+			<isNotEmpty property="day12" prepend=",">
+				day12 = #day12#
+			</isNotEmpty>
+			<isNotEmpty property="day13" prepend=",">
+				day13 = #day13#
+			</isNotEmpty>
+			<isNotEmpty property="day14" prepend=",">
+				day14 = #day14#
+			</isNotEmpty>
+			<isNotEmpty property="day15" prepend=",">
+				day15 = #day15#
+			</isNotEmpty>
+			<isNotEmpty property="day16" prepend=",">
+				day16 = #day16#
+			</isNotEmpty>
+			<isNotEmpty property="day17" prepend=",">
+				day17 = #day17#
+			</isNotEmpty>
+			<isNotEmpty property="day18" prepend=",">
+				day18 = #day18#
+			</isNotEmpty>
+			<isNotEmpty property="day19" prepend=",">
+				day19 = #day19#
+			</isNotEmpty>
+			<isNotEmpty property="day20" prepend=",">
+				day20 = #day20#
+			</isNotEmpty>
+			<isNotEmpty property="day21" prepend=",">
+				day21 = #day21#
+			</isNotEmpty>
+			<isNotEmpty property="day22" prepend=",">
+				day22 = #day22#
+			</isNotEmpty>
+			<isNotEmpty property="day23" prepend=",">
+				day23 = #day23#
+			</isNotEmpty>
+			<isNotEmpty property="day24" prepend=",">
+				day24 = #day24#
+			</isNotEmpty>
+			<isNotEmpty property="day25" prepend=",">
+				day25 = #day25#
+			</isNotEmpty>
+			<isNotEmpty property="day26" prepend=",">
+				day26 = #day26#
+			</isNotEmpty>
+			<isNotEmpty property="day27" prepend=",">
+				day27 = #day27#
+			</isNotEmpty>
+			<isNotEmpty property="day28" prepend=",">
+				day28 = #day28#
+			</isNotEmpty>
+			<isNotEmpty property="day29" prepend=",">
+				day29 = #day29#
+			</isNotEmpty>
+			<isNotEmpty property="day30" prepend=",">
+				day30 = #day30#
+			</isNotEmpty>
+			<isNotEmpty property="day31" prepend=",">
+				day31 = #day31#
+			</isNotEmpty>
+			<isNotEmpty property="status" prepend=",">
+				status = #status#
+			</isNotEmpty>
+			<isNotEmpty property="modifyTime" prepend=",">
+				modifyTime = #modifyTime#
+			</isNotEmpty>
+		</dynamic>
+	</insert>
+	
+	<!-- 根据月份,考勤组ID查询排班下所有uid -->
+	<select id="queryScheduleUidByParam" parameterClass="java.util.Map"
+		resultClass="java.lang.String">
+		select uid 
+		from attendance_schedule where 
+		attendanceId = #attendanceId# and status = #status# and attendMonth = #attendMonth#
+	</select>
+
+	<!-- 批量更新排班表用户状态 软删除 -->
+	<update id="updateAttendScheduleStatusByParam" parameterClass="java.util.Map">
+		update attendance_schedule set status = #afterStatus# , modifytime = now()
+		where attendanceId = #attendanceId#
+		 <isNotEmpty  property="attendMonth">  
+                  and attendMonth = #attendMonth#
+   		 </isNotEmpty> 
+   		 <isNotEmpty  property="list">  
+                 and uid in
+                 <!-- <foreach collection="list" index="index" item="item"
+					separator="," open="(" close=")">
+					#{item,jdbcType=BIGINT}
+				</foreach> -->
+				<iterate property="list" open="(" close=")" conjunction=",">
+					#list[]#
+				</iterate>
+   		 </isNotEmpty  > 
+		 <isNotEmpty  property="beforeStatus">  
+		 	 and status = #beforeStatus#
+		 </isNotEmpty>
+	</update>
+
+	<!-- 软删除考勤组排班班次信息 -->
+	<update id="deleteAttendanceScheduleShift" parameterClass="java.util.Map">
+		update attendance_schedule_shift set
+		status = #afterStatus# , modifytime = now()
+		where attendanceId = #attendanceId# and  status = #beforeStatus#
+	</update>
+	
+	<!-- pc端查询考勤组列表 -->
+	<select id="queryAttendGroupFromPc" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.bean.AttendGroupWithEmpRes">
+		SELECT
+        g.attendanceId,g.attendanceName,g.enterId,g.enterName,g.amTime,g.pmTime,g.location,g.detailAddr,
+        g.longitude,g.latitude,g.attendanceRange,g.attendanceOutRange,g.status,g.createTime,g.modifyTime,
+        g.attendType,g.fixedAttendRule,g.freeAttendRule,g.allowLateTime,g.relyHoliday,g.adminUid,g.adminName,g.adminContactId,
+        (CASE WHEN g.adminUid = #adminUid#
+        THEN 1
+        <isNotEmpty property="charge">
+            WHEN
+            g.attendanceId in
+            <iterate property="attendanceIds" open="(" close=")" conjunction=",">
+                #attendanceIds[]#
+            </iterate>
+            THEN 1
+        </isNotEmpty>
+        ELSE 0 END) AS adminned
+        FROM attendance_group_info g
+		WHERE g.enterId= #enterId# AND g.status = #status#
+        ORDER BY adminned DESC
+    </select>
+
+	<!-- 获取未注册企业通讯录回调接口企业-->
+	<select id="queryUnregisteredEnters"
+		resultClass="richinfo.attendance.bean.AttendEnterRes">
+		select
+		enterId,status,eventType,createTime,modifyTime as updateTime 
+		from attendance_enter 
+		WHERE status=0
+	</select>
+
+	<!--查询考勤组地点返回字符串list-->
+	<select id="queryAttendGroupStringSite" parameterClass="java.lang.Long"
+		resultClass="java.lang.String" >
+		SELECT location AS location FROM attendance_clock_site WHERE attendanceId = #attendanceId#
+	</select>
+
+	<!-- 根据企业ID获取企业信息 -->
+	<select id="queryEnterByEnterId" parameterClass="java.util.Map"
+		resultClass="richinfo.attendance.bean.AttendEnterRes">
+		select
+		enterId,status,createTime,modifyTime as updateTime,eventType
+		from attendance_enter
+		WHERE enterId=#enterId#
+	</select>
+	
+	<!-- 更新注册企业通讯录回调接口状态 -->
+	<update id="updateEnterStatus" parameterClass="java.util.Map">
+		update attendance_enter set
+		status = #status# , modifyTime = now()
+		where enterId = #enterId#  AND eventType = #eventType#
+	</update>
+	
+	<!-- 注册企业通讯录回调接口状态 -->
+	<insert id="insertEnter" parameterClass="java.util.Map">
+		insert into
+		attendance_enter(enterId,status,eventType,createTime,modifyTime)
+		values
+		(#enterId#,#status#,#eventType#,now(),now())
+	</insert>
+
+	<select id="checkoutGroup" parameterClass="java.util.Map" resultClass="richinfo.attendance.bean.AttendGroupWithEmpRes">
+		SELECT
+		agi.attendanceName
+		FROM attendance_group_info agi
+		WHERE agi.enterId = #enterId# AND agi.status = #status#
+	</select>
+
+	<!--查询历史推送消息-->
+	<select id="queryNotificationHistory" parameterClass="java.util.Map" resultClass="richinfo.attendance.entity.HistoryMessage">
+		SELECT
+		hmt.msgId,
+		hmt.attendanceId,
+		hmt.enterId,
+		hmt.uid,
+		hmt.appId,
+		hmt.sender,
+		hmt.topic,
+		hmt.content,
+		hmt.summary,
+		hmt.serverNo,
+		hmt.msgType,
+		hmt.resultCode,
+		hmt.resultFlag
+		FROM history_msg_table hmt
+		WHERE hmt.sendTime >= #startSendTime#  and hmt.sendTime &lt; #endSendTime#
+        AND hmt.msgType = #msgType# AND hmt.resultCode = 200
+		LIMIT 1
+	</select>
+
+	<!--查询创建考勤组信息-->
+	<select id="queryGroupCreator"  resultClass="richinfo.attendance.entity.AttendGroup">
+		SELECT
+		agi.adminUid,
+		agi.enterId,
+		agi.enterName
+		FROM attendance_group_info agi
+		WHERE agi.status = 0
+		GROUP BY agi.adminUid,agi.enterId
+	</select>
+
+	<!--查询考勤组信打卡时间-->
+	<select id="queryGroupClockTime" parameterClass="java.util.Map"  resultClass="richinfo.attendance.entity.AttendGroup">
+		SELECT
+		agi.enterId,
+		agi.attendType,
+		agi.fixedAttendRule,
+		agi.freeAttendRule,
+		agi.allowLateTime,
+		agi.relyHoliday,
+        agi.isAllowedOutRangeClock,
+        agi.useFlexibleRule,
+        agi.flexitime,
+		agi.status
+		FROM attendance_group_info agi
+		WHERE agi.attendanceId = #attendanceId#
+	</select>
+
+	<!--查询用户当天月报-->
+	<select id="queryNomMonthly" parameterClass="java.util.Map"  resultClass="richinfo.attendance.entity.EmployeeMonthDetail">
+		SELECT
+		emd.monthRcdId,
+		emd.attendanceId,
+		emd.enterId,
+		emd.uid,
+		emd.employeeName,
+		emd.goWork,
+		emd.goWorkDate,
+		emd.goLocation,
+		emd.goWorkDesc,
+		emd.leaveWork,
+		emd.leaveLocation,
+		emd.leaveWorkDesc,
+		emd.regionStatus,
+        emd.recordState,
+		emd.remark,
+		emd.attendType
+		FROM employee_month_detail emd
+		WHERE emd.attendanceDate = #attendanceDate#
+		AND emd.uid = #uid#
+		<!--AND emd.attendanceId = #attendanceId#-->
+	</select>
+
+	<!--根据考勤组id获取考勤地址信息-->
+	<select id="queryClockSite" parameterClass="java.util.Map"  resultClass="richinfo.attendance.entity.AttendClockSite">
+		SELECT
+		attendanceId,
+		location,
+		detailAddr,
+		longitude,
+		latitude,
+		attendanceRange
+		FROM attendance_clock_site
+		WHERE attendanceId = #attendanceId#
+	</select>
+
+	<!--根据考勤组id获取部门选择器信息-->
+	<select id="queryDepartmentChooser" parameterClass="java.util.Map"  resultClass="richinfo.attendance.entity.AttendDepartmentChooser">
+		SELECT
+		attendanceId,
+		enterId as enterpriseId,
+		departmentId,
+		departmentName
+		FROM attendance_department_chooser
+		WHERE attendanceId = #attendanceId#
+	</select>
+
+    <insert id="saveGlobalWhiteList" parameterClass="richinfo.attendance.entity.AttendWhitelistEntity">
+        INSERT INTO attendance_employee_whitelist
+        (
+        `uid`,
+        `contactId`,
+        `employeeName`,
+        `phone`,
+        `enterId`,
+        `enterName`,
+        `deptId`,
+        `deptName`,
+        `email`,
+        `position`,
+        `status`,
+        `createTime`,
+        `modifyTime`,
+        `creator`,
+        `creatorId`
+        )
+        VALUES
+        (
+        #uid#,
+        #contactId#,
+        #employeeName#,
+        #phone#,
+        #enterId#,
+        #enterName#,
+        #deptId#,
+        #deptName#,
+        #email#,
+        #position#,
+        #status#,
+        #createTime#,
+        #modifyTime#,
+        #creator#,
+        #creatorId#
+        )
+        ON
+        DUPLICATE KEY
+        UPDATE
+        status = #status#,
+        createTime = #createTime#,
+        modifyTime = #modifyTime#,
+        creator = #creator#,
+        creatorId = #creatorId#
+    </insert>
+
+    <select id="queryAttendWhitelist" parameterClass="java.util.Map" resultClass="richinfo.attendance.entity.AttendWhitelistEntity">
+        SELECT
+        uid,contactId,employeeName,phone,enterId,enterName,deptId,deptName,
+        email,position,status,createTime,modifyTime,creator,creatorId
+        FROM
+        attendance_employee_whitelist
+        WHERE
+        enterId = #enterId#
+        AND
+        status = #status#
+    </select>
+
+    <!-- 批量修改员工在白名单的状态 -->
+    <update id="batchUpdateEmployeeWhiteListStatus" parameterClass="java.util.Map">
+        UPDATE
+        attendance_employee_whitelist
+        SET
+        status = #status#
+        WHERE
+        uid IN
+        <iterate property="users" open="(" close=")" conjunction=",">
+            #users[].uid#
+        </iterate>
+    </update>
+
+    <!-- 批量修改白名单员工在员工表状态 -->
+    <update id="batchUpdateEmployeeStatus" parameterClass="java.util.Map">
+        UPDATE
+        attendance_employee_info
+        SET
+        status = #status#
+        WHERE
+        uid IN
+        <iterate property="users" open="(" close=")" conjunction=",">
+            #users[].uid#
+        </iterate>
+
+
+    </update>
+
+    <!--获取企业白名单Uid-->
+	<select id="queryAttendWhitelistUid" parameterClass="java.lang.String" resultClass="java.lang.String">
+		SELECT
+		uid
+		FROM
+		attendance_employee_whitelist
+		WHERE enterId = #enterId# and status = 0
+	</select>
+	<!--删除部门选择器-->
+	<delete id="deleteDepartmentInId" parameterClass="java.util.List">
+		DELETE
+		FROM
+		attendance_department_chooser
+		WHERE
+		departmentId
+		<iterate open="IN(" close=")" conjunction=",">
+			#departmentIds[]#
+		</iterate>
+	</delete>
+	
+	<!--插入考勤部门选择器-->
+	<insert id="batchSaveDepartmentChooser" parameterClass="richinfo.attendance.entity.AttendDepartmentChooser">
+		INSERT INTO attendance_department_chooser
+		(attendanceId,
+		enterId ,
+		departmentId,
+		departmentName,
+		createTime,
+		updateTime)
+		VALUES (#attendanceId#,
+		#enterpriseId#,
+		#departmentId#,
+		#departmentName#,
+		NOW(),
+		NOW())
+	</insert>
+
+	<!--删除考勤组时   直接删除部门选择器 -->
+	<delete id="deleteAttendDepartment" parameterClass="java.lang.Long">
+		DELETE
+		FROM
+		attendance_department_chooser
+		where attendanceId =
+		#attendanceId#
+	</delete>
+	<!--插入考勤地址-->
+	<insert id="batchInsertAttendSite" parameterClass="richinfo.attendance.entity.AttendClockSite">
+		INSERT INTO attendance_clock_site
+		(attendanceId,
+		location,
+		detailAddr,
+		longitude,
+		latitude,
+		attendanceRange)
+		VALUES (#attendanceId#,
+		#location#,
+		#detailAddr#,
+		#longitude#,
+		#latitude#,
+		#attendanceRange#)
+	</insert>
+
+	<!--删除考勤地址-->
+	<delete id="batchDeleteAttendSite" parameterClass="java.lang.Long">
+		DELETE FROM attendance_clock_site WHERE attendanceId = #attendanceId#
+	</delete>
+
+	<!--根据UID 状态 白名单状态查询考勤组用户信息 -->
+	<select id="queryEmployeeByUidAndWhitelist" parameterClass="java.util.Map" resultClass="richinfo.attendance.entity.AttendEmployee">
+		SELECT
+		employeeId,
+		attendanceId,
+		uid,
+		contactId,
+		employeeName,
+		phone,
+		enterId,
+		enterName,
+		deptId,
+		deptName,
+		email,
+		POSITION,
+		STATUS,
+		createTime,
+        roleType,
+		modifyTime
+		FROM attendance_employee_info
+		WHERE uid =#uid#
+	</select>
+	<!--根据企业id获取企业部门选择器-->
+	<select id="queryEnterDepartmentChooser" parameterClass="java.lang.String" resultClass="richinfo.attendance.entity.AttendDepartmentChooser">
+		SELECT
+		attendanceId,
+		enterId,
+		departmentId,
+		departmentName
+		FROM attendance_department_chooser
+		WHERE enterId = #enterId#
+	</select>
+
+	<select id="queryEnterWhitelistByUid" parameterClass="java.util.Map" resultClass="richinfo.attendance.entity.AttendWhitelistEntity">
+		SELECT
+		whitelistId,
+		uid,
+		contactId,
+		employeeName,
+		phone,
+		enterId,
+		enterName,
+		deptId,
+		deptName,
+		email,
+		POSITION,
+		STATUS
+		FROM attendance_employee_whitelist
+		WHERE uid = #uid# and status = #status#
+	</select>
+
+	<!--g根据部门选择器-->
+	<select id="queryDepartmentInDepartmentIdAttendanceId" parameterClass="java.util.Map" resultClass="richinfo.attendance.entity.AttendDepartmentChooser">
+		SELECT
+		attendanceId,
+		enterId,
+		departmentId,
+		departmentName,
+		createTime
+		FROM attendance_department_chooser
+		WHERE attendanceId = #attendanceId#
+		AND departmentId = #departmentId#
+	</select>
+
+	<!--根据个人月报id更新月报-->
+	<update id="updateEmployeeMonthDetailById" parameterClass="richinfo.attendance.entity.EmployeeMonthDetail">
+		UPDATE employee_month_detail
+		SET
+		attendanceId=#attendanceId#,
+		goWork=#goWork#,
+		goWorkDate=#goWorkDate#,
+		goLocation=#goLocation#,
+		goWorkDesc=#goWorkDesc#,
+		leaveWork=#leaveWork#,
+		leaveWorkDate=#leaveWorkDate#,
+		leaveLocation=#leaveLocation#,
+		leaveWorkDesc=#leaveWorkDesc#,
+		regionStatus=#regionStatus#,
+        outWorkRemark=#outWorkRemark#,
+		remark=#remark#,
+		recordState=#recordState#,
+		earlyMinutes=#earlyMinutes#,
+		workMinutes=#workMinutes#,
+		lateMinutes=#lateMinutes#,
+		scheduleShiftId=#scheduleShiftId#,
+		scheduleShiftName=#scheduleShiftName#,
+		scheduleShiftWorkTime=#scheduleShiftWorkTime#,
+		attendType=#attendType#
+		WHERE monthRcdId = #monthRcdId#
+	</update>
+
+    <!--根据个人月报id更新月报-->
+    <update id="updateEmployeeMonthDetailByIds" parameterClass="richinfo.attendance.entity.EmployeeMonthDetailVO">
+        UPDATE employee_month_detail
+        SET
+        attendanceId=#attendanceId#,
+        goWork=#goWork#,
+        goWorkDate=#goWorkDate#,
+        goLocation=#goLocation#,
+        goWorkDesc=#goWorkDesc#,
+        leaveWork=#leaveWork#,
+        leaveWorkDate=#leaveWorkDate#,
+        leaveLocation=#leaveLocation#,
+        leaveWorkDesc=#leaveWorkDesc#,
+        regionStatus=#regionStatus#,
+        remark=#remark#,
+        recordState=#recordState#,
+        earlyMinutes=#earlyMinutes#,
+        workMinutes=#workMinutes#,
+        lateMinutes=#lateMinutes#,
+        scheduleShiftId=#scheduleShiftId#,
+        scheduleShiftName=#scheduleShiftName#,
+        scheduleShiftWorkTime=#scheduleShiftWorkTime#,
+        attendType=#attendType#
+        WHERE monthRcdId = #monthRcdId#
+    </update>
+
+	<!--根据考勤组id获取部门选择器-->
+	<select id="queryDepartmentIdByAttendanceId" parameterClass="java.lang.Long" resultClass="java.lang.String">
+		SELECT
+		departmentId
+		FROM attendance_department_chooser
+		WHERE attendanceId = #attendanceId#
+	</select>
+
+	<!--查询企业注册信息-->
+	<select id="queryEnterCallBack" parameterClass="java.util.Map" resultClass="java.lang.String">
+		SELECT enterId FROM attendance_enter WHERE STATUS in(0,1) group by enterId
+	</select>
+<!--删除白名单-->
+	<update id="batchDelWhitelistByContactId" parameterClass="richinfo.attendance.entity.AttendEmployee">
+		UPDATE attendance_employee_whitelist SET STATUS = 1, modifyTime= NOW() WHERE enterId = #enterId# AND contactId = #contactId#
+	</update>
+
+<!--回调删除部门-->
+	<delete id="batchDeleteDepartment" parameterClass="richinfo.attendance.entity.AttendDepartmentChooser">
+		DELETE FROM
+		attendance_department_chooser
+		WHERE
+		enterId=#enterpriseId#
+		AND
+		departmentId=#departmentId#
+	</delete>
+
+    <!--获取正在使用考勤组的企业-->
+    <select id="queryGroupEnter" resultClass="java.lang.String">
+        SELECT enterId FROM attendance_group_info WHERE STATUS = 0 GROUP BY enterId
+    </select>
+
+    <!--临时使用清空注册回调的登记库-->
+    <delete id="deleteEnter">
+        DELETE FROM attendance_enter
+    </delete>
+
+    <!-- PC端查询员工月报明细数据 -->
+    <select id="queryEmpMonthDetailList"
+            resultClass="richinfo.attendance.entity.EmployeeMonthDetailVO">
+        SELECT
+        emd.uid,emd.attendanceDate,emd.remark,
+        emd.monthRcdId,emd.attendanceId,emd.goWork,emd.goWorkDate,
+        emd.goLocation,emd.goWorkDesc,emd.regionStatus,emd.recordState,
+        emd.earlyMinutes,emd.workMinutes,emd.lateMinutes,
+        emd.scheduleShiftId,emd.scheduleShiftName,emd.scheduleShiftWorkTime,
+        agi.attendType,agi.fixedAttendRule,agi.freeAttendRule
+        FROM employee_month_detail emd LEFT JOIN
+        attendance_group_info agi ON
+        emd.attendanceId = agi.attendanceId
+        WHERE emd.goWorkDesc = "未打卡" AND  emd.goWork IS NOT NULL
+    </select>
+
+    <!--查询有效考勤组id-->
+    <select id="queryValidAttendanceId" parameterClass="java.lang.Integer" resultClass="java.lang.Long">
+        SELECT attendanceId FROM attendance_group_info WHERE STATUS = #status#
+    </select>
+
+    <!--根据考勤组id获取有效员工信息  contactId enterId-->
+    <select id="queryPersonnelByAttendanceId" parameterClass="java.util.Map" resultClass="richinfo.attendance.entity.AttendEmployee">
+        SELECT contactId,enterId,uid,employeeName,enterName FROM attendance_employee_info WHERE attendanceId = #attendanceId# AND STATUS = #status#
+    </select>
+
+    <!--根据企业id删除企业中的考勤组-->
+    <update id="delGroupByEnterId" parameterClass="java.util.List">
+        UPDATE
+        attendance_group_info
+        SET STATUS = 1, modifyTime = NOW()
+        WHERE
+        enterId in
+        <iterate  open="(" close=")" conjunction=",">
+            #delEnter[]#
+        </iterate>
+    </update>
+
+    <!--根据企业id删除企业中的考勤考勤人员-->
+    <update id="delEmployeeByEnterId" parameterClass="java.util.List">
+        UPDATE
+        attendance_employee_info
+        SET STATUS = 1, modifyTime = NOW()
+        WHERE
+        enterId in
+        <iterate  open="(" close=")" conjunction=",">
+            #delEnter[]#
+        </iterate>
+    </update>
+
+    <!--根据企业删除负责人-->
+    <update id="delGroupChargemanByEnterId" parameterClass="java.util.List">
+        UPDATE
+        attendance_chargeman_list
+        SET STATUS = 1, modifyTime = NOW()
+        WHERE
+        enterId in
+        <iterate  open="(" close=")" conjunction=",">
+            #delEnter[]#
+        </iterate>
+    </update>
+
+    <!--根据企业id删除企业中的考勤白名单 -->
+
+    <update id="delWhitelistByEnterId" parameterClass="java.util.List">
+        UPDATE
+        attendance_employee_whitelist
+        SET STATUS = 1, modifyTime = NOW()
+        WHERE
+        enterId in
+        <iterate  open="(" close=")" conjunction=",">
+            #delEnter[]#
+        </iterate>
+    </update>
+
+    <!--根据企业id删除企业所有审批人-->
+    <update id="delExamineByEnterId" parameterClass="java.util.List">
+        UPDATE
+        attendance_examine_table
+        SET examinerState = 2,isDelete = 2, updateTime = NOW()
+        WHERE
+        enterId IN
+        <iterate  open="(" close=")" conjunction=",">
+            #delEnter[]#
+        </iterate>
+    </update>
+
+    <!--根据企业id删除企业所有部门-->
+    <delete id="delDepartmentByEnterId" parameterClass="java.util.List">
+        DELETE FROM
+        attendance_department_chooser
+        WHERE
+        enterId IN
+        <iterate  open="(" close=")" conjunction=",">
+            #delEnter[]#
+        </iterate>
+    </delete>
+    <!--根据企业id删除企业所有待发信息推送-->
+    <delete id="delMsgByEnterId" parameterClass="java.util.List">
+        DELETE
+        FROM
+        msg_table
+        WHERE
+        enterId IN
+        <iterate  open="(" close=")" conjunction=",">
+            #delEnter[]#
+        </iterate>
+    </delete>
+    <!--根据企业id删除企业所有待发信息推送-->
+    <delete id="delCallBackEnterId" parameterClass="java.util.List">
+        DELETE
+        FROM
+        attendance_enter
+        WHERE
+        enterId IN
+        <iterate  open="(" close=")" conjunction=",">
+            #delEnter[]#
+        </iterate>
+    </delete>
+
+
+
+    <!--新版统计部分-->
+    <!--h5查询个人月报统计-->
+    <select id="queryEmpMonthStatistics" parameterClass="java.util.Map"
+            resultClass="richinfo.attendance.entity.EmployeeMonthDetailVO">
+        SELECT
+        employeeName,monthRcdId,
+        SUM(goWorkDesc="未打卡") goNotClockedDays,
+        SUM(leaveWorkDesc="未打卡") leaveNotClockedDays,
+        SUM(goWorkDesc="迟到") lateDays,
+        SUM(lateMinutes) lateMinutes,
+        SUM(leaveWorkDesc="早退") earlyDays,
+        SUM(earlyMinutes) earlyMinutes,
+        SUM(CASE
+        WHEN goWorkDesc = "已申诉" THEN 1
+        WHEN leaveWorkDesc = "已申诉" THEN 1
+        ELSE 0 END ) AS appealDays
+        FROM employee_month_detail
+        WHERE date_format(attendanceDate,'%Y-%m') = #attendanceMonth#
+        AND uid = #uid#
+        AND enterId = #enterId#
+    </select>
+
+    <!--h5查询个人月报明细-->
+    <select id="queryEmpMonthDetail" parameterClass="java.util.Map"
+            resultClass="richinfo.attendance.entity.EmployeeMonthDetailVO">
+        SELECT
+        emd.monthRcdId,emd.attendanceId,aar.appealId,
+        emd.attendanceDate,emd.goWork,emd.goWorkDesc,
+        emd.leaveWork,emd.leaveWorkDesc,emd.remark,
+        emd.regionStatus,aar.appealRecord,emd.recordState
+        FROM employee_month_detail emd
+        LEFT JOIN attendance_appeal_record aar
+        ON emd.monthRcdId = aar.monthRcdId
+        WHERE DATE_FORMAT(emd.attendanceDate,'%Y-%m') = #attendanceMonth#
+        AND emd.uid = #uid#
+        AND emd.enterId = #enterId#
+        GROUP BY emd.attendanceDate
+    </select>
+
+    <!--h5查询团队月报统计-->
+    <select id="queryTeamMonthStatistics" parameterClass="java.util.Map"
+            resultClass="richinfo.attendance.entity.TeamMonthEntity">
+        SELECT SUM(CASE WHEN temp.lateDays != 0 THEN 1 ELSE 0 END) AS lateDays,
+        SUM(CASE WHEN temp.earlyDays != 0 THEN 1 ELSE 0 END) AS earlyDays,
+        SUM(CASE WHEN temp.goNotClockedDays != 0 THEN 1 ELSE 0 END) AS goNotClockedDays,
+        SUM(CASE WHEN temp.leaveNotClockedDays != 0 THEN 1 ELSE 0 END) AS leaveNotClockedDays,
+        SUM(CASE WHEN temp.outsideDays != 0 THEN 1 ELSE 0 END) AS outsideDays,
+        SUM(CASE WHEN temp.notClockedDays != 0 THEN 1 ELSE 0 END) AS notClockedDays,
+        SUM(CASE WHEN temp.normalDays != 0 THEN 1 ELSE 0 END) AS normalDays
+        FROM (
+            SELECT
+            emd.enterId,emd.attendanceId, emd.attendanceDate,agi.attendanceName,
+            emd.uid,emd.employeeName,
+            SUM(CASE WHEN emd.goWorkDesc = "未打卡" AND emd.leaveWorkDesc =
+            "未打卡"
+            THEN 2 WHEN
+            emd.goWorkDesc = "未打卡" THEN 1 WHEN emd.leaveWorkDesc = "未打卡"
+            THEN 1
+            ELSE 0 END
+            ) AS notClockedDays,
+            SUM(CASE WHEN emd.goWorkDesc = "正常" AND emd.leaveWorkDesc = "正常" THEN 1 ELSE 0
+            END ) AS normalDays,
+            SUM(CASE WHEN emd.goWorkDesc = "迟到" THEN 1 ELSE 0
+            END ) AS lateDays,
+            SUM(CASE WHEN emd.leaveWorkDesc = "早退" THEN 1 ELSE 0
+            END ) AS earlyDays,
+            SUM(CASE WHEN emd.goWorkDesc = "未打卡" THEN 1  ELSE 0
+            END ) AS goNotClockedDays,
+            SUM(CASE WHEN emd.leaveWorkDesc = "未打卡" THEN 1  ELSE 0
+            END ) AS leaveNotClockedDays,
+            SUM(emd.regionStatus = 1) AS outsideDays
+            FROM
+            employee_month_detail emd
+            LEFT JOIN
+            attendance_group_info agi
+            ON emd.attendanceId = agi.attendanceId
+            WHERE DATE_FORMAT(emd.attendanceDate,'%Y-%m') = #attendanceMonth#
+            AND emd.remark = "工作日"
+            AND emd.enterId = #enterId#
+            GROUP BY emd.uid
+        ) temp
+    </select>
+
+    <!--h5查询团队月报分项详情-->
+    <select id="queryTeamMonthDetails" parameterClass="java.util.Map"
+            resultClass="richinfo.attendance.entity.EmployeeMonthDetailVO">
+        SELECT
+        SUM(emd.goWorkDesc="未打卡") goNotClockedDays,
+        SUM(emd.leaveWorkDesc="未打卡") leaveNotClockedDays,
+        SUM(emd.goWorkDesc="迟到") lateDays,
+        SUM(emd.lateMinutes) lateMinutes,
+        SUM(emd.leaveWorkDesc="早退") earlyDays,
+        SUM(emd.earlyMinutes) earlyMinutes,
+        SUM(emd.regionStatus="1") outsideDays,
+        ae.employeeName
+        FROM employee_month_detail emd
+        INNER JOIN attendance_employee_info ae
+        ON ae.uid = emd.uid
+        WHERE
+        DATE_FORMAT(emd.attendanceDate,'%Y-%m') = #attendanceMonth#
+        AND emd.enterId = #enterId#
+        <dynamic>
+            <isNotEmpty property="late" prepend="and">
+                emd.goWorkDesc = '迟到'
+            </isNotEmpty>
+            <isNotEmpty property="early" prepend="and">
+                emd.leaveWorkDesc = '早退'
+            </isNotEmpty>
+            <isNotEmpty property="regionStatus" prepend="and">
+                emd.regionStatus = '1'
+            </isNotEmpty>
+            <isNotEmpty property="goWorkNoClock" prepend="and">
+                emd.goWorkDesc = '未打卡'
+            </isNotEmpty>
+            <isNotEmpty property="leaveWorkNoClock" prepend="and">
+                emd.leaveWorkDesc = '未打卡'
+            </isNotEmpty>
+        </dynamic>
+        GROUP BY ae.employeeName
+    </select>
+
+    <!--h5查询团队日报统计-->
+    <select id="queryTeamDailyStatistics" parameterClass="java.util.Map"
+            resultClass="richinfo.attendance.entity.TeamDailyReportEntity">
+        SELECT
+            enterId,attendanceId,attendanceDate,
+            SUM(CASE WHEN goWorkDesc = "未打卡" AND leaveWorkDesc = "未打卡" THEN 2
+        WHEN goWorkDesc = "未打卡" THEN 1 WHEN leaveWorkDesc = "未打卡" THEN 1 ELSE 0 END ) AS notClockedCount,
+            SUM(CASE WHEN goWorkDesc = "正常" AND leaveWorkDesc = "正常" THEN 1 ELSE 0 END ) AS normalCount,
+            SUM(CASE WHEN goWorkDesc = "迟到" THEN 1 ELSE 0 END ) AS lateCount,
+            SUM(CASE WHEN leaveWorkDesc = "早退" THEN 1 ELSE 0 END ) AS earlyCount,
+            SUM(CASE WHEN goWorkDesc = "未打卡" THEN 1  ELSE 0 END ) AS goNotClockedCount,
+            SUM(CASE WHEN leaveWorkDesc = "未打卡" THEN 1  ELSE 0 END ) AS leaveNotClockedCount,
+            SUM(regionStatus = 1) AS outsideCount
+        FROM
+        employee_month_detail
+        WHERE attendanceDate = #attendanceDate#
+        AND remark = "工作日"
+        AND enterId = #enterId#
+    </select>
+
+    <!--h5查询团队日报打卡明细 -->
+    <select id="queryTeamDailyDetail" parameterClass="java.util.Map"
+            resultClass="richinfo.attendance.entity.TeamDailyEntity">
+        SELECT
+            mon.goWork earlyTime,mon.goLocation goLocation,
+            mon.leaveWork lastTime,mon.leaveLocation leaveLocation,
+            ae.employeeName, att.attendanceName,
+            att.attendanceId,mon.attendanceDate
+        FROM
+        employee_month_detail AS mon
+        INNER JOIN
+        attendance_group_info AS att
+        ON
+        mon.attendanceId = att.attendanceId
+        INNER JOIN attendance_employee_info ae
+        ON ae.uid = mon.uid
+        WHERE
+        mon.attendanceDate = #attendanceDate#
+        AND
+        mon.enterId = #enterId#
+        ORDER BY mon.attendanceId,mon.uid desc
+        <!--<dynamic prepend="limit">-->
+            <!--<isNotEqual property="pageSize" compareValue="-1">-->
+                <!--#offSet#,#pageSize#-->
+            <!--</isNotEqual>-->
+        <!--</dynamic>-->
+    </select>
+
+    <!--h5查询团队日报分项详情-->
+    <select id="queryTeamDailyItemDetails" parameterClass="java.util.Map"
+            resultClass="richinfo.attendance.entity.EmployeeMonthDetail">
+        SELECT
+        ae.employeeName,emd.attendanceDate,emd.goWorkDesc,emd.leaveWorkDesc,emd.regionStatus
+        FROM employee_month_detail emd
+        INNER JOIN attendance_employee_info ae
+        ON ae.uid = emd.uid
+        WHERE
+        emd.attendanceDate = #attendanceDate#
+        AND emd.enterId = #enterId#
+        <dynamic>
+            <isNotEmpty property="late" prepend="and">
+                emd.goWorkDesc = '迟到'
+            </isNotEmpty>
+            <isNotEmpty property="early" prepend="and">
+                emd.leaveWorkDesc = '早退'
+            </isNotEmpty>
+            <isNotEmpty property="regionStatus" prepend="and">
+                emd.regionStatus = '1'
+            </isNotEmpty>
+            <isNotEmpty property="goWorkNoClock" prepend="and">
+                emd.goWorkDesc = '未打卡'
+            </isNotEmpty>
+            <isNotEmpty property="leaveWorkNoClock" prepend="and">
+                emd.leaveWorkDesc = '未打卡'
+            </isNotEmpty>
+        </dynamic>
+        ORDER BY ae.employeeName
+        <!--limit-->
+        <!--#offset#,#pageSize#-->
+    </select>
+
+    <!--h5发送新版团队月报统计-->
+    <select id="sendTeamMonthStatistics" parameterClass="java.util.Map"
+            resultClass="richinfo.attendance.entity.TeamMonthEntity">
+        SELECT
+        emd.enterId,emd.attendanceId, emd.attendanceDate,agi.attendanceName,
+        emd.uid,aei.employeeName,aei.phone,
+        SUM(CASE WHEN emd.goWorkDesc = "未打卡" AND emd.leaveWorkDesc =
+        "未打卡"
+        THEN 2 WHEN
+        emd.goWorkDesc = "未打卡" THEN 1 WHEN emd.leaveWorkDesc = "未打卡"
+        THEN 1
+        ELSE 0 END
+        ) AS notClockedDays,
+        SUM(CASE WHEN emd.goWorkDesc = "正常" AND emd.leaveWorkDesc = "正常" THEN 1 ELSE 0
+        END ) AS normalDays,
+        SUM(CASE WHEN emd.goWorkDesc = "迟到" THEN 1 ELSE 0
+        END ) AS lateDays,
+        SUM(CASE WHEN emd.leaveWorkDesc = "早退" THEN 1 ELSE 0
+        END ) AS earlyDays,
+        SUM(CASE WHEN emd.goWorkDesc = "未打卡" THEN 1  ELSE 0
+        END ) AS goNotClockedDays,
+        SUM(CASE WHEN emd.leaveWorkDesc = "未打卡" THEN 1  ELSE 0
+        END ) AS leaveNotClockedDays,
+        SUM(emd.regionStatus = 1) AS outsideDays,
+        aei.contactId
+        FROM
+        employee_month_detail emd
+        LEFT JOIN
+        attendance_group_info agi
+        ON emd.attendanceId = agi.attendanceId
+        INNER JOIN
+        attendance_employee_info AS aei
+        ON aei.uid = emd.uid
+        WHERE DATE_FORMAT(emd.attendanceDate,'%Y-%m') = #attendanceMonth#
+        AND emd.remark = "工作日"
+        AND emd.enterId = #enterId#
+        GROUP BY emd.uid
+    </select>
+    <!--新版统计部分end-->
+
+<!--查询总数-->
+    <select id="queryOriginalClockDataPcCount" parameterClass="richinfo.attendance.bean.AttendReportReq" resultClass="java.lang.Integer">
+        SELECT COUNT(ar.recordId)
+        FROM attendance_record ar
+        INNER JOIN attendance_group_info ag
+        ON ag.attendanceId = ar.attendanceId
+        INNER JOIN attendance_employee_info ae
+        ON ae.uid = ar.uid
+        WHERE ag.enterId = #enterId# AND ag.status = 0
+        AND DATE_FORMAT(ar.attendanceDate,'%Y-%m-%d') >= #startDate#
+        AND #endDate# >= DATE_FORMAT(ar.attendanceDate,'%Y-%m-%d')
+        <dynamic>
+            <isNotEqual compareValue="-1" property="attendanceId"
+                        prepend="and">
+                ar.attendanceId = #attendanceId#
+            </isNotEqual>
+            <isNotEmpty property="employeeName" prepend="and">
+                ae.employeeName LIKE CONCAT('%', #employeeName#, '%')
+            </isNotEmpty>
+            <isNotEqual compareValue="-1" property="legworkStatus"
+                        prepend="and">
+                ar.status = #legworkStatus#
+            </isNotEqual>
+        </dynamic>
+    </select>
+    <!--查询考勤原始数据-->
+    <select id="queryOriginalClockDataPc"  parameterClass="richinfo.attendance.bean.AttendReportReq" resultClass="richinfo.attendance.entity.AttendEntity">
+        SELECT
+        ar.attendanceDate,ar.attendanceTime,ar.location,ar.detailAddr,ar.status,ar.outWorkRemark,
+        ag.attendanceName,ae.employeeName,ae.contactId
+        FROM attendance_record ar
+        INNER JOIN attendance_group_info ag
+        ON ag.attendanceId = ar.attendanceId
+        INNER JOIN attendance_employee_info ae
+        ON ae.uid = ar.uid
+        WHERE ag.enterId = #enterId# AND ag.status = 0
+        AND DATE_FORMAT(ar.attendanceDate,'%Y-%m-%d') >= #startDate#
+        AND #endDate# >= DATE_FORMAT(ar.attendanceDate,'%Y-%m-%d')
+        <dynamic>
+            <isNotEqual compareValue="-1" property="attendanceId"
+                        prepend="and">
+                ar.attendanceId = #attendanceId#
+            </isNotEqual>
+            <isNotEmpty property="employeeName" prepend="and">
+                ae.employeeName LIKE CONCAT('%', #employeeName#, '%')
+            </isNotEmpty>
+            <isNotEqual compareValue="-1" property="legworkStatus"
+                        prepend="and">
+                ar.status = #legworkStatus#
+            </isNotEqual>
+        </dynamic>
+        order by ar.attendanceDate,ar.attendanceTime
+		limit #offset#,#pageSize#
+    </select>
+<!--查询导出考勤原始数据-->
+    <select id="exportOriginalClockDataPc"  parameterClass="richinfo.attendance.bean.AttendReportReq" resultClass="richinfo.attendance.entity.AttendEntity">
+
+        SELECT
+        ar.attendanceDate,ar.attendanceTime,ar.location,ar.detailAddr,ar.status,ar.outWorkRemark,ag.attendanceName,ae.employeeName,ae.contactId,ae.phone
+        FROM attendance_record ar
+        INNER JOIN attendance_group_info ag
+        ON ag.attendanceId = ar.attendanceId
+        INNER JOIN attendance_employee_info ae
+        ON ae.uid = ar.uid
+        WHERE ag.enterId = #enterId# AND ag.status = 0
+        AND DATE_FORMAT(ar.attendanceDate,'%Y-%m-%d') >= #startDate#
+        AND #endDate# >= DATE_FORMAT(ar.attendanceDate,'%Y-%m-%d')
+        <dynamic>
+            <isNotEqual compareValue="-1" property="attendanceId"
+                        prepend="and">
+                ar.attendanceId = #attendanceId#
+            </isNotEqual>
+            <isNotEmpty property="employeeName" prepend="and">
+                ae.employeeName LIKE CONCAT('%', #employeeName#, '%')
+            </isNotEmpty>
+            <isNotEqual compareValue="-1" property="legworkStatus"
+                        prepend="and">
+                ar.status = #legworkStatus#
+            </isNotEqual>
+        </dynamic>
+        order by ar.attendanceDate,ar.attendanceTime
+
+    </select>
+
+    <!--根据个人月报id查询个人月报-->
+    <select id="queryMonthByMonthRcdId" parameterClass="java.lang.Long" resultClass="richinfo.attendance.entity.EmployeeMonthDetail" >
+        SELECT
+        monthRcdId,attendanceId,enterId,uid,employeeName,attendanceDate,goWork,goWorkDate,goLocation,goWorkDesc,
+        leaveWork,leaveWorkDate,leaveLocation,leaveWorkDesc,regionStatus,remark,recordState,phone,
+        earlyMinutes,workMinutes,lateMinutes,scheduleShiftId,scheduleShiftName,scheduleShiftWorkTime,attendType
+        FROM
+        employee_month_detail
+        WHERE monthRcdId = #monthRcdId#
+    </select>
+
+    <!--获取正在考勤的企业id-->
+    <select id="queryAttendEnter" resultClass="java.lang.String">
+        SELECT
+        enterId
+        FROM
+        attendance_group_info
+        WHERE STATUS = 0 GROUP BY enterId
+    </select>
+
+    <update id="updateEmployeeName" parameterClass="richinfo.attendance.entity.AttendEmployee">
+        UPDATE
+        attendance_employee_info
+        SET
+        employeeName = #employeeName#,
+        modifyTime = now()
+        WHERE uid=#uid# AND enterId = #enterId# AND contactId = #contactId# AND status = 0
+    </update>
+
+    <update id="updateWhiteListEmployeeName" parameterClass="richinfo.attendance.entity.AttendEmployee">
+        UPDATE
+        attendance_employee_whitelist
+        SET
+        employeeName = #employeeName#,
+        modifyTime = now()
+        WHERE uid=#uid# AND enterId = #enterId# AND contactId = #contactId# AND status = 0
+    </update>
+<!--更新负责人的名字-->
+    <update id="updateChargemanEmployeeName" parameterClass="richinfo.attendance.entity.AttendEmployee">
+        UPDATE
+        attendance_chargeman_list
+        SET
+        employeeName = #employeeName#,
+        modifyTime = now()
+        WHERE uid=#uid# AND enterId = #enterId# AND contactId = #contactId# AND status = 0
+    </update>
+
+    <update id="updateExamineUserName" parameterClass="richinfo.attendance.entity.AttendEmployee">
+        UPDATE
+        attendance_examine_table
+        SET
+        examineName = #employeeName# ,
+        updateTime = NOW()
+        WHERE examineUid=#uid# AND enterId = #enterId# AND examineContactId=#contactId# AND isDelete = 1
+    </update>
+
+    <!-- 添加考勤组负责人 -->
+    <update id="batchUpdateEmpRoleType" parameterClass="java.util.Map">
+        update
+        attendance_employee_info set
+        roleType = #roleType#
+        <isNotEmpty property="status" prepend=",">
+            status = #status#
+        </isNotEmpty>
+        where uid in
+        <iterate property="chargemanList" open="(" close=")" conjunction=",">
+            #chargemanList[].uid#
+        </iterate>
+    </update>
+
+    <!-- 批量更新负责人列表状态 -->
+    <update id="batchUpdateEmpChargeStatus" parameterClass="java.util.Map">
+        update
+        attendance_chargeman_list set
+        status = #status#
+        where
+        attendanceId = #attendanceId#
+        and
+        uid in
+        <iterate property="chargemanList" open="(" close=")" conjunction=",">
+            #chargemanList[].uid#
+        </iterate>
+    </update>
+
+    <select id="queryChargeMansByAttendanceId" parameterClass="java.util.HashMap"
+        resultClass="richinfo.attendance.entity.AttendEmployee">
+        SELECT
+        acl.uid,acl.contactId,acl.employeeName,acl.enterId,acl.status,acl.createTime,acl.modifyTime,
+        agi.attendanceName,agi.attendanceId,agi.enterName,agi.status
+        FROM
+        attendance_chargeman_list acl
+        INNER JOIN
+        attendance_group_info agi
+        ON
+        acl.attendanceId = agi.attendanceId
+        WHERE
+        agi.attendanceId = #attendanceId#
+        AND acl.status = #status#
+    </select>
+
+    <insert id="batchSaveChargemanList" parameterClass="richinfo.attendance.entity.AttendChargemanlistEntity">
+        INSERT INTO `attendance`.`attendance_chargeman_list`
+        (`uid`,`attendanceId`,`contactId`,`employeeName`,`phone`,`enterId`,`enterName`,
+        `deptId`,`deptName`,`email`,`position`,`status`,`createTime`,`modifyTime`
+        )
+        VALUES
+        (#uid#,#attendanceId#,#contactId#,#employeeName#,#phone#,#enterId#,#enterName#,
+        #deptId#,#deptName#,#email#,#position#,#status#,#createTime#,#modifyTime#
+        )
+        ON
+        DUPLICATE KEY
+        UPDATE
+        status = #status#,
+        createTime = #createTime#,
+        modifyTime = #modifyTime#
+    </insert>
+
+    <!--查询考勤组负责人返回字符串list-->
+    <select id="queryAttendGroupChargeMansString" parameterClass="java.lang.Long"
+        resultClass="java.lang.String" >
+        SELECT l.employeeName AS chargeMans
+        FROM
+        attendance_chargeman_list l
+        WHERE
+        l.attendanceId = #attendanceId#
+        AND
+        l.status = 0
+    </select>
+
+    <!--查询考勤组负责人负责的考勤组-->
+    <select id="queryChargeGroupByUid" parameterClass="java.lang.String"
+        resultClass="java.lang.String" >
+        SELECT attendanceId
+        FROM
+        attendance_chargeman_list
+        WHERE
+        uid = #uid#
+        AND
+        status = 0
+    </select>
+
+    <!--群查查询考勤组负责人负责的考勤组-->
+    <select id="queryChargeGroupByUids" parameterClass="java.util.List"
+        resultClass="java.lang.String" >
+        SELECT uid
+        FROM
+        attendance_chargeman_list
+        WHERE
+        status = 0
+        AND
+        uid in
+        <iterate open="(" close=")" conjunction=",">
+            #uids[]#
+        </iterate>
+        group by uid
+    </select>
+
+    <!-- 群删考勤组负责人 -->
+    <update id="batchDeleteEmpRoleType" parameterClass="java.util.Map">
+        update
+        attendance_employee_info set
+        roleType = #roleType#
+        where uid in
+        <iterate property="uids" open="(" close=")" conjunction=",">
+            #uids[]#
+        </iterate>
+    </update>
+
+    <!--查询考勤组负责人负责的考勤组-->
+    <select id="queryChargeMansUidByAttendanceId" parameterClass="java.lang.Long"
+        resultClass="richinfo.attendance.entity.AttendEmployee" >
+        SELECT uid
+        FROM
+        attendance_chargeman_list
+        WHERE
+        attendanceId = #attendanceId#
+        AND
+        status = 0
+    </select>
+
+    <select id="queryEnterAllGroups" parameterClass="java.lang.String"
+        resultClass="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM attendance_group_info
+        WHERE enterId = #enterId#
+        AND status = 0
+    </select>
+
+    <!--获取正常使用的考勤 contactId为空的-->
+    <select id="findGroup" resultClass="richinfo.attendance.entity.AttendGroup">
+        SELECT attendanceId,enterId,adminUid FROM attendance_group_info WHERE STATUS = 0 AND adminContactId is null
+    </select>
+
+    <update id="checkoutUpdateGroup" parameterClass="richinfo.attendance.entity.AttendGroup">
+        UPDATE
+        attendance_group_info SET
+        adminContactId = #adminContactId#,
+        adminName = #adminName#
+        WHERE
+        attendanceId = #attendanceId#
+    </update>
+
+    <update id="checkoutDelGroupUid" parameterClass="richinfo.attendance.entity.AttendGroup">
+        UPDATE
+        attendance_group_info SET
+        adminUid = NULL
+        WHERE
+        attendanceId = #attendanceId#
+    </update>
+    
+    <select id="findCheckoutExamine" resultClass="richinfo.attendance.entity.AttendExamineEntity">
+        SELECT attExamineId,enterId,examineUid,examinerState
+        from
+        attendance_examine_table WHERE isDelete = 1 AND examineContactId IS NULL
+    </select>
+
+    <!--审批人同步-->
+    <update id="checkoutUpdateExamine" parameterClass="richinfo.attendance.entity.AttendExamineEntity">
+        UPDATE attendance_examine_table SET examineContactId = #examineContactId# where attExamineId=#attExamineId#
+    </update>
+
+    <!--获取正在使用contactId为空的考勤人员-->
+    <select id="findCheckoutEmployee" resultClass="richinfo.attendance.entity.AttendEmployee">
+        SELECT employeeId,uid,enterId,contactId FROM attendance_employee_info WHERE STATUS = 0 AND contactId IS NULL
+    </select>
+
+    <!--更新考勤人员的contactId-->
+    <update id="checkoutUpdateEmployee" parameterClass="richinfo.attendance.entity.AttendEmployee">
+        UPDATE attendance_employee_info SET contactId = #contactId# WHERE employeeId = #employeeId#
+    </update>
+
+    <!--同步已经删除的考勤人员状态-->
+    <update id="checkoutDelEmployee" parameterClass="richinfo.attendance.entity.AttendEmployee">
+        UPDATE attendance_employee_info SET status = 1  WHERE employeeId = #employeeId#
+    </update>
+
+    <!--根据contactId获取一个正在使用的考勤组-->
+    <select id="queryGroupByContactId" parameterClass="richinfo.attendance.entity.AttendEmployee" resultClass="richinfo.attendance.entity.AttendGroup">
+        SELECT enterId,adminUid,adminContactId FROM attendance_group_info WHERE enterId = #enterId# AND adminContactId = #contactId#  AND STATUS = 0 LIMIT 1
+    </select>
+
+    <!--更新考勤组的创建人contactId-->
+    <update id="updateGroupContactId" parameterClass="richinfo.attendance.entity.AttendGroup">
+        UPDATE
+        attendance_group_info SET
+        adminContactId = #adminContactId# , modifyTime = NOW()
+        WHERE
+        enterId = #enterId# and adminUid = #adminUid# and status = 0
+    </update>
+<!--删除考勤组的创建人uid 与contactId-->
+    <update id="deleteGroupContactId" parameterClass="richinfo.attendance.entity.AttendGroup">
+        UPDATE
+        attendance_group_info SET
+        adminUid = NULL ,adminContactId = NULL ,modifyTime = NOW()
+        WHERE
+        enterId = #enterId# and adminUid = #adminUid# and adminContactId = #adminContactId# and status = 0
+    </update>
+
+    <!--根据contactId获取一个正常使用的审批人-->
+    <select id="queryExamineByContactId" parameterClass="richinfo.attendance.entity.AttendEmployee" resultClass="richinfo.attendance.entity.AttendExamineEntity">
+        SELECT enterId,examineUid,examineContactId
+        FROM
+        attendance_examine_table
+        WHERE enterId = #enterId# and examineContactId = #contactId# and isDelete = 1 LIMIT 1
+    </select>
+    
+    
+    <update id="updateExamineContactId" parameterClass="richinfo.attendance.entity.AttendExamineEntity">
+        UPDATE
+        attendance_examine_table SET
+        examineContactId = #examineContactId# ,updateTime = NOW()
+        where
+        enterId = #enterId# and examineUid = #examineUid# and isDelete = 1
+    </update>
+
+
+    <update id="deleteExamineByContactId" parameterClass="richinfo.attendance.entity.AttendExamineEntity">
+        UPDATE
+        attendance_examine_table SET
+        examinerState = 2 , isDelete = 2 , updateTime = NOW()
+        WHERE
+        enterId = #enterId# and examineUid = #examineUid# and examineContactId = #examineContactId# and isDelete = 1
+    </update>
+
+    <!--设置为企业全局负责人-->
+    <insert id="setEnterChargeMan" parameterClass="richinfo.attendance.entity.UserInfo">
+        INSERT INTO `attendance`.`attendance_chargeman_list`
+        (`uid`,`attendanceId`,`contactId`,`employeeName`,`phone`,`enterId`,`enterName`,
+        `deptId`,`deptName`,`email`,`position`,`status`,`createTime`,`modifyTime`
+        )
+        SELECT
+        #uid#,attendanceId,#contactId#,#employeeName#,#phone#,#enterId#,#enterName#,
+        #deptId#,#deptName#,#email#,#position#,0,now(),now()
+        FROM
+        attendance_group_info
+        WHERE
+        enterId = #enterId#
+        AND
+        status = 0
+    </insert>
+
+    <!--移除企业负责人身份-->
+    <update id="removeChargeManRole" parameterClass="richinfo.attendance.entity.UserInfo">
+        DELETE FROM `attendance`.`attendance_chargeman_list`
+        WHERE
+        uid = #uid# AND enterId = #enterId#
+    </update>
+    
+    <select id="queryAttendanceIdByEnterId" parameterClass="java.lang.String" resultClass="java.lang.Integer">
+        SELECT COUNT(attendanceId)
+        FROM
+        attendance_group_info
+        WHERE
+        enterId = #enterId#
+        AND
+        status = 0
+    </select>
+
+    <select id="queryAttendanceIdByUid" parameterClass="java.lang.String" resultClass="java.lang.Integer">
+        SELECT COUNT(attendanceId)
+        FROM
+        attendance_chargeman_list
+        WHERE
+        uid = #uid#
+        AND
+        status = 0
+    </select>
+
+    <!-- 查询员工一天的考勤记录列表，顺序排列 -->
+    <select id="querySignRecords" parameterClass="java.util.Map"
+            resultClass="richinfo.attendance.entity.AttendEntity">
+        SELECT
+        uid,phone,attendanceId,attendanceDate,attendanceTime,location,detailAddr,longitude,latitude,status
+        FROM attendance_record
+        WHERE attendanceDate = #attendanceDate#
+        ORDER BY attendanceTime
+    </select>
+
+    <!-- 批量插入员工手机号 -->
+    <update id="batchInsertPhone">
+        update
+        attendance_employee_info
+        set
+        phone=#phone#
+        where
+        uid=#uid#
+    </update>
+
+    <!--审批限制更新插入-->
+    <insert id="insertOrUpdateApprovalRestrict" parameterClass="richinfo.attendance.entity.AttendApprovalRestrict">
+        INSERT INTO
+        attendance_approval_restrict (enterId,restrictStatus,restrictNumber,createTime,modifyTime)
+        VALUES
+        (#enterId#,#restrictStatus#,#restrictNumber#,NOW(),NOW())
+        ON DUPLICATE KEY
+        UPDATE
+        restrictStatus = #restrictStatus#,restrictNumber=#restrictNumber#,modifyTime = NOW()
+    </insert>
+
+    <!--查询企业审批限制-->
+    <select id="queryApprovalRestrictByEnterId" parameterClass="java.lang.String"
+            resultClass="richinfo.attendance.entity.AttendApprovalRestrict">
+        SELECT
+        enterId,        restrictStatus,        restrictNumber
+        FROM
+        attendance_approval_restrict
+        WHERE
+        enterId = #enterId#
+    </select>
+    <!--查询月份审批数-->
+    <select id="queryApprovalCount" parameterClass="java.util.Map" resultClass="java.lang.Integer">
+        SELECT
+        COUNT(appealId)
+        FROM
+        attendance_appeal_record
+        WHERE
+        enterId = #enterId#
+        AND
+        uid = #uid#
+        AND DATE_FORMAT(attendanceDate,'%Y-%m') = #attendanceMonth#
+        AND examineState
+        IN(1,2)
+    </select>
+
+    <!--根据考勤组id删除考勤组审批者-->
+    <update id="deleteExamineByAttendanceId" parameterClass="java.util.Map">
+        UPDATE
+        attendance_examine_table
+        SET
+        examinerState = 2,
+        isDelete = 2,
+        updateTime = NOW()
+        WHERE
+        attendanceId = #attendanceId#
+    </update>
+
+    <!-- 修改考勤组审批员 -->
+    <update id="updateExistsExamine" parameterClass="java.util.Map">
+        update
+        attendance_examine_table
+        set examinerState = 1,isDelete = 1,examineContactId = #examineContactId#,updateTime
+        = now()
+        where attendanceId =
+        #attendanceId#
+        and examineUid =#examineUid#
+        and examinerState = 2
+    </update>
+
+    <update id="transferApprovalByAttendanceId" parameterClass="java.util.Map">
+        UPDATE
+        attendance_appeal_record
+        SET
+        examineUid = #examineUid#,
+        examineName = #examineName#,
+        updateTime = NOW()
+        WHERE
+        attendanceId = #attendanceId#
+        AND
+        examineState = 1
+    </update>
+
+    <!--查询员工月报明细列表，时间顺序排列 -->
+    <select id="getCurrentDayDate" parameterClass="java.util.Map"
+            resultClass="richinfo.attendance.entity.vo.DetailVO">
+        select
+        e.enterId,
+        e.uid,
+        i.contactId,
+        e.employeeName,
+        e.goWork,
+        e.goWorkDate,
+        e.goLocation,
+        e.goWorkDesc,
+        e.leaveWork,
+        e.leaveWorkDate,
+        e.leaveLocation,
+        e.leaveWorkDesc,
+        e.regionStatus,
+        e.outWorkRemark,
+        e.createTime,
+        e.phone,
+        g.enterName,
+        e.remark,
+        e.lateMinutes,
+        e.earlyMinutes,
+        e.workMinutes,
+        g.attendanceName,
+        g.attendType
+        from
+        attendance_employee_info i
+        join
+        employee_month_detail e
+        on e.uid = i.uid
+        join
+        attendance_group_info g
+        on g.attendanceId = e.attendanceId
+        where
+        e.attendanceId= #attendanceId#
+        and
+        e.attendanceDate = #attendanceDate#
+        <dynamic>
+            <isNotEmpty property="goWorkDesc" prepend="and">
+                e.goWorkDesc = #goWorkDesc#
+            </isNotEmpty>
+            <isNotEmpty property="leaveWorkDesc" prepend="and">
+                e.leaveWorkDesc = #leaveWorkDesc#
+            </isNotEmpty>
+        </dynamic>
+        order by
+        e.attendanceDate desc
+    </select>
+
+    <select id="getCurrentDayDateCount" parameterClass="java.util.Map"
+            resultClass="java.lang.Integer">
+        select
+        count(*)
+        from
+        attendance_employee_info i
+        join
+        employee_month_detail e
+        on e.uid = i.uid
+        join
+        attendance_group_info g
+        on g.attendanceId = e.attendanceId
+        where
+        e.attendanceId= #attendanceId#
+        and
+        e.attendanceDate = #attendanceDate#
+        <dynamic>
+            <isNotEmpty property="goWorkDesc" prepend="and">
+                e.goWorkDesc = #goWorkDesc#
+            </isNotEmpty>
+            <isNotEmpty property="leaveWorkDesc" prepend="and">
+                e.leaveWorkDesc = #leaveWorkDesc#
+            </isNotEmpty>
+        </dynamic>
+    </select>
+
+</sqlMap>

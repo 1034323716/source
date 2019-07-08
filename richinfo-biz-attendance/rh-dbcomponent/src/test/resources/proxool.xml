@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<something-else-entirely>
+
+  <proxool>
+    <alias>orapub</alias>
+    <driver-url>jdbc:oracle:thin:@(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.9.35)(PORT = 1521))(CONNECT_DATA = (SERVER = DEDICATED)(SERVICE_NAME = comm)))</driver-url>
+    <driver-class>oracle.jdbc.driver.OracleDriver</driver-class>
+    <driver-properties>
+      <property name="user" value="global01"/>
+      <property name="password" value="global01"/>
+    </driver-properties>
+    <house-keeping-sleep-time>30000</house-keeping-sleep-time>
+    <maximum-connection-count>4</maximum-connection-count>
+    <minimum-connection-count>1</minimum-connection-count>
+    <maximum-active-time>60000</maximum-active-time>
+    <maximum-connection-lifetime>600000</maximum-connection-lifetime>
+    <simultaneous-build-throttle>30</simultaneous-build-throttle>
+    <prototype-count>0</prototype-count>
+    <recently-started-threshold>60000</recently-started-threshold>
+    <statistics-log-level>ERROR</statistics-log-level>
+    <house-keeping-test-sql>select CURRENT_DATE FROM dual</house-keeping-test-sql>
+    <jmx>false</jmx>
+    <verbose>true</verbose>
+    <trace>true</trace>
+    <overload-without-refusal-lifetime>60000</overload-without-refusal-lifetime>
+  </proxool>
+
+  <proxool>
+    <alias>oramail</alias>
+    <driver-url>jdbc:oracle:thin:@(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.9.35)(PORT = 1521))(CONNECT_DATA = (SERVER = DEDICATED)(SERVICE_NAME = mail0)))</driver-url>
+    <driver-class>oracle.jdbc.driver.OracleDriver</driver-class>
+    <driver-properties>
+      <property name="user" value="OSS01"/>
+      <property name="password" value="OSS01PWD"/>
+    </driver-properties>
+    <house-keeping-sleep-time>30000</house-keeping-sleep-time>
+    <maximum-connection-count>20</maximum-connection-count>
+    <minimum-connection-count>6</minimum-connection-count>
+    <maximum-active-time>60000</maximum-active-time>
+    <maximum-connection-lifetime>600000</maximum-connection-lifetime>
+    <simultaneous-build-throttle>30</simultaneous-build-throttle>
+    <prototype-count>0</prototype-count>
+    <recently-started-threshold>60000</recently-started-threshold>
+    <statistics-log-level>ERROR</statistics-log-level>
+    <house-keeping-test-sql>select CURRENT_DATE FROM dual</house-keeping-test-sql>
+    <jmx>false</jmx>
+    <verbose>true</verbose>
+    <trace>true</trace>
+    <overload-without-refusal-lifetime>60000</overload-without-refusal-lifetime>
+  </proxool>
+
+  <proxool>
+    <alias>orasms</alias>
+    <driver-url>jdbc:oracle:thin:@(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.9.34)(PORT = 1521))(CONNECT_DATA = (SERVER = DEDICATED)(SERVICE_NAME = sms)))</driver-url>
+    <driver-class>oracle.jdbc.driver.OracleDriver</driver-class>
+    <driver-properties>
+      <property name="user" value="sms01"/>
+      <property name="password" value="sms01"/>
+    </driver-properties>
+    <house-keeping-sleep-time>30000</house-keeping-sleep-time>
+    <maximum-connection-count>20</maximum-connection-count>
+    <minimum-connection-count>2</minimum-connection-count>
+    <maximum-active-time>60000</maximum-active-time>
+    <maximum-connection-lifetime>600000</maximum-connection-lifetime>
+    <simultaneous-build-throttle>30</simultaneous-build-throttle>
+    <prototype-count>0</prototype-count>
+    <recently-started-threshold>60000</recently-started-threshold>
+    <statistics-log-level>ERROR</statistics-log-level>
+    <house-keeping-test-sql>select CURRENT_DATE FROM dual</house-keeping-test-sql>
+    <jmx>false</jmx>
+    <verbose>true</verbose>
+    <trace>true</trace>
+    <overload-without-refusal-lifetime>60000</overload-without-refusal-lifetime>
+  </proxool>
+
+  <proxool>
+    <alias>orasps</alias>
+    <driver-url>jdbc:oracle:thin:@(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.9.34)(PORT = 1521)) (CONNECT_DATA = (SERVER = DEDICATED)(SERVICE_NAME = mdisk)))</driver-url>
+    <driver-class>oracle.jdbc.driver.OracleDriver</driver-class>
+    <driver-properties>
+      <property name="user" value="mdisk"/>
+      <property name="password" value="mdisk"/>
+    </driver-properties>
+    <house-keeping-sleep-time>30000</house-keeping-sleep-time>
+    <maximum-connection-count>50</maximum-connection-count>
+    <minimum-connection-count>5</minimum-connection-count>
+    <maximum-active-time>60000</maximum-active-time>
+    <maximum-connection-lifetime>600000</maximum-connection-lifetime>
+    <simultaneous-build-throttle>30</simultaneous-build-throttle>
+    <prototype-count>0</prototype-count>
+    <recently-started-threshold>60000</recently-started-threshold>
+    <statistics-log-level>ERROR</statistics-log-level>
+    <house-keeping-test-sql>select CURRENT_DATE FROM dual</house-keeping-test-sql>
+    <jmx>false</jmx>
+    <verbose>true</verbose>
+    <trace>true</trace>
+    <overload-without-refusal-lifetime>60000</overload-without-refusal-lifetime>
+  </proxool>
+
+<proxool>
+    <alias>orashare</alias>
+    <driver-url>jdbc:oracle:thin:@(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.9.34)(PORT = 1521)) (CONNECT_DATA = (SERVER = DEDICATED)(SERVICE_NAME = mdisk)))</driver-url>
+    <driver-class>oracle.jdbc.driver.OracleDriver</driver-class>
+    <driver-properties>
+      <property name="user" value="TC_USER"/>
+      <property name="password" value="TC_USER"/>
+    </driver-properties>
+    <house-keeping-sleep-time>30000</house-keeping-sleep-time>
+    <maximum-connection-count>20</maximum-connection-count>
+    <minimum-connection-count>5</minimum-connection-count>
+    <maximum-active-time>60000</maximum-active-time>
+    <maximum-connection-lifetime>600000</maximum-connection-lifetime>
+    <simultaneous-build-throttle>30</simultaneous-build-throttle>
+    <prototype-count>0</prototype-count>
+    <recently-started-threshold>60000</recently-started-threshold>
+    <statistics-log-level>ERROR</statistics-log-level>
+    <house-keeping-test-sql>select CURRENT_DATE FROM dual</house-keeping-test-sql>
+    <jmx>false</jmx>
+    <verbose>true</verbose>
+    <trace>true</trace>
+    <overload-without-refusal-lifetime>60000</overload-without-refusal-lifetime>
+  </proxool>
+
+</something-else-entirely>
