@@ -8,15 +8,8 @@
  */
 package richinfo.attendance.dao;
 
-import java.security.cert.TrustAnchor;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import richinfo.attendance.bean.AttendEnterRes;
 import richinfo.attendance.entity.AttendDepartmentChooser;
 import richinfo.attendance.entity.AttendEmployee;
@@ -27,6 +20,11 @@ import richinfo.attendance.util.AssertUtil;
 import richinfo.attendance.util.AttendanceConfig;
 import richinfo.attendance.util.QytxlUtil;
 import richinfo.dbcomponent.exception.PersistException;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 功能描述：企业信息查询
@@ -64,6 +62,11 @@ public class EnterDao extends BaseAttendanceDao
                     "attendance.batchDelChargemanContactId", decreaseMember);
             log.info("batchDelChargemanContactId success={}|uidSize={}", flag5,
             		decreaseMember.size());
+            //删除设备信息
+            boolean flag6 = attendanceDao.batchUpdate(
+                "attendance.batchUpdateEquipmentAttdenName", decreaseMember);
+            log.info("batchUpdateEquipmentAttdenName success={}|uidSize={}", flag6,
+                decreaseMember.size());
             //考勤组创建人处理
             for(AttendEmployee attendEmployee : decreaseMember){
                AttendGroup attendGroup = (AttendGroup) attendanceDao.queryForObject("attendance.queryGroupByContactId",attendEmployee);
@@ -319,6 +322,12 @@ public class EnterDao extends BaseAttendanceDao
             //删除注册回调
             attendanceDao.delete(
                 "attendance.delCallBackEnterId", delEnter);
+            //删除设备控制表
+            attendanceDao.delete(
+                "attendance.delEquipmentStatusByEnterId", delEnter);
+            //删除设备列表
+            attendanceDao.delete(
+                "attendance.delEquipmentListByEnterId", delEnter);
             attendanceDao.commitTransaction();
         }catch (Exception e){
             try {

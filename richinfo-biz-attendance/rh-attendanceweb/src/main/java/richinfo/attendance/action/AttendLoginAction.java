@@ -122,6 +122,8 @@ public class AttendLoginAction extends BaseAttendanceAction {
             saveCookie("firstLogin", res.getFirstLogin(), response);
             //用户角色类型写入
             saveCookie("roleType", String.valueOf(res.getRoleType()), response);
+            //设备功能写入
+            saveCookie("useEquipmentClock", String.valueOf(res.getUseEquipmentClock()), response);
 
             // 写会话cookies HTTPOLNY
             saveHTTPOlnyCookie("loginToken", res.getUsessionid(), response);

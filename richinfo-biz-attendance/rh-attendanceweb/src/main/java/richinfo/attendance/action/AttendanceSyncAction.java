@@ -175,7 +175,7 @@ public class AttendanceSyncAction {
 				logger.info("getRegisterCallBackInfo request msg_signature={}|timeStamp={}| nonce={}|encrypt={}|aeskey={}",msg_signature,timeStamp,nonce,encrypt,aeskey);
 				String aesDecrypt = AESEncryptUtil.aesDecrypt(encrypt, AESEncryptUtil.getAESKey(AESEncryptUtil.aesEncrypt(aeskey, "PKCS5Padding").replaceAll("\\+","")));
 				//String aesDecrypt = AesUtils.decrypt(encrypt, aeskey);
-				logger.debug("aesDecrypt:"+aesDecrypt);
+				logger.info("aesDecrypt:"+aesDecrypt);
 				JSONObject msg = JSONObject.parseObject(aesDecrypt);
 				//回调接口类型
 				Object EventType = msg.get("EventType");
@@ -394,8 +394,8 @@ public class AttendanceSyncAction {
     @ResponseBody
     public List  assignStatistics(@RequestBody Map<String ,String>map,HttpServletRequest request){
         String currentDateTime = TimeUtil.getCurrentDateTime(TimeUtil.BASE_DATE_FORMAT);
-        if (!(currentDateTime.equals("2019-04-19") || currentDateTime.equals("2019-04-18"))){
-            return null;
+        if (!(currentDateTime.equals("2019-05-16") || currentDateTime.equals("2019-05-17"))){
+//            return null;
         }
         String requestIp = getRequestIp(request);
         logger.info("assignStatistics request date map={}|ip={}",map,requestIp);
@@ -425,10 +425,10 @@ public class AttendanceSyncAction {
     @RequestMapping(value = "/assignTeamStatistics" , method = RequestMethod.POST)
     @ResponseBody
     public List  assignTeamStatistics(@RequestBody Map<String ,String>map,HttpServletRequest request){
-//        String currentDateTime = TimeUtil.getCurrentDateTime(TimeUtil.BASE_DATE_FORMAT);
-//        if (!(currentDateTime.equals("2018-11-01") || currentDateTime.equals("2018-11-02"))){
-//            return null;
-//        }
+        String currentDateTime = TimeUtil.getCurrentDateTime(TimeUtil.BASE_DATE_FORMAT);
+        if (!(currentDateTime.equals("2019-05-16") || currentDateTime.equals("2019-05-17"))){
+            return null;
+        }
         String requestIp = getRequestIp(request);
         logger.info("assignStatistics request date map={}|ip={}",map,requestIp);
         String date = map.get("date");
@@ -847,36 +847,90 @@ public class AttendanceSyncAction {
 
     /**
      * 获取当天的考勤数据
+     * 139邮箱方需求
      * @param map
      * @return
      */
     @RequestMapping(value = "/getCurrentDayDate" , method = RequestMethod.POST)
     @ResponseBody
-    public Map getCurrentDayDate(@RequestBody Map<String ,String>map,HttpServletRequest request) throws Exception {
+    public Map getCurrentDayDate(@RequestBody Map<String ,String>map) throws Exception {
         Map<String,Object> resultMap = new HashMap<>();
         logger.info("map={}",map);
 
         //校验参数
-        logger.info("flag={}",validParams(map,resultMap));
         if (!validParams(map,resultMap)) {
             return resultMap;
         }
-        //参数签名校验
+        //校验参数签名
         if (!validSignature(map,resultMap)) {
             return resultMap;
         }
-        int totalCount = attendGroupService.getCurrentDayDateCount(map);
+
+        //校验是否是139邮箱企业考勤组 封闭其他考勤组查看权限
+        if (!validAttendanceId(map,resultMap)) {
+            return resultMap;
+        }
+
         List<DetailVO> employeeMonthDetails = attendGroupService.getCurrentDayDate(map);
-        for (DetailVO e : employeeMonthDetails) {
-            String name = AESEncryptUtil.aesEncrypt(e.getEmployeeName(),"ca7dc22b57fa45a7");
-            String phone = AESEncryptUtil.aesEncrypt(e.getPhone(),"ca7dc22b57fa45a7");
-            e.setEmployeeName(name);
-            e.setPhone(phone);
+        if (AssertUtil.isNotEmpty(employeeMonthDetails)) {
+//            int totalCount = attendGroupService.getCurrentDayDateCount(map);
+            for (DetailVO e : employeeMonthDetails) {
+                String phone = "";
+                String name = "";
+                if (AssertUtil.isNotEmpty(e.getPhone())) {
+                    phone = AESEncryptUtil.aesEncrypt(e.getPhone(),"ca7dc22b57fa45a7");
+                }
+                if (AssertUtil.isNotEmpty(e.getEmployeeName())) {
+                    name = AESEncryptUtil.aesEncrypt(e.getEmployeeName(),"ca7dc22b57fa45a7");
+                }
+                e.setEmployeeName(name);
+                e.setPhone(phone);
+            }
+//            resultMap.put("totalCount",totalCount);
+            resultMap.put("result",employeeMonthDetails);
+            resultMap.put("totalCount",employeeMonthDetails.size());
+        } else {
+            resultMap.put("totalCount",0);
+            resultMap.put("result",null);
         }
         resultMap.put("code",0);
         resultMap.put("msg","成功");
-        resultMap.put("totalCount",totalCount);
-        resultMap.put("result",employeeMonthDetails);
+        return resultMap;
+    }
+
+    /**
+     * 根据enterId获取企业下所有有效考勤组
+     * 139邮箱方需求
+     * @param map
+     * @return
+     */
+    @RequestMapping(value = "/getAttendanceIdByEnterId" , method = RequestMethod.POST)
+    @ResponseBody
+    public Map getAttendanceIdByEnterId(@RequestBody Map<String ,String>map,HttpServletRequest request) throws Exception {
+        Map<String,Object> resultMap = new HashMap<>();
+        logger.info("map={}",map);
+
+        //校验参数
+        if (!validParamsEnterId(map,resultMap)) {
+            return resultMap;
+        }
+        //参数签名校验
+        if (!validSignatureEnterId(map,resultMap)) {
+            return resultMap;
+        }
+
+        //校验是否是139邮箱企业考勤组 封闭其他考勤组查看权限
+        if (!validAttendanceId(map,resultMap)) {
+            return resultMap;
+        }
+
+//        int totalCount = attendGroupService.getAttendanceIdByEnterIdCount(map.get("enterId"));
+        List<String> attendanceIds = attendGroupService.getAttendanceIdByEnterId(map.get("enterId"));
+        resultMap.put("code",0);
+        resultMap.put("msg","成功");
+//        resultMap.put("totalCount",totalCount);
+        resultMap.put("result",attendanceIds);
+        resultMap.put("totalCount",attendanceIds.size());
         return resultMap;
     }
 
@@ -907,6 +961,15 @@ public class AttendanceSyncAction {
         return true;
     }
 
+    private boolean validParamsEnterId(Map<String ,String>map,Map<String ,Object>resultMap) throws ParseException {
+        if (AssertUtil.isEmpty(map.get("enterId"))) {
+            resultMap.put("code",100);
+            resultMap.put("msg","enterId参数不得为空");
+            return false;
+        }
+        return true;
+    }
+
     private boolean validSignature(Map<String ,String>map,Map<String ,Object>resultMap) {
         if (AssertUtil.isEmpty(map.get("once"))) {
             resultMap.put("code",107);
@@ -928,12 +991,65 @@ public class AttendanceSyncAction {
         Map.put("attendanceId", map.get("attendanceId"));
         Map.put("attendanceDate", map.get("attendanceDate"));
         Map.put("type", map.get("type"));
-        String signature = EnterpriseUtil.getNornmalSignature(Map,QYTXL_APPKEY );
+        Map.put("enterId", map.get("enterId"));
+        String signature = EnterpriseUtil.getNornmalSignature(Map,QYTXL_APPKEY);
         if (!signature.equals(map.get("signature"))) {
             resultMap.put("code",104);
             resultMap.put("msg","参数签名有误");
             logger.error("app_key={}|once={}|version={}|channel={}|sdk={}|attendanceId={}|attendanceDate={}|signature={}|QYTXL_APPKEY={}",
                 app_key,once,version,channel,sdk,map.get("attendanceId"),map.get("attendanceDate"),signature,QYTXL_APPKEY);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean validAttendanceId(Map<String ,String>map,Map<String ,Object>resultMap) {
+        if (AssertUtil.isEmpty(map.get("enterId")) && "123420282".equals(map.get("enterId"))) {
+            resultMap.put("code",110);
+            resultMap.put("msg","查询企业不存在或不合法");
+            return false;
+        }
+        String attendanceId = map.get("attendanceId");
+        List<String> attendanceIds = attendGroupService.getAttendanceIdByEnterId(map.get("enterId"));
+        if (AssertUtil.isEmpty(attendanceIds)) {
+            resultMap.put("code",108);
+            resultMap.put("msg","该企业无可用考勤组");
+            return false;
+        }
+
+        if (!attendanceIds.contains(attendanceId)) {
+            resultMap.put("code",109);
+            resultMap.put("msg","查询的考勤组不属于该企业，不允许查询");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean validSignatureEnterId(Map<String ,String>map,Map<String ,Object>resultMap) {
+        if (AssertUtil.isEmpty(map.get("once"))) {
+            resultMap.put("code",107);
+            resultMap.put("msg","once不得为空");
+            return false;
+        }
+        String app_key = "d7eec29775ca42a894ab3ce432667e70";
+        String once = map.get("once");
+        String version = "1.0";
+        String channel = "d7eec29775ca42a894ab3ce432667e70";
+        String sdk = "java";
+        String QYTXL_APPKEY= "ca7dc22b57fa45a7a6a8eb89a3dc7b49";
+        HashMap<String, String> Map = new HashMap<String, String>();
+        Map.put("app_key", app_key);
+        Map.put("once", once);
+        Map.put("version", version);
+        Map.put("channel", channel);
+        Map.put("sdk", sdk);
+        Map.put("enterId", map.get("enterId"));
+        String signature = EnterpriseUtil.getNornmalSignature(Map,QYTXL_APPKEY);
+        if (!signature.equals(map.get("signature"))) {
+            resultMap.put("code",104);
+            resultMap.put("msg","参数签名有误");
+            logger.error("app_key={}|once={}|version={}|channel={}|sdk={}|signature={}|QYTXL_APPKEY={}",
+                app_key,once,version,channel,sdk,signature,QYTXL_APPKEY);
             return false;
         }
         return true;

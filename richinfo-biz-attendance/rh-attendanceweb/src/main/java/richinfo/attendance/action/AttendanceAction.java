@@ -119,6 +119,8 @@ public class AttendanceAction extends BaseAttendanceAction {
         if ("1".equals(reqMap.get("status"))) {
             attendReq.setOutWorkRemark((String) reqMap.get("outWorkRemark"));
         }
+        attendReq.setEquipmentSerial((String) reqMap.get("equipmentSerial")==null?"":(String) reqMap.get("equipmentSerial"));
+//        attendReq.setEquipmentSerial((String) reqMap.get("equipmentSerial"));
 
         return attendReq;
     }

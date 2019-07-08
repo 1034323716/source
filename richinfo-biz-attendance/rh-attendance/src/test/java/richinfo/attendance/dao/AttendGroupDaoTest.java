@@ -18,13 +18,14 @@ import richinfo.attendance.common.DaoObject;
 import richinfo.attendance.entity.AttendEmployee;
 import richinfo.attendance.entity.AttendGroup;
 import richinfo.attendance.entity.AttendGroup.GroupStatus;
+import richinfo.attendance.entity.AttendanceEquipment;
 import richinfo.attendance.entity.UserInfo;
+import richinfo.attendance.entity.vo.AttendanceEquipmentVO;
+import richinfo.attendance.util.AssertUtil;
 import richinfo.dbcomponent.exception.PersistException;
 import richinfo.dbcomponent.service.impl.SqlMapClientBeanFactory;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * 功能描述：
@@ -192,25 +193,31 @@ public class AttendGroupDaoTest extends DaoObject
     /**
      * 编辑考勤组
      */
-    // @Test
+     //@Test
     public void testUpdateGroup()
     {
-        AttendGroup attendGroup = new AttendGroup();
-        attendGroup.setAttendanceId(43L);
-        attendGroup.setModifyTime(new Date());
-        attendGroup.setLatitude(-1L);
-        attendGroup.setLongitude(-1L);
-        attendGroup.setAttendanceRange(-1);
-        /*boolean flag = groupDao.updateGroup(attendGroup, null, null, null,
-            new UserInfo());
-        System.out.println("结果:" + flag);*/
+        Map<String,Object> queryParam = new HashMap();
+        queryParam.put("enterId","7188935");
+        List<AttendanceEquipment> equipmentList = groupDao.queryEquipmentList(queryParam);
+        boolean flag = false;
+        System.out.println(equipmentList.size());
+        for (AttendanceEquipment equipment:equipmentList) {
+            System.out.println(equipment.toString());
+            if ("E504F178212BBCBD".equals(equipment.getEquipmentSerial())) {
+                flag = true;
+                System.out.println(flag);
+                break;
+            }
+        }
+
     }
 
-    // @Test
+     @Test
     public void testQueryAttendGroupInfo()
     {
-        AttendGroup a = groupDao.queryAttendGroupInfo(4L, "12345678", 0);
-        System.out.println(a);
+
+
+
     }
 
     // @Test
@@ -238,26 +245,92 @@ public class AttendGroupDaoTest extends DaoObject
 
     }
 
-    // @Test
-    public void deleteEmployeesOfGroup()
-    {
-        AttendGroup attendGroup = new AttendGroup();
-        attendGroup.setAttendanceId(501);
-        attendGroup.setModifyTime(new Date());
-        attendGroup.setStatus(GroupStatus.Abnormal.getValue());
+     @Test
+    public void deleteEmployeesOfGroup() {
+         Map<String,Object> setEquipmentParam = new HashMap();
+         setEquipmentParam.put("enterId","7188935");
+         setEquipmentParam.put("uid","E504F178212BBCBDB7156B77EBF61A07");
+         setEquipmentParam.put("employeeName","张楠");
+         setEquipmentParam.put("contractId","66631396");
+         setEquipmentParam.put("attendanceId","307");
+         setEquipmentParam.put("attendanceName","你妹夫");
+         setEquipmentParam.put("equipmentSerial","9C66EC15EB3E1");
+         setEquipmentParam.put("equipmentStatus",0);
+         setEquipmentParam.put("equipmentDeviceType","华为M20 pro");
+         setEquipmentParam.put("equipmentLimit","3");
 
-//        boolean f = groupDao.deleteGroup(attendGroup, new UserInfo());
-        System.out.println("=========");
-//        System.out.println(f);
-        System.out.println("--------------");
-    }
+     }
 
     /**
      * 测试企业考勤组
      */
-    @Test
+   // @Test
     public void testBatchUpdateEmployeeWhiteListStatus() throws PersistException {
+        Map<String,Object> queryParam = new HashMap();
+        queryParam.put("enterId","7188935");
+        queryParam.put("employeeName","张");
+        List<AttendanceEquipment> equipmentList = groupDao.queryEquipmentList(queryParam);
+        AttendanceEquipmentVO equipmentVO = new AttendanceEquipmentVO();
+        System.out.println(AssertUtil.isNotEmpty(equipmentList));
+        System.out.println(equipmentList.size());
+        if (AssertUtil.isNotEmpty(equipmentList)) {
+            List<AttendanceEquipmentVO> resultList = new ArrayList<>();
+            for (int i=0;i<equipmentList.size();i++) {
+                AttendanceEquipment equipment = equipmentList.get(i);
+                if (AssertUtil.isEmpty(equipmentVO.getUid())) {
+                    equipmentVO.setUid(equipment.getUid());
+                    equipmentVO.setAttendanceName(equipment.getAttendanceName());
+                    equipmentVO.setEmployeeName(equipment.getEmployeeName());
+                    equipmentVO.setContractId(equipment.getContractId());
+                    equipmentVO.setFirstEquipmentSerial(equipment.getEquipmentSerial());
+                    equipmentVO.setFirstEquipmentDeviceType(equipment.getEquipmentDeviceType());
+                    equipmentVO.setFirstEquipmentStatus(equipment.getEquipmentStatus());
+                } else {
+                    System.out.println("isEqual="+equipment.getUid().equals(equipmentVO.getUid()));
+                    if (equipment.getUid().equals(equipmentVO.getUid())) {
+                        if (AssertUtil.isNotEmpty(equipmentVO.getFirstEquipmentSerial()) && AssertUtil.isNotEmpty(equipmentVO.getSecondEquipmentSerial())
+                            && "0".equals(equipmentVO.getFirstEquipmentStatus()) && "0".equals(equipmentVO.getSecondEquipmentStatus())) {
+                            equipmentVO.setThirdEquipmentSerial(equipment.getEquipmentSerial());
+                        }
+                        if (AssertUtil.isNotEmpty(equipmentVO.getThirdEquipmentSerial())) {
+                            equipmentVO.setThirdEquipmentDeviceType(equipment.getEquipmentDeviceType());
+                        }
+                        if (AssertUtil.isNotEmpty(equipmentVO.getThirdEquipmentSerial())) {
+                            equipmentVO.setThirdEquipmentStatus(equipment.getEquipmentStatus());
+                        }
+                        if (AssertUtil.isNotEmpty(equipmentVO.getFirstEquipmentSerial()) && "0".equals(equipmentVO.getFirstEquipmentStatus())
+                                && AssertUtil.isEmpty(equipmentVO.getThirdEquipmentSerial())
+                            ) {
+                            equipmentVO.setSecondEquipmentSerial(equipment.getEquipmentSerial());
+                        }
+                        if (AssertUtil.isNotEmpty(equipmentVO.getSecondEquipmentSerial()) && AssertUtil.isEmpty(equipmentVO.getThirdEquipmentSerial())) {
+                            equipmentVO.setSecondEquipmentDeviceType(equipment.getEquipmentDeviceType());
+                        }
+                        if (AssertUtil.isNotEmpty(equipmentVO.getSecondEquipmentSerial()) && AssertUtil.isEmpty(equipmentVO.getThirdEquipmentSerial())) {
+                            equipmentVO.setSecondEquipmentStatus(equipment.getEquipmentStatus());
+                        }
+                    } else {
+                        resultList.add(equipmentVO);
+                        equipmentVO = new AttendanceEquipmentVO();
+                        equipmentVO.setUid(equipment.getUid());
+                        equipmentVO.setAttendanceName(equipment.getAttendanceName());
+                        equipmentVO.setEmployeeName(equipment.getEmployeeName());
+                        equipmentVO.setContractId(equipment.getContractId());
+                        equipmentVO.setFirstEquipmentSerial(equipment.getEquipmentSerial());
+                        equipmentVO.setFirstEquipmentDeviceType(equipment.getEquipmentDeviceType());
+                        equipmentVO.setFirstEquipmentStatus(equipment.getEquipmentStatus());
+                    }
+                }
+                if (i==equipmentList.size()-1) {
+                    resultList.add(equipmentVO);
+                }
+            }
+            System.out.println(resultList.size());
+            for (AttendanceEquipmentVO equipment : resultList) {
+                System.out.println(equipment.toString());
+            }
 
+        }
     }
     
 }

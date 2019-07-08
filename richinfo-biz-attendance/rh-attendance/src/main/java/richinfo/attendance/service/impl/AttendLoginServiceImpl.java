@@ -21,19 +21,18 @@ import richinfo.attendance.common.AtdcResultCode;
 import richinfo.attendance.common.AtdcResultSummary;
 import richinfo.attendance.common.ResultCode;
 import richinfo.attendance.dao.AttendEmployeeDao;
+import richinfo.attendance.dao.AttendGroupDao;
 import richinfo.attendance.dao.AttendLoginDao;
 import richinfo.attendance.entity.AttendEmployee.EmployeeType;
 import richinfo.attendance.entity.AttendWhitelistEntity;
+import richinfo.attendance.entity.AttendanceEquipmentControl;
 import richinfo.attendance.entity.UserInfo;
 import richinfo.attendance.service.AttendLoginService;
 import richinfo.attendance.util.*;
 import richinfo.bcomponet.cache.CachedUtil;
 import richinfo.bcomponet.cache.comm.CacheKey;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * 功能描述： 考勤系统登录接口实现类
@@ -45,6 +44,7 @@ public class AttendLoginServiceImpl implements AttendLoginService
     private UserInfoCache userInfoCache = UserInfoCache.getInstance();
     AttendLoginDao loginDao = new AttendLoginDao();
     private AttendEmployeeDao employeeDao = new AttendEmployeeDao();
+    private AttendGroupDao groupDao = new AttendGroupDao();
     /** 用管凭证校验请求参数密钥 */
     private static final String ARTIFACT_SECRET = "3*7-AB3S$69@94a0";
 
@@ -133,12 +133,27 @@ public class AttendLoginServiceImpl implements AttendLoginService
                     userInfo.setRoleType(EmployeeType.NormalEmp.getValue());
                 }
 
+                //根据enterid uid查询设备表
+                Map<String,Object> temp = new HashMap();
+                temp.put("enterId",userInfo.getEnterId());
+                AttendanceEquipmentControl attendanceEquipment = groupDao.queryEquipmentStatus(temp);
+                if (AssertUtil.isNotEmpty(attendanceEquipment)) {
+                    if ("0".equals(attendanceEquipment.getEquipmentUseStatus())) {
+                        res.setUseEquipmentClock("0");
+                    } else {
+                        res.setUseEquipmentClock("1");
+                    }
+                } else {
+                    res.setUseEquipmentClock("1");
+                }
+
                 //查询白名单
                 AttendWhitelistEntity whitelistUser = loginDao.queryWhitelistUserInfo(req.getUid(), 0, enterId);
                 logger.debug("校验白名单用户=============whitelistUser{}",whitelistUser);
                 //校验白名单用户
                 if (whitelistUser != null && StringUtils.isNotBlank(whitelistUser.getUid())){
                     res.setWhitelistStatus(1);
+                    userInfo.setWhitelistStatus(1);
                 }
                 // 和飞信给的数据库数据没有RCS登录的准确 这里设置一下企业名称为登录数据
                 if (AssertUtil.isNotEmpty(req.getEnterName()))
@@ -189,6 +204,9 @@ public class AttendLoginServiceImpl implements AttendLoginService
                 // 用户首次登录标识
                 String firstLogin = checkFirstLogin(uid);
                 res.setFirstLogin(firstLogin);
+//                if (uid.equals("A11275A1A064AFB7CAE7E38ED6CA3B89") || uid.equals("665036D7B3DDB92A2C2FC3B3CCECF5CD")){
+//                    res.setFirstLogin("1");
+//                }
             }
             catch (Exception e)
             {

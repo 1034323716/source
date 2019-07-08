@@ -171,6 +171,7 @@ public class AttendGroupDao extends BaseAttendanceDao
                 }
             }
 
+            logger.info("queryAttendGroupListOnAppParam = {}",map);
             groupList = attendanceDao.queryForList("attendance.queryAttendGroupListOnApp", map);
 
             //logger.info("queryAttendGroupListOnApp success,groupList={}",groupList);
@@ -561,10 +562,6 @@ public class AttendGroupDao extends BaseAttendanceDao
         {
             // 开启事务
             attendanceDao.startTransaction();
-            //获取企业白名单
-           // String enterId = attendGroup.getEnterId();
-           // List<String> uids = attendanceDao.queryForList("attendance.queryAttendWhitelistUid",enterId);
-           // logger.info("attendanceDao.queryForList uids ={}|enterId={} ",uids,enterId);
             // 1、新增、更新用户与考勤组的关系
             if (AssertUtil.isNotEmpty(decreaseMember))
             {
@@ -572,34 +569,44 @@ public class AttendGroupDao extends BaseAttendanceDao
                 attendanceDao.batchUpdateNoTransaction(
                     "attendance.batchdeleteEmployee", decreaseMember);
             }
+            if (AssertUtil.isNotEmpty(decreaseMember))
+            {
+
+                attendanceDao.batchUpdateNoTransaction(
+                    "attendance.batchRemoveEquipmentAttdenName", decreaseMember);
+            }
             if (AssertUtil.isNotEmpty(updateIncrease))
             {
 
-
-               /* Iterator<AttendEmployee> iterator = updateIncrease.iterator();
-                while (iterator.hasNext()){
-                    AttendEmployee nextEmployee = iterator.next();
-                    if (AssertUtil.isNotEmpty(uids) && uids.contains(nextEmployee.getUid())){
-                        nextEmployee.setStatus(EmployeeStatus.Abnormal.getValue());
-                    }
-                }*/
                 attendanceDao.batchUpdateNoTransaction(
                     "attendance.batchUpdateEmployees", updateIncrease);
+            }
+            if (AssertUtil.isNotEmpty(updateIncrease))
+            {
+                Map<String,Object> updateMap = new HashMap();
+                updateMap.put("attendanceName",attendGroup.getAttendanceName());
+                updateMap.put("enterId",attendGroup.getEnterId());
+                updateMap.put("attendanceId",attendGroup.getAttendanceId());
+                updateMap.put("employee",updateIncrease);
+                logger.info("updateMap={}",updateMap);
+                attendanceDao.update("attendance.updateEquipmentAttdenNameByUid", updateMap);
             }
             if (AssertUtil.isNotEmpty(insertIncrease))
             {
 
-/*
-                Iterator<AttendEmployee> iterator = insertIncrease.iterator();
-                while (iterator.hasNext()) {
-                    AttendEmployee nextEmployee = iterator.next();
-                    if (AssertUtil.isNotEmpty(uids) && uids.contains(nextEmployee.getUid())) {
-                        nextEmployee.setStatus(EmployeeStatus.Abnormal.getValue());
-                    }
-                }*/
                 attendanceDao.batchInsertNoTransaction(
                     "attendance.batchSaveEmployees", insertIncrease);
 
+            }
+            if (AssertUtil.isNotEmpty(insertIncrease))
+            {
+                Map<String,Object> insertMap = new HashMap();
+                insertMap.put("attendanceName",attendGroup.getAttendanceName());
+                insertMap.put("enterId",attendGroup.getEnterId());
+                insertMap.put("attendanceId",attendGroup.getAttendanceId());
+                insertMap.put("employee",insertIncrease);
+                logger.info("insertMap={}",insertMap);
+                attendanceDao.update("attendance.updateEquipmentAttdenNameByUid", insertMap);
             }
             logger.debug("attendGroup={}",attendGroup);
             // 2、更新考勤组基本信息
@@ -610,6 +617,7 @@ public class AttendGroupDao extends BaseAttendanceDao
             for (AttendClockSite attendClockSite : attendClockSites){
                 attendClockSite.setAttendanceId(attendanceId);
             }
+
             //批量插入考勤地址
             attendanceDao.batchInsertNoTransaction("attendance.batchInsertAttendSite",attendClockSites);
             //删除已经其他考勤组和删除的
@@ -624,35 +632,51 @@ public class AttendGroupDao extends BaseAttendanceDao
             attendanceDao.batchInsertNoTransaction("attendance.batchSaveDepartmentChooser",AttendDepartmentChooser);
 
             // 处理审批员业务
-            if (AssertUtil.isNotEmpty(attendGroup.getExamineName())
+           /* if (AssertUtil.isNotEmpty(attendGroup.getExamineName())
                 && AssertUtil.isNotEmpty(attendGroup.getExamineUid()))
-            {
-                // 不为空表示需要 修改考勤组的审批员信息
-                // 先将考勤组旧审批员状态进行更新，变成非审批员
-              //  long attendanceId = attendGroup.getAttendanceId();
-                attendanceDao.update("attendance.updateExaminerState",
-                    attendanceId);
+            {*/
 
-                int result = attendanceDao.update(
-                    "attendance.updateExamineInfo", attendGroup);
-                if (result < 1)
-                {
-                    // 更新失败表明原先没有数据，则直接插入新值
-                    AttendExamineEntity entity = new AttendExamineEntity();
-                    entity.setEnterId(attendGroup.getEnterId());
-                    entity.setAttendanceId(attendGroup.getAttendanceId());
-                    entity.setExamineName(attendGroup.getExamineName());
-                    entity.setExamineUid(attendGroup.getExamineUid());
-                    entity.setExamineContactId(attendGroup.getExamineContactId());
-                    entity.setExaminerState(1);
-                    entity.setIsDelete(1);
-                    Date date = new Date();
-                    entity.setCreateTime(date);
-                    entity.setUpdateTime(date);
-                    attendanceDao.insert("attendance.insertAttendExamine",
-                        entity);
-                }
-            }
+               String  examineUid = String.valueOf(attendanceDao.queryForObject("attendance.queryGroupExamineUid", attendGroup.getAttendanceId()));
+
+               //不相同说明更换审批人
+               if (!examineUid.equals(attendGroup.getExamineUid())){
+
+                   // 不为空表示需要 修改考勤组的审批员信息
+                   // 先将考勤组旧审批员状态进行更新，变成非审批员
+                   attendanceDao.update("attendance.updateExaminerState",
+                       attendanceId);
+
+                   int result = attendanceDao.update(
+                       "attendance.updateExamineInfo", attendGroup);
+                   if (result < 1)
+                   {
+                       // 更新失败表明原先没有数据，则直接插入新值
+                       AttendExamineEntity entity = new AttendExamineEntity();
+                       entity.setEnterId(attendGroup.getEnterId());
+                       entity.setAttendanceId(attendGroup.getAttendanceId());
+                       entity.setExamineName(attendGroup.getExamineName());
+                       entity.setExamineUid(attendGroup.getExamineUid());
+                       entity.setExamineContactId(attendGroup.getExamineContactId());
+                       entity.setExaminerState(1);
+                       entity.setIsDelete(1);
+                       Date date = new Date();
+                       entity.setCreateTime(date);
+                       entity.setUpdateTime(date);
+                       attendanceDao.insert("attendance.insertAttendExamine",
+                           entity);
+                   }
+
+                   //转移审批单到新的审批者
+                   Map<String,Object> paramMap = new HashMap<>();
+                   paramMap.put("attendanceId",attendGroup.getAttendanceId());
+                   paramMap.put("examineUid",attendGroup.getExamineUid());
+                   paramMap.put("examineName",attendGroup.getExamineName());
+                   //旧审批人id
+                   paramMap.put("formerExamineUid",examineUid);
+                   //转让审批单
+                   attendanceDao.update("attendance.transferExamineInfo", paramMap);
+               }
+            //}
             // 编辑更新考勤组
             dealAttendanceScheduleShift(attendGroup.getAttendanceId(),
                 attendanceScheduleShift);
@@ -862,7 +886,7 @@ public class AttendGroupDao extends BaseAttendanceDao
             for (AttendGroupWithEmpRes e:groupList){
               if ("".equals(e.getAdminName()) || e.getAdminName() == null) {
                   e.setAdminName("已离职");
-                  logger.info("这位大兄dei已经离职了，uid={}|name={}",e.getAdminUid(),e.getAdminName());
+                  logger.info("该员工已经离职了，uid={}|name={}",e.getAdminUid(),e.getAdminName());
               }
             }
 
@@ -1217,6 +1241,8 @@ public class AttendGroupDao extends BaseAttendanceDao
             case "早退":
                 map.put("leaveWorkDesc","早退");
                 break;
+            case "全部":
+                break;
             default:
                 map.put("goWorkDesc","未打卡");
                 break;
@@ -1227,6 +1253,32 @@ public class AttendGroupDao extends BaseAttendanceDao
             logger.error("getCurrentDayDate failed,|e={}",  e);
         }
         return null;
+    }
+
+    /**
+     * 根据enterId获取企业下所有有效考勤组
+     * @return
+     */
+    public List<String> getAttendanceIdByEnterId(String enterId) {
+        try {
+            return (List<String>)attendanceDao.queryForList("attendance.getAttendanceIdByEnterId",enterId);
+        } catch (Exception e) {
+            logger.error("getAttendanceIdByEnterId failed,|e={}",  e);
+        }
+        return null;
+    }
+
+    /**
+     * 根据enterId获取企业下所有有效考勤组数量
+     * @return
+     */
+    public int getAttendanceIdByEnterIdCount(String enterId) {
+        try {
+            return (Integer)attendanceDao.queryForObject("attendance.getAttendanceIdByEnterIdCount",enterId);
+        } catch (Exception e) {
+            logger.error("getAttendanceIdByEnterIdCount failed,|e={}",  e);
+        }
+        return 0;
     }
 
     /**
@@ -1249,6 +1301,8 @@ public class AttendGroupDao extends BaseAttendanceDao
             case "早退":
                 map.put("leaveWorkDesc","早退");
                 break;
+            case "全部":
+                break;
             default:
                 map.put("goWorkDesc","未打卡");
                 break;
@@ -1259,5 +1313,211 @@ public class AttendGroupDao extends BaseAttendanceDao
             logger.error("findCheckoutExamine failed,|e={}",  e);
         }
         return 0;
+    }
+
+    public List<AttendanceEquipment> queryEquipmentList(Map<String,Object> paramMap) {
+        try {
+            return (List<AttendanceEquipment>)attendanceDao.queryForList(
+                "attendance.queryEquipmentList", paramMap);
+        } catch (PersistException e) {
+            logger.error("queryEquipmentList error.", e);
+            return null;
+        }
+    }
+
+    public List<AttendanceEquipment> queryEquipments(Map<String,Object> paramMap) {
+        try {
+            return (List<AttendanceEquipment>)attendanceDao.queryForList(
+                "attendance.queryEquipments", paramMap);
+        } catch (PersistException e) {
+            logger.error("queryEquipments error.", e);
+            return null;
+        }
+    }
+
+    public AttendanceEquipment queryEquipmentLimit(Map<String,Object> paramMap) {
+        try {
+            return (AttendanceEquipment)attendanceDao.queryForObject(
+                "attendance.queryEquipmentLimit", paramMap);
+        } catch (PersistException e) {
+            logger.error("queryEquipmentLimit error.", e);
+            return null;
+        }
+    }
+
+    public AttendanceEquipmentControl queryEquipmentStatus(Map<String,Object> paramMap) {
+        try {
+            return (AttendanceEquipmentControl)attendanceDao.queryForObject(
+                "attendance.queryEquipmentStatus", paramMap);
+        } catch (PersistException e) {
+            logger.error("queryEquipmentStatus error.", e);
+            return null;
+        }
+    }
+
+    public int queryEquipmentNumByUid(Map<String,Object> paramMap) {
+        try {
+            return (int)attendanceDao.queryForObject(
+                "attendance.queryEquipmentNumByUid", paramMap);
+        } catch (PersistException e) {
+            logger.error("queryEquipmentNumByUid error.", e);
+            return 0;
+        }
+    }
+
+    public int removeEquipment(Map<String,Object> paramMap) {
+        int result = 0;
+        try {
+            result = attendanceDao.delete("attendance.removeEquipment", paramMap);
+        } catch (Exception e) {
+            logger.error("removeEquipment failed,|e={}",  e);
+        }
+        return result;
+    }
+
+    public boolean insertEquipment(Map<String,Object> paramMap) {
+        try {
+            attendanceDao.insert("attendance.insertEquipment", paramMap);
+        } catch (Exception e) {
+            logger.error("insertEquipment failed,|e={}",  e);
+            return false;
+        }
+        return true;
+    }
+
+    public boolean insertEquipmentUseStatus(Map<String,Object> paramMap) {
+        try {
+            attendanceDao.insert("attendance.insertEquipmentUseStatus", paramMap);
+        } catch (Exception e) {
+            logger.error("insertEquipmentUseStatus failed,|e={}",  e);
+            return false;
+        }
+        return true;
+    }
+
+    public boolean updateEquipmentStatus(Map<String,Object> paramMap) {
+        try {
+            attendanceDao.update("attendance.updateEquipmentStatus", paramMap);
+        } catch (Exception e) {
+            logger.error("updateEquipmentStatus failed,|e={}",  e);
+            return false;
+        }
+        return true;
+    }
+
+    public boolean updateEquipmentStatusByUid(Map<String,Object> paramMap) {
+        try {
+            attendanceDao.update("attendance.updateEquipmentStatusByUid", paramMap);
+        } catch (Exception e) {
+            logger.error("updateEquipmentStatusByUid failed,|e={}",  e);
+            return false;
+        }
+        return true;
+    }
+
+    public boolean floatEquipment(Map<String,Object> paramMap) {
+        try {
+            if (!"0".equals((String)paramMap.get("equipmentLimit")))  {
+                switch ((String)paramMap.get("equipmentLimit")) {
+                    case "1":
+                        paramMap.put("limitCount","1");
+                        break;
+                    case "2":
+                        paramMap.put("limitCount","2");
+                        break;
+                    case "3":
+                        paramMap.put("limitCount","3");
+                        break;
+                }
+                attendanceDao.delete("attendance.floatEquipment", paramMap);
+            } else {
+                attendanceDao.delete("attendance.setOffEquipment", paramMap);
+            }
+        } catch (Exception e) {
+            logger.error("updateEquipmentStatus failed,|e={}",  e);
+            return false;
+        }
+        return true;
+    }
+
+//    public int floatEquipment(Map<String,Object> paramMap) {
+//        int result = 0;
+//        try {
+//            attendanceDao.startTransaction();
+//            result = attendanceDao.update("attendance.setEquipmentLimit", paramMap);
+//            if (result > 0) {
+//                if (!"0".equals((String)paramMap.get("equipmentLimit"))) {
+//                    switch ((String)paramMap.get("equipmentLimit")) {
+//                        case "1":
+//                            paramMap.put("limitCount","1");
+//                            break;
+//                        case "2":
+//                            paramMap.put("limitCount","2");
+//                            break;
+//                        case "3":
+//                            paramMap.put("limitCount","3");
+//                            break;
+//                    }
+//                    result = attendanceDao.update("attendance.floatEquipment", paramMap);
+//                } else {
+//                    result = attendanceDao.update("attendance.setOffEquipment", paramMap);
+//                }
+//            }
+//            attendanceDao.commitTransaction();
+//        } catch (Exception e) {
+//            try {
+//                attendanceDao.rollbackTransaction();
+//            } catch (PersistException e1) {
+//                e1.printStackTrace();
+//            }
+//        }
+//        return result;
+//    }
+
+
+    //获取正在使用的考勤组
+    public List<String> findGroupInNormal(Map<String,Integer> paramMap) {
+        try {
+            logger.info("findGroupInNormal paramMap = {}",paramMap);
+           return  attendanceDao.queryForList("attendance.findGroupInNormal",paramMap);
+        } catch (PersistException e) {
+            e.printStackTrace();
+            logger.error("findGroupInNormal failed,|e={}",  e);
+        }
+        return null;
+    }
+
+    //获取正在使用的考勤组
+    public void  updateEquipmentAttdenNameByUid(Map<String,Object> updateMap) {
+        try {
+            attendanceDao.update("attendance.updateEquipmentAttdenNameByUid", updateMap);
+        } catch (PersistException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 查询负责的考勤组
+     * @param uid
+     * @return
+     */
+    public List<String> queryGroupPrincipalByUid(String uid) {
+        try {
+            return  attendanceDao.queryForList("attendance.queryGroupPrincipalByUid",uid);
+        } catch (PersistException e) {
+            e.printStackTrace();
+            logger.error("queryGroupPrincipalByUid failed,|e={}|uid={}",  e,uid);
+            return null;
+        }
+    }
+
+    public int queryGroupCharge(Map<String,Object> paramMap) {
+        try {
+            return (int)attendanceDao.queryForObject(
+                "attendance.queryGroupCharge", paramMap);
+        } catch (PersistException e) {
+            logger.error("queryGroupCharge error.", e);
+            return 0;
+        }
     }
 }

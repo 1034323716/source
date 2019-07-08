@@ -82,6 +82,32 @@ public class AttendEmployeeDao extends BaseAttendanceDao
     }
 
     /**
+     * 根据uid查找员工信息；查找失败，返回null
+     * @param uid 企业联系人ID
+     * @return
+     */
+    public AttendEmployee queryEmployeeTypeByUid(String uid) {
+        AttendEmployee result = null;
+
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("uid", uid);
+        map.put("status", EmployeeStatus.Normal.getValue());
+        try
+        {
+            result = (AttendEmployee) attendanceDao.queryForObject(
+                "attendance.queryEmployeeTypeByUid", map);
+            logger.debug("queryEmployeeTypeByUid success.result={}", result);
+        }
+        catch (PersistException e)
+        {
+            logger.error("queryEmployeeTypeByUid error.uid={}", uid, e);
+        }
+
+        return result;
+    }
+
+
+    /**
      * 根据enterid查找员工信息；查找失败，返回null
      * @param enterid 企业ID
      * @return
@@ -790,5 +816,33 @@ public class AttendEmployeeDao extends BaseAttendanceDao
             logger.error("queryAttendanceIdByEnterId failed,|e={}",  e);
         }
         return count;
+    }
+
+    /**
+     * 查询没有手机号码正常状态的用户  每次查询100个
+     * @return
+     */
+    public List<AttendEmployee> findEmployeeNoPhone(String attendanceId) {
+        try {
+          return   attendanceDao.queryForList("attendance.findEmployeeNoPhone",attendanceId);
+        } catch (PersistException e) {
+            e.printStackTrace();
+            logger.error("findEmployeeNoPhone failed,|e={}",  e);
+        }
+        return null ;
+    }
+
+    /**
+     * 批量补充更新用户手机号码
+     * @param complementEmployees
+     */
+    public void batchSaveComplementEmployee(List<AttendEmployee> complementEmployees) {
+        try {
+            boolean result = attendanceDao.batchUpdate("attendance.updateComplementEmployee", complementEmployees);
+            logger.info("batchSaveComplementEmployee size={}|result={}",complementEmployees.size(),result);
+        } catch (PersistException e) {
+            e.printStackTrace();
+            logger.error("batchSaveComplementEmployee failed,|e={}",  e);
+        }
     }
 }

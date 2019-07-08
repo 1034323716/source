@@ -373,8 +373,7 @@ public class AttendAppealDao extends BaseAttendanceDao
                 result = updateTeamDailyReportData(map);
                 if (result < 1)
                 {
-                    logger
-                        .info(
+                    logger.info(
                             "dealAppeal updateTeamDailyReportData failed,appealId={}|monthRcdId={}|enterId={}|examineUid={}|examineResult={}|result={}",
                             reqBean.getAppealId(), appealInfo.getMonthRcdId(),
                             reqBean.getEnterId(), reqBean.getExamineUid(),

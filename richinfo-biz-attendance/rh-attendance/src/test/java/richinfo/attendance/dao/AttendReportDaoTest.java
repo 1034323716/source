@@ -7,6 +7,7 @@ import richinfo.attendance.common.DaoObject;
 import richinfo.attendance.entity.*;
 import richinfo.attendance.task.TeamDailyTask;
 import richinfo.attendance.util.AssertUtil;
+import richinfo.attendance.util.EnterpriseUtil;
 import richinfo.attendance.util.TimeUtil;
 import richinfo.bcomponet.tasks.exception.TaskException;
 import richinfo.dbcomponent.service.impl.SqlMapClientBeanFactory;
@@ -476,13 +477,26 @@ public class AttendReportDaoTest extends DaoObject{
 
     }
 
-    @Test
-    public void testBatchInsertPhone() {
-        List insertList = new ArrayList();
-        UserInfo info = new UserInfo();
-        info.setUid("EE62C7A0BF1EDF1EEB2F5E6EE6D71C6F");
-        info.setPhone("132456");
-        insertList.add(info);
-        System.out.println(dao.batchInsertPhone(insertList));
+    public static void main(String[] args) {
+        String once = EnterpriseUtil.getNum(12);
+        String app_key = "d7eec29775ca42a894ab3ce432667e70";
+        String version = "1.0";
+        String channel = "d7eec29775ca42a894ab3ce432667e70";
+        String sdk = "java";
+        String QYTXL_APPKEY= "ca7dc22b57fa45a7a6a8eb89a3dc7b49";
+        HashMap<String, String> Map = new HashMap<String, String>();
+        Map.put("app_key", app_key);
+        Map.put("once", once);
+        Map.put("version", version);
+        Map.put("channel", channel);
+        Map.put("sdk", sdk);
+//        Map.put("attendanceId", "719");
+//        Map.put("attendanceDate", "2019-05-08");
+//        Map.put("type","全部");
+        Map.put("enterId", "7188935");
+        String signature = EnterpriseUtil.getNornmalSignature(Map,QYTXL_APPKEY);
+        System.out.println(once);
+        System.out.println(signature);
+
     }
 }

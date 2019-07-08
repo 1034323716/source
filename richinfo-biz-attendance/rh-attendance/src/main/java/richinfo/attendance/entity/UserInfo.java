@@ -68,6 +68,12 @@ public class UserInfo implements Serializable
     private int aM;
 
     /**
+     * 白名单用户标识  0否 1是
+     * 默认 否0
+     */
+    private int whitelistStatus = 0;
+
+    /**
      * 登录时间
      */
     private long loginupdatetime;
@@ -101,6 +107,17 @@ public class UserInfo implements Serializable
 
     public void setaM(int aM) {
         this.aM = aM;
+    }
+
+    /** 职位 */
+    private String attendanceName;
+
+    public String getAttendanceName() {
+        return attendanceName;
+    }
+
+    public void setAttendanceName(String attendanceName) {
+        this.attendanceName = attendanceName;
     }
 
     public UmcArtifactValidRes getUmcArtifactValidRes() {
@@ -281,20 +298,41 @@ public class UserInfo implements Serializable
         this.isAdmin = isAdmin;
     }
 
-    @Override
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append("UserInfo[uid=").append(uid).append(",contactId=")
-            .append(contactId).append(",attendanceId=").append(attendanceId)
-            .append(",enterId=").append(enterId).append(",enterName=")
-            .append(enterName).append(",phone=").append(phone)
-            .append(",employeeName=").append(employeeName).append(",deptName=")
-            .append(deptName).append(",status=").append(status)
-            .append(",isAdmin=").append(isAdmin).append(",examinerState=")
-            .append(examinerState).append("]");
-        return sb.toString();
+    public int getWhitelistStatus() {
+        return whitelistStatus;
     }
+
+    public void setWhitelistStatus(int whitelistStatus) {
+        this.whitelistStatus = whitelistStatus;
+    }
+
+    @Override
+    public String toString() {
+        return "UserInfo{" +
+            "uid='" + uid + '\'' +
+            ", contactId='" + contactId + '\'' +
+            ", token='" + token + '\'' +
+            ", attendanceId=" + attendanceId +
+            ", enterId='" + enterId + '\'' +
+            ", enterName='" + enterName + '\'' +
+            ", employeeName='" + employeeName + '\'' +
+            ", phone='" + phone + '\'' +
+            ", deptId='" + deptId + '\'' +
+            ", deptName='" + deptName + '\'' +
+            ", email='" + email + '\'' +
+            ", position='" + position + '\'' +
+            ", status=" + status +
+            ", isAdmin=" + isAdmin +
+            ", examinerState=" + examinerState +
+            ", aM=" + aM +
+            ", whitelistStatus=" + whitelistStatus +
+            ", loginupdatetime=" + loginupdatetime +
+            ", cacheupdatetime=" + cacheupdatetime +
+            ", umcArtifactValidRes=" + umcArtifactValidRes +
+            ", roleType=" + roleType +
+            '}';
+    }
+
     public static void main(String[]str){
         HashMap<String,String> Map = new HashMap<String,String>();
         Map.put("app_key","d7eec29775ca42a894ab3ce432667e70");

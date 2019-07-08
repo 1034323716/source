@@ -125,8 +125,7 @@ public class EmployeeMonthDetailTask extends Task
                 });
             }
 
-            logger.info("end EmployeeMonthDetailTask useTime={}",
-                AttendanceUtil.getUseTime(start));
+            logger.info("end EmployeeMonthDetailTask useTime={}", AttendanceUtil.getUseTime(start));
             //多线程任务执行完毕 然后关闭线程池
             fixedThreadPool.shutdown();
             //1秒钟监听一次线程线是否完成任务

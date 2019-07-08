@@ -42,6 +42,27 @@ public class AttendReq extends AttendReqBean
     /** 外勤备注 */
     private String outWorkRemark;
 
+    //是否允许开启设备打卡功能，0使用1不使用
+    private String useEquipmentClock;
+
+    private String equipmentSerial;
+
+    public String getEquipmentSerial() {
+        return equipmentSerial;
+    }
+
+    public void setEquipmentSerial(String equipmentSerial) {
+        this.equipmentSerial = equipmentSerial;
+    }
+
+    public String getUseEquipmentClock() {
+        return useEquipmentClock;
+    }
+
+    public void setUseEquipmentClock(String useEquipmentClock) {
+        this.useEquipmentClock = useEquipmentClock;
+    }
+
     public String getOutWorkRemark() {
         return outWorkRemark;
     }

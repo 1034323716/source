@@ -116,6 +116,17 @@ public class AttendLoginRes extends ResBean
         this.allowOutRangeClock = allowOutRangeClock;
     }
 
+    //是否允许开启设备打卡功能，0使用1不使用
+    private String useEquipmentClock;
+
+    public String getUseEquipmentClock() {
+        return useEquipmentClock;
+    }
+
+    public void setUseEquipmentClock(String useEquipmentClock) {
+        this.useEquipmentClock = useEquipmentClock;
+    }
+
     private String enterName;
 
     public String getEnterName() {

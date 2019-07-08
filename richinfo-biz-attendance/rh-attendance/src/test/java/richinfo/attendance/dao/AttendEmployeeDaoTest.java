@@ -14,16 +14,16 @@ package richinfo.attendance.dao;
 
 import org.junit.Before;
 import org.junit.Test;
+import richinfo.attendance.entity.AttendEmployee;
 import richinfo.attendance.entity.UserInfo;
 import richinfo.attendance.util.AssertUtil;
 import richinfo.dbcomponent.exception.PersistException;
 import richinfo.dbcomponent.service.impl.SqlMapClientBeanFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 /**
  * 功能描述：
@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 public class AttendEmployeeDaoTest
 {
     private AttendEmployeeDao employeeDao = new AttendEmployeeDao();
+    private AttendGroupDao groupDao = new AttendGroupDao();
 
     /**
      * @throws java.lang.Exception
@@ -126,24 +127,31 @@ public class AttendEmployeeDaoTest
 
     @Test
     public void testQueryOwnGroup() {
-        List<UserInfo> users = new ArrayList<UserInfo>();
+        List<AttendEmployee> users = new ArrayList<AttendEmployee>();
 
-        UserInfo user1 = new UserInfo();
+        AttendEmployee user1 = new AttendEmployee();
         user1.setAttendanceId(18184537);
+        user1.setEnterId("7188935");
+        user1.setUid("752EF0A86C67ED2EB67B45EF92439D41");
         users.add(user1);
 
-        UserInfo user2 = new UserInfo();
+        AttendEmployee user2 = new AttendEmployee();
         user2.setAttendanceId(187);
+        user2.setEnterId("7188935");
+        user2.setUid("752EF0A86C67ED2EB67B45EF92439D41");
         users.add(user2);
 
-        UserInfo user3 = new UserInfo();
+        AttendEmployee user3 = new AttendEmployee();
         user3.setAttendanceId(10087);
+        user3.setEnterId("7188935");
+        user3.setUid("EE62C7A0BF1EDF1EEB2F5E6EE6D71C6F");
         users.add(user3);
 
-        Comparator<UserInfo> comparator = Comparator.comparingLong(UserInfo::getAttendanceId);
-
-        List<UserInfo> userInfoList = users.stream().sorted(comparator).collect(Collectors.toList());
-
-        System.out.println(Arrays.asList(userInfoList));
+        Map<String,Object> insertMap = new HashMap();
+        insertMap.put("attendanceName","我要的卡kksksks券");
+        insertMap.put("enterId","7188935");
+        insertMap.put("attendanceId","34534636");
+        insertMap.put("employee",users);
+        groupDao.updateEquipmentAttdenNameByUid(insertMap);
     }
 }

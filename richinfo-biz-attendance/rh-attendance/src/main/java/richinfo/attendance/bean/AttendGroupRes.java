@@ -15,6 +15,7 @@ package richinfo.attendance.bean;
 import richinfo.attendance.common.ResBean;
 import richinfo.attendance.entity.*;
 import richinfo.attendance.entity.AttendGroup.GroupStatus;
+import richinfo.attendance.entity.vo.AttendanceEquipmentVO;
 
 import java.util.Date;
 import java.util.List;
@@ -156,6 +157,38 @@ public class AttendGroupRes extends ResBean
 
     public void setAttendApprovalRestrict(AttendApprovalRestrict attendApprovalRestrict) {
         this.attendApprovalRestrict = attendApprovalRestrict;
+    }
+
+    /** 设备限制数量 */
+    private String equipmentLimit;
+
+    public String getEquipmentLimit() {
+        return equipmentLimit;
+    }
+
+    public void setEquipmentLimit(String equipmentLimit) {
+        this.equipmentLimit = equipmentLimit;
+    }
+
+    //打卡设备
+//    private  List<AttendanceEquipment> equipmentList;
+//
+//    public List<AttendanceEquipment> getEquipmentList() {
+//        return equipmentList;
+//    }
+//
+//    public void setEquipmentList(List<AttendanceEquipment> equipmentList) {
+//        this.equipmentList = equipmentList;
+//    }
+
+    private  List<AttendanceEquipmentVO> equipmentList;
+
+    public List<AttendanceEquipmentVO> getEquipmentList() {
+        return equipmentList;
+    }
+
+    public void setEquipmentList(List<AttendanceEquipmentVO> equipmentList) {
+        this.equipmentList = equipmentList;
     }
 
     public String getAdminName() {

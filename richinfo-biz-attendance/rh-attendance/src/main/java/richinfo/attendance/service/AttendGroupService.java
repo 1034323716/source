@@ -155,6 +155,33 @@ public interface AttendGroupService
      */
     AttendGroupRes checkEnterGroup(AttendGroupReq req,HttpServletRequest request);
 
+    /**
+     * 根据企业，考勤组，员工等筛选条件查询设备列表
+     * @param req
+     * @return
+     */
+    AttendGroupRes queryEquipmentList(AttendGroupReq req,HttpServletRequest request);
+
+    /**
+     * 设备后台管理系统删除设备
+     * @param req
+     * @return
+     */
+    AttendGroupRes removeEquipment(AttendGroupReq req,HttpServletRequest request);
+
+    /**
+     * 设备后台管理系统设置设备数量限制
+     * @param req
+     * @return
+     */
+    AttendGroupRes setEquipmentLimit(AttendGroupReq req,HttpServletRequest request);
+
+    /**
+     * 设备后台管理系统录入设备
+     * @param req
+     * @return
+     */
+    AttendGroupRes insertEquipment(AttendGroupReq req,HttpServletRequest request);
 
     /**
      * 同步检查通讯录同步删除人员
@@ -178,11 +205,6 @@ public interface AttendGroupService
     void checkoutEmployeeContactId();
 
     /**
-     * 查询企业联系人
-     */
-    String getEmployeesByEnterId(String enterId,String mobile,String matchHint);
-
-    /**
      * h5独立设置审批限制
      * @param req
      * @return
@@ -204,4 +226,8 @@ public interface AttendGroupService
     List<DetailVO> getCurrentDayDate(Map<String, String> map);
 
     int getCurrentDayDateCount(Map<String, String> map);
+
+    List<String> getAttendanceIdByEnterId(String enterId);
+
+    int getAttendanceIdByEnterIdCount(String enterId);
 }

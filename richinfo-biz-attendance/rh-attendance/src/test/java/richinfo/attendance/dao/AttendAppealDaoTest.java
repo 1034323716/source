@@ -1,5 +1,6 @@
 package richinfo.attendance.dao;
 
+import org.junit.Test;
 import richinfo.attendance.bean.AbnormalAppealRes;
 import richinfo.attendance.bean.AttendAppealReq;
 import richinfo.attendance.common.ResBean;
@@ -159,11 +160,24 @@ public class AttendAppealDaoTest
         System.out.println(resBean.getCode() + "\t" + resBean.getSummary());
     }
 
-    //@Test
-    public void testQueryNotExamineAppeal() throws PersistException
-    {
-        //long count = appealDao.queryNotExamineAppeal("2278242", 1);
-        //System.out.println(count);
+    private AttendEmployeeDao employeeDao = new AttendEmployeeDao();
+
+    @Test
+    public void testQueryNotExamineAppeal() throws PersistException {
+//        Map<String, Object> map = new HashMap<String, Object>();
+//        map.put("uid", "EE62C7A0BF1EDF1EEB2F5E6EE6D71C6F");
+//        map.put("attendanceDate", "2018-10-10");
+//        EmployeeMonthDetail employeeMonthDetail = employeeDao.queryNomMonthly(map);
+//        if (AssertUtil.isNotEmpty(employeeMonthDetail) && AssertUtil.isNotEmpty(employeeMonthDetail.getRecordState())){
+//            System.out.println(employeeMonthDetail);
+//            System.out.println(employeeMonthDetail.getRecordState());
+//            System.out.println(employeeMonthDetail.getAttendType());
+//        }
+        EmployeeMonthDetail employeeMonthDetail = new EmployeeMonthDetail();
+        employeeMonthDetail.setAttendType(1);
+        EmployeeMonthDetail detail = new EmployeeMonthDetail();
+        detail.setAttendType(1);
+        System.out.println(employeeMonthDetail.getAttendType()==detail.getAttendType());
     }
 
 }

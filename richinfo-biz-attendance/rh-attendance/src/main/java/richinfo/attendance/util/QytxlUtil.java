@@ -279,9 +279,9 @@ public class QytxlUtil
 	public Map<String,Object> getItem(String enterpriseId , String contactId )throws Exception{
 		String parame = getItemParam(enterpriseId,contactId);
 		String postUrl = QYTXL_EUSER_ITEM_URL;
-//		log.info("getItem url={},params={}",postUrl,parame);
+		log.debug("getItem url={},params={}",postUrl,parame);
 		JSONObject responseJson = EnterpriseUtil.sendPost(postUrl, parame, null);
-//		log.info("Register res={}",responseJson.toString());
+		log.debug("Register res={}",responseJson.toString());
 		Map<String,Object> map = JsonUtil.jsonToBean(responseJson.toString(), Map.class);
 		return map;
 	}

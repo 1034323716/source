@@ -245,7 +245,7 @@ public class AttendEmployee extends BeanObject implements Serializable
     }
 
     public enum EmployeeStatus {
-        // 正常 //异常 //未知
+        // 正常 //异常 //白名单 //未知
         Normal(0), Abnormal(1),Whitelist(2), Unknow(-1);
 
         private int value;

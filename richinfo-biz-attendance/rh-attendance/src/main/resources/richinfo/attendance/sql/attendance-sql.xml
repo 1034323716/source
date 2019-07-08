@@ -682,6 +682,23 @@
 		and status=#status#
 	</select>
 
+    <select id="queryEmployeeTypeByUid" parameterClass="java.util.HashMap"
+            resultClass="richinfo.attendance.entity.AttendEmployee">
+        SELECT
+        acl.uid,acl.contactId,acl.employeeName,acl.enterId,acl.status,acl.createTime,acl.modifyTime,
+        agi.attendanceId,agi.enterName,agi.status
+        FROM
+        attendance_chargeman_list acl
+        INNER JOIN
+        attendance_employee_info agi
+        ON
+        acl.attendanceId = agi.attendanceId
+        WHERE
+        agi.uid = #uid#
+        AND agi.status = #status#
+        AND acl.status = 0
+    </select>
+
 	<!-- 添加考勤打卡记录 -->
 	<insert id="saveAttendRecord" parameterClass="richinfo.attendance.entity.AttendEntity">
 		insert into
@@ -1030,6 +1047,28 @@
 		where attendanceId = #attendanceId# and
 		examinerState = 1 and isDelete = 1
 	</select>
+
+	<!-- 查询考勤组对应的审批员uid -->
+	<select id="queryGroupExamineUid" parameterClass="java.lang.Long"
+		resultClass="java.lang.String">
+		select
+		examineUid
+		from
+		attendance_examine_table
+		where attendanceId = #attendanceId# and
+		examinerState = 1 and isDelete = 1
+	</select>
+
+	<!-- 转让审批单 -->
+	<update id="transferExamineInfo" parameterClass="java.util.Map">
+        UPDATE
+        attendance_appeal_record
+        SET
+        examineUid = #examineUid#,examineName = #examineName#
+        WHERE
+        attendanceId = #attendanceId# AND examineUid = #formerExamineUid# AND examineState = 1
+	</update>
+
 
 	<!-- 考勤异常申诉记录录入 -->
 	<insert id="abnormalAppeal" parameterClass="richinfo.attendance.bean.AttendAppealReq">
@@ -3307,6 +3346,20 @@
         l.status = 0
     </select>
 
+
+
+    <select id="queryGroupCharge" parameterClass="java.util.Map"
+            resultClass="java.lang.Integer">
+        SELECT
+        COUNT(*)
+        FROM
+        attendance_chargeman_list acl
+        WHERE
+        acl.uid = #uid#
+        AND
+        acl.status = 0
+    </select>
+
     <!--查询考勤组负责人负责的考勤组-->
     <select id="queryChargeGroupByUid" parameterClass="java.lang.String"
         resultClass="java.lang.String" >
@@ -3676,4 +3729,252 @@
         </dynamic>
     </select>
 
+    <select id="getAttendanceIdByEnterId" parameterClass="java.lang.String"
+            resultClass="java.lang.String">
+        SELECT attendanceId
+        FROM attendance_group_info
+        WHERE enterId = #enterId#
+        AND status = 0
+    </select>
+
+
+    <select id="getAttendanceIdByEnterIdCount" parameterClass="java.lang.String"
+            resultClass="java.lang.Integer">
+        SELECT count(*)
+        FROM attendance_group_info
+        WHERE enterId = #enterId#
+        AND status = 0
+    </select>
+
+
+    <!--查询没有手机号码用户   每次查询100个-->
+    <select id="findEmployeeNoPhone" resultClass="richinfo.attendance.entity.AttendEmployee" parameterClass="java.lang.String">
+        SELECT
+        employeeId,contactId,enterId,uid,phone
+        FROM
+        attendance_employee_info
+        WHERE
+        STATUS = 0
+        AND attendanceId = #attendanceId#
+        AND (phone IS NULL OR TRIM(phone)='')
+    </select>
+    <!--更新补充号码的用户-->
+    <update id="updateComplementEmployee" parameterClass="richinfo.attendance.entity.AttendEmployee">
+        UPDATE
+        attendance_employee_info
+        SET
+        contactId = #contactId# , phone=#phone# , modifyTime = NOW()
+        WHERE
+        employeeId = #employeeId#
+    </update>
+    <!--查询正常使用的考勤组id-->
+    <select id="findGroupInNormal" resultClass="java.lang.String">
+        SELECT attendanceId FROM attendance_group_info WHERE STATUS = 0 LIMIT #startNumber#,#endNumber#
+    </select>
+    <!--根据uid查询负责的考勤组-->
+    <select id="queryGroupPrincipalByUid" parameterClass="java.lang.String">
+        SELECT attendanceId
+        FROM
+        attendance_chargeman_list
+        WHERE
+        STATUS = 0
+        AND
+        uid = #uid#
+    </select>
+
+    <select id="queryEquipmentList" parameterClass="java.util.Map"  resultClass="richinfo.attendance.entity.AttendanceEquipment">
+        SELECT
+        *
+        FROM attendance_equipment
+        WHERE
+        enterId = #enterId#
+        and equipmentStatus = 0
+        <isNotEmpty property="attendanceId" prepend="and">
+            attendanceId = #attendanceId#
+        </isNotEmpty>
+        <isNotEmpty property="employeeName" prepend="and">
+            employeeName LIKE CONCAT('%', #employeeName#, '%')
+        </isNotEmpty>
+        ORDER BY uid,createTime DESC
+    </select>
+
+    <select id="queryEquipments" parameterClass="java.util.Map"  resultClass="richinfo.attendance.entity.AttendanceEquipment">
+        SELECT
+        *
+        FROM attendance_equipment
+        WHERE
+        enterId = #enterId#
+        <isNotEmpty property="uid" prepend="and">
+            uid = #uid#
+        </isNotEmpty>
+        <isNotEmpty property="equipmentStatus" prepend="and">
+            equipmentStatus = #equipmentStatus#
+        </isNotEmpty>
+    </select>
+
+    <!--查询单个员工已绑定的设备数量-->
+    <select id="queryEquipmentNumByUid" parameterClass="java.util.Map"  resultClass="java.lang.Integer">
+        SELECT
+        count(*)
+        FROM attendance_equipment
+        WHERE
+        enterId = #enterId#
+        and uid = #uid#
+        and equipmentStatus = 0
+    </select>
+
+    <!--移除单个设备信息-->
+    <delete id="removeEquipment" parameterClass="java.util.Map">
+        DELETE FROM `attendance`.`attendance_equipment`
+        WHERE
+        `enterId` = #enterId#
+        AND
+        `uid` = #uid#
+        <isNotEmpty property="equipmentSerial" prepend="and">
+            equipmentSerial = #equipmentSerial#
+        </isNotEmpty>
+    </delete>
+
+    <!--根据设备限制数依照设备添加时间早晚自动删除设备-->
+    <delete id="floatEquipment" parameterClass="java.util.Map">
+        DELETE FROM `attendance`.`attendance_equipment`
+        WHERE
+        equipmentId IN (
+        SELECT equipmentId FROM
+        (SELECT a.equipmentId,a.uid,a.createTime,(SELECT COUNT(*) FROM attendance_equipment b
+        WHERE b.createTime>a.createTime AND b.uid=a.uid) AS cnt FROM attendance_equipment a
+        WHERE enterId = #enterId# AND equipmentStatus = 0
+        ) c WHERE c.cnt &gt;=  #limitCount#
+        )
+    </delete>
+
+    <!--关闭设备打卡功能-->
+    <delete id="setOffEquipment" parameterClass="java.util.Map">
+        DELETE FROM `attendance`.`attendance_equipment`
+        WHERE
+        enterId = #enterId#
+    </delete>
+
+    <!--根据员工uid修改设备管理表状态-->
+    <update id="updateEquipmentStatusByUid" parameterClass="java.util.Map">
+        UPDATE `attendance`.`attendance_equipment`
+        SET
+        equipmentStatus = 0
+        WHERE
+        enterId = #enterId# and `uid` = #uid#
+    </update>
+
+    <!--根据员工uid修改设备表中考勤组数据-->
+    <update id="updateEquipmentAttdenNameByUid" parameterClass="java.util.Map">
+        UPDATE `attendance`.`attendance_equipment`
+        SET
+        attendanceName = #attendanceName# , attendanceId = #attendanceId#
+        WHERE
+        enterId = #enterId# and
+        uid in
+        <iterate property="employee" open="(" close=")" conjunction=",">
+            #employee[].uid#
+        </iterate>
+    </update>
+
+    <!--批量修改设备列表考勤组数据-->
+    <update id="batchRemoveEquipmentAttdenName" parameterClass="richinfo.attendance.entity.AttendEmployee">
+        UPDATE
+        `attendance`.`attendance_equipment`
+        SET attendanceName = "", attendanceId = 0,updateTime = now()
+        WHERE enterId = #enterId# AND uid = #uid#
+    </update>
+
+    <!--插入设备数据-->
+    <insert id="insertEquipment" parameterClass="java.util.Map">
+        INSERT INTO `attendance`.`attendance_equipment`
+        (
+        `enterId`,
+        `uid`,
+        `employeeName`,
+        `contractId`,
+        `attendanceId`,
+        `attendanceName`,
+        `equipmentSerial`,
+        `equipmentStatus`,
+        `equipmentDeviceType`,
+        `createTime`,
+        `updateTime`
+        )
+        VALUES
+        (
+        #enterId#,
+        #uid#,
+        #employeeName#,
+        #contractId#,
+        #attendanceId#,
+        #attendanceName#,
+        #equipmentSerial#,
+        #equipmentStatus#,
+        #equipmentDeviceType#,
+        NOW(),
+        NOW()
+        )
+    </insert>
+
+    <!--更新企业设备管理数据-->
+    <update id="updateEquipmentStatus" parameterClass="java.util.Map">
+        UPDATE `attendance`.`attendance_equipment_control`
+        SET
+        `equipmentUseStatus` = #equipmentUseStatus#,`equipmentLimit` = #equipmentLimit#,updateTime = now()
+        WHERE
+        `enterId` = #enterId#
+    </update>
+
+    <!--插入企业设备管理-->
+    <insert id="insertEquipmentUseStatus" parameterClass="java.util.Map">
+        INSERT INTO `attendance`.`attendance_equipment_control`
+        (
+        `enterId`,
+        `equipmentUseStatus`,
+        equipmentLimit,
+        `createTime`,
+        `updateTime`
+        )
+        VALUES
+        (
+        #enterId#,
+        #equipmentUseStatus#,
+        #equipmentLimit#,
+        NOW(),
+        NOW()
+        )
+    </insert>
+
+    <!--查询设备管理状态-->
+    <select id="queryEquipmentStatus" parameterClass="java.util.Map"  resultClass="richinfo.attendance.entity.AttendanceEquipmentControl">
+        SELECT
+        *
+        FROM
+        `attendance`.`attendance_equipment_control`
+        WHERE
+        enterId = #enterId#
+    </select>
+
+    <!--批量删除设备控制表-->
+    <update id="delEquipmentStatusByEnterId" parameterClass="java.util.List">
+        UPDATE
+        `attendance`.`attendance_equipment_control`
+        SET `equipmentUseStatus` = 1 , updateTime = NOW()
+        WHERE
+        enterId in
+        <iterate  open="(" close=")" conjunction=",">
+            #delEnter[]#
+        </iterate>
+    </update>
+
+    <!--批量删除设备列表-->
+    <delete id="delEquipmentListByEnterId" parameterClass="java.util.List">
+        DELETE FROM `attendance`.`attendance_equipment`
+        WHERE
+        enterId in
+        <iterate  open="(" close=")" conjunction=",">
+            #delEnter[]#
+        </iterate>
+    </delete>
 </sqlMap>

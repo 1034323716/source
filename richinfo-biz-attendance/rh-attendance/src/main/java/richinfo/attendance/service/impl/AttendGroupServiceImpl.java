@@ -29,6 +29,7 @@ import richinfo.attendance.entity.AttendEmployee.EmployeeChargemanStatus;
 import richinfo.attendance.entity.AttendEmployee.EmployeeStatus;
 import richinfo.attendance.entity.AttendEmployee.EmployeeType;
 import richinfo.attendance.entity.AttendGroup.GroupStatus;
+import richinfo.attendance.entity.vo.AttendanceEquipmentVO;
 import richinfo.attendance.entity.vo.DetailVO;
 import richinfo.attendance.service.AttendGroupService;
 import richinfo.attendance.util.*;
@@ -38,6 +39,8 @@ import richinfo.dbcomponent.exception.PersistException;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+
+import static richinfo.attendance.common.AtdcResultSummary.ATDC108.NO_DATA;
 //import scala.util.parsing.json.JSON;
 
 /**
@@ -1608,16 +1611,14 @@ public class AttendGroupServiceImpl extends ServiceObject implements
                 return ;
             }
             // 校验经纬度有效性
-            if (attendClockSite.getLongitude() <= 0 || attendClockSite.getLatitude() <= 0)
-            {
+            if (attendClockSite.getLongitude() <= 0 || attendClockSite.getLatitude() <= 0) {
                 respBean.setCode(AtdcResultCode.ATDC104.PARAMS_INVALID);
                 respBean.setSummary(AtdcResultSummary.ATDC104.PARAMS_INVALID);
                 return;
             }
 
             // 校验打卡范围有效性(公司内打卡)
-            if (attendClockSite.getAttendanceRange() <= 0)
-            {
+            if (attendClockSite.getAttendanceRange() <= 0) {
                 respBean.setCode(AtdcResultCode.ATDC104.PARAMS_INVALID);
                 respBean.setSummary(AtdcResultSummary.ATDC104.PARAMS_INVALID);
                 return;
@@ -1625,22 +1626,18 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             // 考勤地点,长度校验
             String location = attendClockSite.getLocation();
             if (AssertUtil.isNotEmpty(location)
-                    && location.length() > config.getCommonNameLength())
-            {
+                    && location.length() > config.getCommonNameLength()) {
                 attendClockSite.setLocation(location.substring(0,
                         config.getCommonNameLength()));
             }
             // 考勤详细地址,长度校验
             String detailAddr = attendClockSite.getDetailAddr();
             if (AssertUtil.isNotEmpty(detailAddr)
-                    && detailAddr.length() > config.getDetailAddrLength())
-            {
+                    && detailAddr.length() > config.getDetailAddrLength()) {
                 attendClockSite.setDetailAddr(detailAddr.substring(0,
                         config.getDetailAddrLength()));
             }
         }
-
-
 
         // 校验打卡范围有效性(公司外打卡)
         /*if (reqParam.getOutRange() <= 0)
@@ -1673,10 +1670,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         }
 
         // 判断考勤组是否已添加了审批员逻辑业务部分
-        if ((AssertUtil.isEmpty(reqParam.getExamineName())
-            && AssertUtil.isNotEmpty(reqParam.getExamineUid()) || (AssertUtil
-            .isEmpty(reqParam.getExamineUid()) && AssertUtil
-            .isNotEmpty(reqParam.getExamineName()))))
+        if (AssertUtil.isEmpty(reqParam.getExamineName()) || AssertUtil.isEmpty(reqParam.getExamineUid()))
         {
             // 审批员基本信息姓名和uid要么都为空，要么都不为空，否则不予通过
             respBean.setCode(AtdcResultCode.ATDC104.PARAMS_INVALID);
@@ -1684,7 +1678,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             return;
         }
 
-        AttendAppealReq bean = new AttendAppealReq();
+       /* AttendAppealReq bean = new AttendAppealReq();
         bean.setAttendanceId(reqParam.getAttendanceId());
         AttendExamineEntity entity = null;
         try
@@ -1702,9 +1696,9 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             respBean.setCode(AtdcResultCode.ATDC107.DATA_PERSISTENCE_ERROR);
             respBean.setSummary(AtdcResultSummary.ATDC107.DATA_PERSISTENCE_ERROR);
             return;
-        }
-        if (AssertUtil.isEmpty(entity))
-        {
+        }*/
+      /*  if (AssertUtil.isEmpty(entity))
+        {*/
             // 考勤组未添加审批员
             if (AssertUtil.isEmpty(reqParam.getExamineName())
                 || AssertUtil.isEmpty(reqParam.getExamineUid()))
@@ -1714,8 +1708,8 @@ public class AttendGroupServiceImpl extends ServiceObject implements
                     .setSummary(AtdcResultSummary.ATDC104.ATTEND_NOTADD_EXAMINER);
                 return;
             }
-        }
-        if (AssertUtil.isNotEmpty(reqParam.getExamineName())
+       // }
+        /*if (AssertUtil.isNotEmpty(reqParam.getExamineName())
             && AssertUtil.isNotEmpty(reqParam.getExamineUid()))
         {
 
@@ -1730,7 +1724,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
                     return;
                 }
             }
-        }
+        }*/
 
         // 校验排班时间
         if (reqParam.getScheduleShifts().size() > 0)
@@ -1749,7 +1743,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             }
         }
 
-        if (AssertUtil.isNotEmpty(reqParam.getExamineName())
+        /*if (AssertUtil.isNotEmpty(reqParam.getExamineName())
             && AssertUtil.isNotEmpty(reqParam.getExamineUid())
             && AssertUtil.isNotEmpty(entity)
             && reqParam.getExamineName().equals(entity.getExamineName())
@@ -1758,7 +1752,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             // 如果传递的审批员信息与当前的一致，则表明无需更新修改，设定成null,方便具体业务处理sql
             reqParam.setExamineName(null);
             reqParam.setExamineUid(null);
-        }
+        }*/
     }
 
     /***
@@ -2103,7 +2097,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         if (AssertUtil.isEmpty(list))
         {
             res.setCode(AtdcResultCode.S_OK);
-            res.setSummary(AtdcResultSummary.ATDC108.NO_DATA);
+            res.setSummary(NO_DATA);
             return res;
         }
         for (AttendGroupWithEmpRes attendGroupWithEmpRes : list){
@@ -2191,7 +2185,15 @@ public class AttendGroupServiceImpl extends ServiceObject implements
                 userGroup.setUid(reqParam.getUserInfo().getUid());
                 userGroup.setEnterName(reqParam.getUserInfo().getEnterName());
             }
-
+            Map<String,Object> paramMap = new HashMap<>();
+            paramMap.put("uid",reqParam.getUserInfo().getUid());
+            int i = groupDao.queryGroupCharge(paramMap);
+            logger.info("isCurrentUserCharge={}",i);
+            if (i>0) {
+                res.setCharge("1");
+            } else {
+                res.setCharge("0");
+            }
             res.setUserGroup(userGroup);
         }
         catch (PersistException e)
@@ -2315,7 +2317,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             reqParam.getEnterId(), AttendGroup.GroupStatus.Normal.getValue(), userInfo);
         if (AssertUtil.isEmpty(list)) {
             res.setCode(AtdcResultCode.S_OK);
-            res.setSummary(AtdcResultSummary.ATDC108.NO_DATA);
+            res.setSummary(NO_DATA);
             return res;
         }
         for (AttendGroupWithEmpRes attendGroupWithEmpRes : list){
@@ -2373,7 +2375,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         if (AssertUtil.isEmpty(list))
         {
             res.setCode(AtdcResultCode.S_OK);
-            res.setSummary(AtdcResultSummary.ATDC108.NO_DATA);
+            res.setSummary(NO_DATA);
             return res;
         }
         res.setData(list);
@@ -2603,13 +2605,15 @@ public class AttendGroupServiceImpl extends ServiceObject implements
     public List<AttendDepartmentChooser> detectionJoinGroup(AttendEmployee employee,UserInfo userInfo) {
         String enterId = employee.getEnterId();
         String uid = employee.getUid();
-        //查询是否存在考勤组
-        AttendEmployee attendEmployee = employeeDao.queryEmployeeByUidAndWhitelist(uid);
+
         //不为空直接返回
-        if (AssertUtil.isNotEmpty(attendEmployee)&&(attendEmployee.getStatus() == EmployeeStatus.Normal.getValue()
+       /* if (AssertUtil.isNotEmpty(attendEmployee)&&(attendEmployee.getStatus() == EmployeeStatus.Normal.getValue()
                 || attendEmployee.getStatus() == EmployeeStatus.Whitelist.getValue() )){
             return null;
             //为空判断 则进行部门选择器操作
+        }*/
+        if(userInfo.getAttendanceId() != 0 || userInfo.getWhitelistStatus() == 1){
+            return null;
         }
 
             //获取企业下所有部门的考勤组的部门选择器
@@ -2675,25 +2679,32 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         attendanceIds = null;
         //只有一个考勤组 自动加入考勤组
         //查询用户是否在企业白名单中
-        AttendWhitelistEntity attendWhitelistEntity = attendWhitelistDao.queryEnterWhitelistByUid(uid,AttendWhitelistEntity.EmployeeStatus.Normal.getValue());
+        //AttendWhitelistEntity attendWhitelistEntity = attendWhitelistDao.queryEnterWhitelistByUid(uid,AttendWhitelistEntity.EmployeeStatus.Normal.getValue());
 
-        if (AssertUtil.isNotEmpty(attendWhitelistEntity)){
+        /*if (AssertUtil.isNotEmpty(attendWhitelistEntity)){
             employee.setStatus(EmployeeStatus.Whitelist.getValue());
         }else {
             employee.setStatus(EmployeeStatus.Normal.getValue());
-        }
+        }*/
+        //查询是否存在考勤组
+        AttendEmployee attendEmployee = employeeDao.queryEmployeeByUidAndWhitelist(uid);
         //添加考勤组id
         if (AssertUtil.isNotEmpty(attendEmployee) && attendEmployee.getStatus() == EmployeeStatus.Abnormal.getValue()){
             attendEmployee.setAttendanceId(attendanceId);
             //更新
             attendEmployee.setModifyTime(new Date());
             attendEmployee.setStatus(employee.getStatus());
+            //查询是否是考勤组负责人
+            //查询负责的考勤组
+            List<String> groupIds = groupDao.queryGroupPrincipalByUid(attendEmployee.getUid());
+            attendEmployee.setRoleType(groupIds != null && groupIds.size() > 0 ? 1:0);
+
             employeeDao.updateEmployee(attendEmployee);
             againCacheUser(userInfo);
             return null;
         }
         //由于用户跳转过来没有带用户名  所以需要查询企业通讯录获取用户名
-        Map<String, Object> itemMap;
+        Map<String, Object> itemMap ;
         try {
             itemMap = QytxlUtil.getInstance().getItem(employee.getEnterId(), employee.getContactId());
         } catch (Exception e) {
@@ -2725,6 +2736,10 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         employee.setAttendanceId(attendanceId);
         employee.setCreateTime(new Date());
         employee.setModifyTime(new Date());
+        //查询是否是考勤组负责人
+        //查询负责的考勤组
+        List<String> groupIds = groupDao.queryGroupPrincipalByUid(employee.getUid());
+        employee.setRoleType(groupIds != null && groupIds.size() > 0 ? 1:0);
         employeeDao.saveEmployee(employee);
         againCacheUser(userInfo);
             return null;
@@ -2754,8 +2769,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         userInfoCache.save(
                 userInfo.getToken(),
                 user,
-                AttendanceConfig.getInstance().getPropertyLong(
-                        "attend.user.cacheTime", 1800000));
+            1800000);
     }
 
     /**
@@ -2787,6 +2801,10 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         if (AssertUtil.isNotEmpty(employee)){
             employee.setAttendanceId(req.getAttendanceId());
             employee.setStatus(status);
+            //查询是否是考勤组负责人
+            //查询负责的考勤组
+            List<String> groupIds = groupDao.queryGroupPrincipalByUid(employee.getUid());
+            employee.setRoleType(groupIds != null && groupIds.size() > 0 ? 1:0);
             employeeDao.updateEmployee(employee);
             againCacheUser(userInfo);
             return res;
@@ -2841,7 +2859,11 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         attendEmployee.setEmployeeName(name);
         attendEmployee.setCreateTime(new Date());
         attendEmployee.setModifyTime(new Date());
-         employeeDao.saveEmployee(attendEmployee);
+        //查询是否是考勤组负责人
+        //查询负责的考勤组
+        List<String> groupIds = groupDao.queryGroupPrincipalByUid(attendEmployee.getUid());
+        attendEmployee.setRoleType(groupIds != null && groupIds.size() > 0 ? 1:0);
+        employeeDao.saveEmployee(attendEmployee);
         againCacheUser(userInfo);
         //保存
         return res;
@@ -3024,7 +3046,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         }
         List<UserInfo> chargeMans = groupReq.getChargemanList();
 
-        //移除时同步 负责人身份 事务性后改
+        //移除时同步 负责人身份
         List<String> attendanceIds = employeeDao.queryChargeGroupByUid(groupReq.getUid());
 
         if (AssertUtil.isEmpty(attendanceIds)) {
@@ -3312,37 +3334,6 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         }
     }
 
-    @Override
-    public String getEmployeesByEnterId(String enterId,String mobile,String matchHint) {
-        try {
-//            String repMap = QytxlUtil.getInstance().getEmployeesByEnterId(enterId,mobile,matchHint);
-
-//            if(0 == (int)repMap.get("error_code")){
-//                List<Map<String,Object>> items =(List<Map<String,Object>>) repMap.get("items");
-//                logger.info("items={}",items);
-//                List<AttendEmployee> employees = new ArrayList<>();
-//                AttendEmployee employee = new AttendEmployee();
-//                for (Map<String,Object> item:items) {
-//                    employee.setEnterId(enterId);
-//                    employee.setUid((String) item.get("euserId"));
-//                    employee.setEmployeeName(AesUtils.decrypt((String) item.get("euserId"),
-//                        AttendanceConfig.getInstance().getProperty("attend.qytxl.aes_key",
-//                            "6af15ca383ee45dd")));
-//                    employee.setContactId((String) item.get("contactId"));
-//                    employees.add(employee);
-//                    employee = new AttendEmployee();
-//                }
-//
-//                return employees;
-//            }
-            return  null;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "查询失败！";
-    }
-
-
     /**
      *指定更换企业考勤组审批人与转移审批单
      * @param map
@@ -3360,7 +3351,293 @@ public class AttendGroupServiceImpl extends ServiceObject implements
     }
 
     @Override
+    public List<String> getAttendanceIdByEnterId(String enterId) {
+        return groupDao.getAttendanceIdByEnterId(enterId);
+    }
+
+    @Override
+    public int getAttendanceIdByEnterIdCount(String enterId) {
+        return groupDao.getAttendanceIdByEnterIdCount(enterId);
+    }
+
+    @Override
     public int getCurrentDayDateCount(Map<String, String> map) {
         return groupDao.getCurrentDayDateCount(map);
+    }
+
+    @Override
+    public AttendGroupRes queryEquipmentList(AttendGroupReq attendGroupReq, HttpServletRequest request) {
+        logger.info("queryEquipmentList enterId={}|userInfo={}",
+            attendGroupReq.getEnterId(), attendGroupReq.getUserInfo());
+        AttendGroupRes attendGroupRes = new AttendGroupRes();
+
+        //参数校验
+        if (AssertUtil.isEmpty(attendGroupReq.getEnterId())) {
+            attendGroupRes.setCode(AtdcResultCode.ATDC104.PARAMS_INVALID);
+            attendGroupRes.setSummary(AtdcResultSummary.ATDC104.PARAMS_INVALID);
+            return attendGroupRes;
+        }
+
+        Map<String,Object> queryParam = new HashMap();
+        queryParam.put("enterId",attendGroupReq.getEnterId());
+        if (AssertUtil.isNotEmpty(attendGroupReq.getAttendId())) {
+            queryParam.put("attendanceId",attendGroupReq.getAttendId());
+        }
+        if (AssertUtil.isNotEmpty(attendGroupReq.getEmployeeName())) {
+            queryParam.put("employeeName",attendGroupReq.getEmployeeName());
+        }
+
+        logger.info("queryParam={}",queryParam);
+        List<AttendanceEquipment> equipmentList = groupDao.queryEquipmentList(queryParam);
+        logger.info("equipmentList.size()={}",equipmentList.size());
+        for (AttendanceEquipment equipment:equipmentList) {
+            logger.info("equipment={}",equipment.toString());
+        }
+        Map<String,Object> temp = new HashMap();
+        temp.put("enterId",attendGroupReq.getUserInfo().getEnterId());
+        AttendanceEquipmentControl attendanceEquipmentControl = groupDao.queryEquipmentStatus(temp);
+        AttendanceEquipmentVO equipmentVO = new AttendanceEquipmentVO();
+        if (AssertUtil.isNotEmpty(equipmentList)) {
+            List<AttendanceEquipmentVO> resultList = new ArrayList<>();
+            for (int i=0;i<equipmentList.size();i++) {
+                AttendanceEquipment equipment = equipmentList.get(i);
+                if (AssertUtil.isEmpty(equipmentVO.getUid())) {
+                    equipmentVO.setUid(equipment.getUid());
+                    equipmentVO.setAttendanceName(equipment.getAttendanceName());
+                    equipmentVO.setEmployeeName(equipment.getEmployeeName());
+                    equipmentVO.setContractId(equipment.getContractId());
+                    equipmentVO.setEquipmentLimit(attendanceEquipmentControl.getEquipmentLimit());
+                    equipmentVO.setFirstEquipmentSerial(equipment.getEquipmentSerial());
+                    equipmentVO.setFirstEquipmentDeviceType(equipment.getEquipmentDeviceType());
+                    equipmentVO.setFirstEquipmentStatus(equipment.getEquipmentStatus());
+                } else {
+                    logger.info("isEqual={}",equipment.getUid().equals(equipmentVO.getUid()));
+                    if (equipment.getUid().equals(equipmentVO.getUid())) {
+                        if (AssertUtil.isNotEmpty(equipmentVO.getFirstEquipmentSerial()) && AssertUtil.isNotEmpty(equipmentVO.getSecondEquipmentSerial())
+                            && "0".equals(equipmentVO.getFirstEquipmentStatus()) && "0".equals(equipmentVO.getSecondEquipmentStatus())) {
+                            equipmentVO.setThirdEquipmentSerial(equipment.getEquipmentSerial());
+                        }
+                        if (AssertUtil.isNotEmpty(equipmentVO.getThirdEquipmentSerial())) {
+                            equipmentVO.setThirdEquipmentDeviceType(equipment.getEquipmentDeviceType());
+                        }
+                        if (AssertUtil.isNotEmpty(equipmentVO.getThirdEquipmentSerial())) {
+                            equipmentVO.setThirdEquipmentStatus(equipment.getEquipmentStatus());
+                        }
+                        if (AssertUtil.isNotEmpty(equipmentVO.getFirstEquipmentSerial()) && "0".equals(equipmentVO.getFirstEquipmentStatus()) && AssertUtil.isEmpty(equipmentVO.getThirdEquipmentSerial())) {
+                            equipmentVO.setSecondEquipmentSerial(equipment.getEquipmentSerial());
+                        }
+                        if (AssertUtil.isNotEmpty(equipmentVO.getSecondEquipmentSerial()) && AssertUtil.isEmpty(equipmentVO.getThirdEquipmentSerial())) {
+                            equipmentVO.setSecondEquipmentDeviceType(equipment.getEquipmentDeviceType());
+                        }
+                        if (AssertUtil.isNotEmpty(equipmentVO.getSecondEquipmentSerial()) && AssertUtil.isEmpty(equipmentVO.getThirdEquipmentSerial())) {
+                            equipmentVO.setSecondEquipmentStatus(equipment.getEquipmentStatus());
+                        }
+                    } else {
+                        resultList.add(equipmentVO);
+                        equipmentVO = new AttendanceEquipmentVO();
+                        equipmentVO.setUid(equipment.getUid());
+                        equipmentVO.setAttendanceName(equipment.getAttendanceName());
+                        equipmentVO.setEmployeeName(equipment.getEmployeeName());
+                        equipmentVO.setContractId(equipment.getContractId());
+                        equipmentVO.setEquipmentLimit(attendanceEquipmentControl.getEquipmentLimit());
+                        equipmentVO.setFirstEquipmentSerial(equipment.getEquipmentSerial());
+                        equipmentVO.setFirstEquipmentDeviceType(equipment.getEquipmentDeviceType());
+                        equipmentVO.setFirstEquipmentStatus(equipment.getEquipmentStatus());
+                    }
+                }
+                if (i==equipmentList.size()-1) {
+                    resultList.add(equipmentVO);
+                }
+            }
+            System.out.println(resultList.size());
+            for (AttendanceEquipmentVO equipment : resultList) {
+                logger.info("AttendanceEquipmentVO={}",equipment.toString());
+            }
+            attendGroupRes.setEquipmentLimit(attendanceEquipmentControl.getEquipmentLimit());
+            attendGroupRes.setSummary("成功!");
+            attendGroupRes.setCode(AtdcResultCode.S_OK);
+            attendGroupRes.setEquipmentList(resultList);
+        } else {
+            attendGroupRes.setEquipmentLimit(attendanceEquipmentControl==null?"0":attendanceEquipmentControl.getEquipmentLimit());
+            attendGroupRes.setSummary(AtdcResultSummary.ATDC108.NO_DATA);
+            attendGroupRes.setCode(AtdcResultCode.S_OK);
+        }
+        return attendGroupRes;
+    }
+
+    @Override
+    public AttendGroupRes removeEquipment(AttendGroupReq attendGroupReq, HttpServletRequest request) {
+        logger.info("removeEquipment enterId={}|userInfo={}",
+            attendGroupReq.getEnterId(), attendGroupReq.getUserInfo());
+        AttendGroupRes attendGroupRes = new AttendGroupRes();
+
+        //参数校验
+        if (AssertUtil.isEmpty(attendGroupReq.getEnterId()) || AssertUtil.isEmpty(attendGroupReq.getUid())) {
+            attendGroupRes.setCode(AtdcResultCode.ATDC104.PARAMS_INVALID);
+            attendGroupRes.setSummary(AtdcResultSummary.ATDC104.PARAMS_INVALID);
+            return attendGroupRes;
+        }
+
+        Map<String,Object> removeParam = new HashMap();
+        removeParam.put("enterId",attendGroupReq.getEnterId());
+        removeParam.put("uid",attendGroupReq.getUid());
+        removeParam.put("updateTime",new Date());
+        if (AssertUtil.isNotEmpty(attendGroupReq.getEquipmentSerial())) {
+            removeParam.put("equipmentSerial",attendGroupReq.getEquipmentSerial());
+        }
+
+        logger.info("removeParam={}",removeParam);
+        int result = groupDao.removeEquipment(removeParam);
+
+        if (result<0) {
+            attendGroupRes.setSummary("失败!");
+            attendGroupRes.setCode(AtdcResultCode.S_ERROR);
+        } else {
+            attendGroupRes.setSummary("成功!");
+            attendGroupRes.setCode(AtdcResultCode.S_OK);
+        }
+        return attendGroupRes;
+    }
+
+    @Override
+    public AttendGroupRes setEquipmentLimit(AttendGroupReq attendGroupReq, HttpServletRequest request) {
+        logger.info("setEquipmentLimit enterId={}|userInfo={}",
+            attendGroupReq.getEnterId(), attendGroupReq.getUserInfo());
+        AttendGroupRes attendGroupRes = new AttendGroupRes();
+
+        //参数校验
+        if (AssertUtil.isEmpty(attendGroupReq.getEnterId())) {
+            attendGroupRes.setCode(AtdcResultCode.ATDC104.PARAMS_INVALID);
+            attendGroupRes.setSummary(AtdcResultSummary.ATDC104.PARAMS_INVALID);
+            return attendGroupRes;
+        }
+
+        Map<String,Object> temp = new HashMap();
+        temp.put("enterId",attendGroupReq.getUserInfo().getEnterId());
+        AttendanceEquipmentControl attendanceEquipmentControl = groupDao.queryEquipmentStatus(temp);
+
+        temp.put("equipmentLimit",attendGroupReq.getEquipmentLimit());
+        temp.put("equipmentUseStatus",attendGroupReq.getEquipmentStatus());
+
+        logger.info("temp={}",temp);
+        if (AssertUtil.isEmpty(attendanceEquipmentControl)) {
+            if (!groupDao.insertEquipmentUseStatus(temp)) {
+                attendGroupRes.setSummary("失败!");
+                attendGroupRes.setCode(AtdcResultCode.S_ERROR);
+            }
+        } else {
+            if (!groupDao.updateEquipmentStatus(temp)) {
+                attendGroupRes.setSummary("失败!");
+                attendGroupRes.setCode(AtdcResultCode.S_ERROR);
+            }
+        }
+
+        groupDao.floatEquipment(temp);
+        attendGroupRes.setSummary("成功!");
+        attendGroupRes.setCode(AtdcResultCode.S_OK);
+        return attendGroupRes;
+    }
+
+    @Override
+    public AttendGroupRes insertEquipment(AttendGroupReq attendGroupReq, HttpServletRequest request) {
+        logger.info("insertEquipment userInfo={}", attendGroupReq.getUserInfo());
+        AttendGroupRes attendGroupRes = new AttendGroupRes();
+        //参数校验
+        checkSetEquipmentParam(attendGroupReq,attendGroupRes);
+
+        //根据enterid查得equipmentLimit
+        Map<String,Object> temp = new HashMap();
+        temp.put("enterId",attendGroupReq.getUserInfo().getEnterId());
+        AttendanceEquipmentControl attendanceEquipmentControl = groupDao.queryEquipmentStatus(temp);
+        if (AssertUtil.isNotEmpty(attendanceEquipmentControl)) {
+            if ("0".equals(attendanceEquipmentControl.getEquipmentUseStatus())) {
+                if (AssertUtil.isEmpty(attendGroupReq.getEquipmentSerial())) {
+                    attendGroupRes.setCode(AtdcResultCode.S_ERROR);
+                    attendGroupRes.setSummary("获取设备号失败，请更新和飞信最新版");
+                    return attendGroupRes;
+                }
+            }
+        }
+        //获取该企业已录入的设备列表
+        List<AttendanceEquipment> equipmentList = groupDao.queryEquipments(temp);
+        logger.info("equipmentList={}",equipmentList.toString());
+        logger.info("equipmentList.size()={}",equipmentList.size());
+        temp.put("uid",attendGroupReq.getUserInfo().getUid());
+        //判断该员工的设备是否已经满额
+        boolean flag = false;
+        //若该列表为空 则说明没有录入过 需要录入
+        if (AssertUtil.isEmpty(equipmentList)) {
+            flag = true;
+        } else {
+            for (AttendanceEquipment equipment:equipmentList) {
+                logger.info("equipment={}",equipment.toString());
+                //判断是否已经有录入过相同的设备 若已经录入则不再录入
+                if (attendGroupReq.getEquipmentSerial().equals(equipment.getEquipmentSerial())) {
+                    //判端该已有设备是否是本人
+                    logger.info("isEqs={}",attendGroupReq.getUserInfo().getUid().equals(equipment.getUid()));
+                    if (attendGroupReq.getUserInfo().getUid().equals(equipment.getUid())) {
+                        //若已录入的设备被删除则还原
+                        if (groupDao.updateEquipmentStatusByUid(temp)) {
+                            attendGroupRes.setSummary("成功!");
+                            attendGroupRes.setCode(AtdcResultCode.S_OK);
+                            return attendGroupRes;
+                        }
+                    } else {
+                        if ("0".equals(equipment.getEquipmentStatus())) {
+                            attendGroupRes.setCode(AtdcResultCode.S_ERROR);
+                            attendGroupRes.setSummary("当前设备已被他人绑定");
+                            return attendGroupRes;
+                        }
+                        flag = false;
+                        break;
+                    }
+                } else {
+                    flag = true;
+                }
+            }
+        }
+        if (flag) {
+            int i = groupDao.queryEquipmentNumByUid(temp);
+            if (Integer.parseInt(attendanceEquipmentControl.getEquipmentLimit()) == i) {
+                attendGroupRes.setCode(AtdcResultCode.S_ERROR);
+                attendGroupRes.setSummary("超出限制设备数量");
+                return attendGroupRes;
+            } else {
+                Map<String,Object> setEquipmentParam = new HashMap();
+                setEquipmentParam.put("enterId",attendGroupReq.getUserInfo().getEnterId());
+                setEquipmentParam.put("uid",attendGroupReq.getUserInfo().getUid());
+                setEquipmentParam.put("employeeName",attendGroupReq.getUserInfo().getEmployeeName());
+                setEquipmentParam.put("contractId",attendGroupReq.getUserInfo().getContactId());
+                setEquipmentParam.put("attendanceId",attendGroupReq.getUserInfo().getAttendanceId());
+                setEquipmentParam.put("attendanceName",attendGroupReq.getAttendanceName()==null?"":attendGroupReq.getAttendanceName());//
+                setEquipmentParam.put("equipmentSerial",attendGroupReq.getEquipmentSerial());
+                setEquipmentParam.put("equipmentStatus",0);
+                setEquipmentParam.put("equipmentDeviceType",attendGroupReq.getEquipmentDeviceType());
+                logger.info("setEquipmentParam={}",setEquipmentParam);
+                if (!groupDao.insertEquipment(setEquipmentParam)) {
+                    attendGroupRes.setSummary("录入失败!");
+                    attendGroupRes.setCode(AtdcResultCode.S_ERROR);
+                    return attendGroupRes;
+                }
+            }
+        }
+        attendGroupRes.setSummary("成功!");
+        attendGroupRes.setCode(AtdcResultCode.S_OK);
+        return attendGroupRes;
+        }
+
+    private void checkSetEquipmentParam(AttendGroupReq attendGroupReq,AttendGroupRes attendGroupRes){
+        if (AssertUtil.isEmpty(attendGroupReq.getEquipmentSerial())) {
+            attendGroupRes.setCode(AtdcResultCode.ATDC104.PARAMS_INVALID);
+            attendGroupRes.setSummary(AtdcResultSummary.ATDC104.PARAMS_INVALID);
+        }
+        if (AssertUtil.isEmpty(attendGroupReq.getEquipmentDeviceType())) {
+            attendGroupRes.setCode(AtdcResultCode.ATDC104.PARAMS_INVALID);
+            attendGroupRes.setSummary(AtdcResultSummary.ATDC104.PARAMS_INVALID);
+        }
+        if (AssertUtil.isEmpty(attendGroupReq.getAttendanceName())) {
+            attendGroupRes.setCode(AtdcResultCode.ATDC104.PARAMS_INVALID);
+            attendGroupRes.setSummary(AtdcResultSummary.ATDC104.PARAMS_INVALID);
+        }
     }
 }

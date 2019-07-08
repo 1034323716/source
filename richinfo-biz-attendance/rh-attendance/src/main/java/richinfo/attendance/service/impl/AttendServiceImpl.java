@@ -114,7 +114,6 @@ public class AttendServiceImpl implements AttendService
             }else {
                 //说明一条上班  一条下班
                 if (employeeMonthDetail.getGoWork() != null &&
-
                         TimeUtil.formatDateTime(attendEntity.getAttendanceTime(),TimeUtil.BASE_TIME_FORMAT)
                                 .equals(TimeUtil.formatDateTime(employeeMonthDetail.getGoWork(),TimeUtil.BASE_TIME_FORMAT))){
                     //封装上班打卡数据
@@ -332,8 +331,7 @@ public class AttendServiceImpl implements AttendService
     public AttendRes clock(AttendReq attendReq) {
         // 校验请求参数
         AttendRes attendRes = checkClockReqPara(attendReq);
-        if (!attendRes.isSuccess())
-        {
+        if (!attendRes.isSuccess()) {
             logger.warn("checkClockReqPara falied.attendReq={}", attendReq);
             return attendRes;
         }
@@ -341,9 +339,59 @@ public class AttendServiceImpl implements AttendService
         // 组装打卡记录
         AttendEntity attendRecord = assembleAttendRecord(attendReq);
         logger.info("打卡封装参数完成 attendRecord={},outWorkRemark={}",attendRecord,attendRecord.getOutWorkRemark());
-       
+
+        //查询该打卡员工有无设备开启设备打卡功能
+        //根据enterid查得equipmentLimit
+        Map<String,Object> temp = new HashMap();
+        temp.put("enterId",attendReq.getUserInfo().getEnterId());
+        AttendanceEquipmentControl attendanceEquipmentControl = attendGroupDao.queryEquipmentStatus(temp);
+        if (AssertUtil.isNotEmpty(attendanceEquipmentControl)) {
+            if ("0".equals(attendanceEquipmentControl.getEquipmentUseStatus())) {
+                if (AssertUtil.isEmpty(attendReq.getEquipmentSerial())) {
+                    attendRes.setCode(AtdcResultCode.S_ERROR);
+                    attendRes.setSummary("获取设备号失败，请更新和飞信最新版");
+                    return attendRes;
+                }
+                //获取该企业已录入的设备列表
+                List<AttendanceEquipment> equipmentList = attendGroupDao.queryEquipments(temp);
+                temp.put("uid",attendReq.getUserInfo().getUid());
+                int i = attendGroupDao.queryEquipmentNumByUid(temp);
+                boolean flag = false;
+                //若该列表为空 则说明没有录入过
+                if (AssertUtil.isEmpty(equipmentList)) {
+                    flag = true;
+                } else {
+                    for (AttendanceEquipment equipment:equipmentList) {
+                        //判断是否已经有录入过相同的设备 若已经录入则不再录入 若已录入的设备被删除则还原
+                        if (attendReq.getEquipmentSerial().equals(equipment.getEquipmentSerial()) && "0".equals(equipment.getEquipmentStatus())) {
+                            //判断该设备是否是本人的
+                            flag = attendReq.getUid().equals(equipment.getUid());
+                            break;
+                        } else {
+                            flag = true;
+                            break;
+                        }
+                    }
+                }
+                if (flag) {
+                    //判断该员工的设备是否已经满额
+                    if (Integer.parseInt(attendanceEquipmentControl.getEquipmentLimit()) < i) {
+                        attendRes.setCode(AtdcResultCode.S_ERROR);
+                        attendRes.setSummary("设备数量超出了限制");
+                        return attendRes;
+                    }
+                } else {
+                    attendRes.setCode(AtdcResultCode.S_ERROR);
+                    attendRes.setSummary("当前设备已被绑定，无法打卡");
+                    return attendRes;
+                }
+            }
+        }
+
+        logger.info("**********************clockSerial={}",attendReq.getEquipmentSerial()+"******************************");
         // 员工打卡
-        return attendDao.saveAttendRecord(attendRecord);
+        attendRes = attendDao.saveAttendRecord(attendRecord);
+        return attendRes;
     }
 
     /**

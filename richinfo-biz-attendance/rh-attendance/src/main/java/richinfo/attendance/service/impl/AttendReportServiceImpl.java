@@ -527,50 +527,6 @@ public class AttendReportServiceImpl implements AttendReportService
 //            entity1.setEmployeeName("CCCC");
 //            list.add(entity1);
 
-            List<TeamMonthEntity> insertList = new ArrayList<TeamMonthEntity>();
-
-            //导出团队月报需要新增手机 但该项是允许为空的 因此需要调用通讯来获取手机号
-//            for (TeamMonthEntity entity : list) {
-//                if (AssertUtil.isEmpty(entity.getPhone())) {
-//                    Map<String, Object> itemMap;
-//                    try {
-//                        itemMap = QytxlUtil.getInstance().getItem(reqParam.getEnterId(), entity.getContactId());
-//                    } catch (Exception e) {
-//                        logger.error("getItem error 一次 EnterId={}|ContactId()={}|e={}",reqParam.getUserInfo().getEnterId(), reqParam.getUserInfo().getContactId(),e);
-//                        e.printStackTrace();
-//                        try {
-//                            itemMap =  QytxlUtil.getInstance().getItem(reqParam.getUserInfo().getEnterId(),reqParam.getUserInfo().getContactId());
-//                        } catch (Exception e1) {
-//                            e1.printStackTrace();
-//                            logger.error("getItem error 二次 EnterId={}|ContactId()={}|e={}",reqParam.getUserInfo().getEnterId(), reqParam.getUserInfo().getContactId(),e);
-//                            itemMap = null;
-//                        }
-//                    }
-//                    String phone = "已离职";
-//                    if (AssertUtil.isNotEmpty(itemMap.get("item"))) {
-//                        Map jsonObject = (Map) itemMap.get("item");
-//                        phone = (String) jsonObject.get("regMobile");
-//                        try {
-//                            phone = AesUtils.decrypt(phone, AttendanceConfig.getInstance()
-//                                .getProperty("attend.qytxl.aes_key",
-//                                    "258e5059518c4f56"));
-//                        } catch (Exception e) {
-//                            e.printStackTrace();
-//                            logger.error("AES 解密异常 regMobile={}|e={}",phone,e);
-//                        }
-//                    }
-//                    entity.setPhone(phone);
-//                    insertList.add(entity);
-//                }
-//            }
-
-            if (AssertUtil.isNotEmpty(insertList)) {
-                if (!reportDao.batchInsertPhone(insertList)){
-                    res.setCode(AtdcResultCode.S_OK);
-                    res.setSummary(AtdcResultSummary.ATDC107.DATA_PERSISTENCE_ERROR);
-                    return res;
-                }
-            }
 
             int count = AssertUtil.isEmpty(list) ? 0 : list.size();
             logger.info("sendTeamMonthStatistics enterId={}|month={}|recvEmail={}|phone={}|listSize={}",
@@ -623,7 +579,7 @@ public class AttendReportServiceImpl implements AttendReportService
      */
     private String exportTeamMonthlyExecl(String enterName, String month, List<TeamMonthEntity> list) {
         String title = "【" + enterName + "】 打卡统计团队月报-" + month;
-        String[] rowsName = new String[] { "部门", "员工","contractId" ,"正常", "外勤", "迟到", "早退",
+        String[] rowsName = new String[] { "部门", "员工","contractId" ,"手机号码","正常", "外勤", "迟到", "早退",
             "未打卡","已申诉" };
 
         List<Object[]> dataList = new ArrayList<Object[]>();
@@ -634,13 +590,13 @@ public class AttendReportServiceImpl implements AttendReportService
             objs[0] = entity.getAttendanceName();
             objs[1] = entity.getEmployeeName();
             objs[2] = (entity.getContactId());
-//            objs[3] = entity.getPhone()==null?"-":entity.getPhone().equals("")?"-":entity.getPhone();
-            objs[3] = entity.getNormalDays();
-            objs[4] = entity.getOutsideDays();
-            objs[5] = entity.getLateDays();
-            objs[6] = entity.getEarlyDays();
-            objs[7] = entity.getNotClockedDays();
-            objs[8] = entity.getAppealDays();
+            objs[3] = entity.getPhone()==null || entity.getPhone().equals("") ?"-":entity.getPhone();
+            objs[4] = entity.getNormalDays();
+            objs[5] = entity.getOutsideDays();
+            objs[6] = entity.getLateDays();
+            objs[7] = entity.getEarlyDays();
+            objs[8] = entity.getNotClockedDays();
+            objs[9] = entity.getAppealDays();
             dataList.add(objs);
         }
 
@@ -660,7 +616,7 @@ public class AttendReportServiceImpl implements AttendReportService
      */
     private String exportTeamMonthlyExeclNew(String enterName, String month, List<TeamMonthEntity> list) {
         String title = "【" + enterName + "】 打卡统计团队月报-" + month;
-        String[] rowsName = new String[] { "部门", "员工" , "正常", "外勤", "迟到", "早退",
+        String[] rowsName = new String[] { "部门", "员工" ,"手机号码", "正常", "外勤", "迟到", "早退",
             "上午未打卡","下午未打卡","contractId" };
 
         List<Object[]> dataList = new ArrayList<Object[]>();
@@ -670,14 +626,14 @@ public class AttendReportServiceImpl implements AttendReportService
             objs = new Object[rowsName.length];
             objs[0] = entity.getAttendanceName();
             objs[1] = entity.getEmployeeName();
-//            objs[2] = entity.getPhone()==null?"-":entity.getPhone().equals("")?"-":entity.getPhone();
-            objs[2] = entity.getNormalDays();
-            objs[3] = entity.getOutsideDays();
-            objs[4] = entity.getLateDays();
-            objs[5] = entity.getEarlyDays();
-            objs[6] = entity.getGoNotClockedDays();
-            objs[7] = entity.getLeaveNotClockedDays();
-            objs[8] = entity.getContactId();
+            objs[2] = entity.getPhone()==null || entity.getPhone().equals("") ? "-" : entity.getPhone();
+            objs[3] = entity.getNormalDays();
+            objs[4] = entity.getOutsideDays();
+            objs[5] = entity.getLateDays();
+            objs[6] = entity.getEarlyDays();
+            objs[7] = entity.getGoNotClockedDays();
+            objs[8] = entity.getLeaveNotClockedDays();
+            objs[9] = entity.getContactId();
             dataList.add(objs);
         }
 
@@ -840,50 +796,6 @@ public class AttendReportServiceImpl implements AttendReportService
 
         List<TeamDailyEntity> list = reportDao.queryTeamDailyInfo(teamReq, userInfo);
 
-        List<TeamDailyEntity> insertList = new ArrayList<TeamDailyEntity>();
-
-        //导出团队月报需要新增手机 但该项是允许为空的 因此需要调用通讯来获取手机号
-//        for (TeamDailyEntity entity : list) {
-//            if (AssertUtil.isEmpty(entity.getPhone())) {
-//                Map<String, Object> itemMap;
-//                try {
-//                    itemMap = QytxlUtil.getInstance().getItem(reqParam.getEnterId(), entity.getContactId());
-//                } catch (Exception e) {
-//                    logger.error("getItem error 一次 EnterId={}|ContactId()={}|e={}",reqParam.getUserInfo().getEnterId(), reqParam.getUserInfo().getContactId(),e);
-//                    e.printStackTrace();
-//                    try {
-//                        itemMap =  QytxlUtil.getInstance().getItem(reqParam.getUserInfo().getEnterId(),reqParam.getUserInfo().getContactId());
-//                    } catch (Exception e1) {
-//                        e1.printStackTrace();
-//                        logger.error("getItem error 二次 EnterId={}|ContactId()={}|e={}",reqParam.getUserInfo().getEnterId(), reqParam.getUserInfo().getContactId(),e);
-//                        itemMap = null;
-//                    }
-//                }
-//                String phone = "已离职";
-//                if (AssertUtil.isNotEmpty(itemMap.get("item"))) {
-//                    Map jsonObject = (Map) itemMap.get("item");
-//                    phone = (String) jsonObject.get("regMobile");
-//                    try {
-//                        phone = AesUtils.decrypt(phone, AttendanceConfig.getInstance()
-//                            .getProperty("attend.qytxl.aes_key",
-//                                "258e5059518c4f56"));
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                        logger.error("AES 解密异常 regMobile={}|e={}",phone,e);
-//                    }
-//                }
-//                entity.setPhone(phone);
-//                insertList.add(entity);
-//            }
-//        }
-
-        if (AssertUtil.isNotEmpty(insertList)) {
-            if (!reportDao.batchInsertPhone(insertList)){
-                respBean.setCode(AtdcResultCode.S_OK);
-                respBean.setSummary(AtdcResultSummary.ATDC107.DATA_PERSISTENCE_ERROR);
-                return respBean;
-            }
-        }
 
         if (AssertUtil.isEmpty(list))
         {
@@ -910,7 +822,6 @@ public class AttendReportServiceImpl implements AttendReportService
         }
         // 发送完成后删除报表文件
         FileUtil.delete(excelPath);
-        // }
 
         return respBean;
     }
@@ -943,7 +854,7 @@ public class AttendReportServiceImpl implements AttendReportService
         String attendanceDate, List<TeamDailyEntity> list)
     {
         String title = "【" + enterName + "】 团队打卡明细日报-" + attendanceDate;
-        String[] rowsName = new String[] { "部门", "员工","contractId" ,"最早打卡时间", "打卡状态描述",
+        String[] rowsName = new String[] { "部门", "员工","contractId" ,"手机号码","最早打卡时间", "打卡状态描述",
             "打卡地点", "最晚打卡时间", "打卡状态描述", "打卡地点", "是否外勤打卡" };
 
         List<Object[]> dataList = new ArrayList<Object[]>();
@@ -955,14 +866,14 @@ public class AttendReportServiceImpl implements AttendReportService
             objs[0] = entity.getAttendanceName();
             objs[1] = entity.getEmployeeName();
             objs[2] = (entity.getContactId());
-//            objs[3] = entity.getPhone()==null?"-":entity.getPhone().equals("")?"-":entity.getPhone();
-            objs[3] = (entity.getEarlyTime() == null ? "-" : TimeUtil.date2String(entity.getEarlyTime(), TimeUtil.BASE_TIME_FORMAT));
-            objs[4] = (entity.getEarlyTimeDesc() == null? entity.getRemark(): entity.getEarlyTimeDesc());
-            objs[5] = (entity.getEarlyTimeLocation() == null ? " " : entity.getEarlyTimeLocation());
-            objs[6] = (entity.getLastTime() == null ? "-" : TimeUtil.date2String(entity.getLastTime(), TimeUtil.BASE_TIME_FORMAT));
-            objs[7] = (entity.getLastTimeDesc() == null ? entity.getRemark() : entity.getLastTimeDesc());
-            objs[8] = (entity.getLastTimeLocation() == null ? " " : entity.getLastTimeLocation());
-            objs[9] = (entity.getRegionStatus() == 0 ? "否" : "是");
+            objs[3] =  entity.getPhone()==null || entity.getPhone().equals("") ? "-" : entity.getPhone();
+            objs[4] = (entity.getEarlyTime() == null ? "-" : TimeUtil.date2String(entity.getEarlyTime(), TimeUtil.BASE_TIME_FORMAT));
+            objs[5] = (entity.getEarlyTimeDesc() == null? entity.getRemark(): entity.getEarlyTimeDesc());
+            objs[6] = (entity.getEarlyTimeLocation() == null ? " " : entity.getEarlyTimeLocation());
+            objs[7] = (entity.getLastTime() == null ? "-" : TimeUtil.date2String(entity.getLastTime(), TimeUtil.BASE_TIME_FORMAT));
+            objs[8] = (entity.getLastTimeDesc() == null ? entity.getRemark() : entity.getLastTimeDesc());
+            objs[9] = (entity.getLastTimeLocation() == null ? " " : entity.getLastTimeLocation());
+            objs[10] = (entity.getRegionStatus() == 0 ? "否" : "是");
             dataList.add(objs);
         }
 
@@ -1313,50 +1224,6 @@ public class AttendReportServiceImpl implements AttendReportService
         // TODO 目前数据量较小，直接查整个企业的数据导出即可，后续量增多时可调整成分页查询
         List<TeamMonthEntity> list = reportDao.queryExportTeamMonthPc(req);
 
-        List<TeamMonthEntity> insertList = new ArrayList<TeamMonthEntity>();
-
-        //导出团队月报需要新增手机 但该项是允许为空的 因此需要调用通讯来获取手机号
-//        for (TeamMonthEntity entity : list) {
-//            if (AssertUtil.isEmpty(entity.getPhone())) {
-//                Map<String, Object> itemMap;
-//                try {
-//                    itemMap = QytxlUtil.getInstance().getItem(entity.getEnterId(), entity.getContactId());
-//                } catch (Exception e) {
-//                    logger.error("getItem error 一次 EnterId={}|ContactId()={}|e={}",req.getUserInfo().getEnterId(), req.getUserInfo().getContactId(),e);
-//                    e.printStackTrace();
-//                    try {
-//                        itemMap =  QytxlUtil.getInstance().getItem(req.getUserInfo().getEnterId(),req.getUserInfo().getContactId());
-//                    } catch (Exception e1) {
-//                        e1.printStackTrace();
-//                        logger.error("getItem error 二次 EnterId={}|ContactId()={}|e={}",req.getUserInfo().getEnterId(), req.getUserInfo().getContactId(),e);
-//                        itemMap = null;
-//                    }
-//                }
-//                String phone = "已离职";
-//                if (AssertUtil.isNotEmpty(itemMap.get("item"))) {
-//                    Map jsonObject = (Map) itemMap.get("item");
-//                    phone = (String) jsonObject.get("regMobile");
-//                    try {
-//                        phone = AesUtils.decrypt(phone, AttendanceConfig.getInstance()
-//                            .getProperty("attend.qytxl.aes_key",
-//                                "258e5059518c4f56"));
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                        logger.error("AES 解密异常 regMobile={}|e={}",phone,e);
-//                    }
-//                }
-//                entity.setPhone(phone);
-//                insertList.add(entity);
-//            }
-//        }
-
-        if (AssertUtil.isNotEmpty(insertList)) {
-            if (!reportDao.batchInsertPhone(insertList)){
-                res.setCode(AtdcResultCode.S_OK);
-                res.setSummary(AtdcResultSummary.ATDC107.DATA_PERSISTENCE_ERROR);
-                return res;
-            }
-        }
         if (AssertUtil.isEmpty(list)) {
             res.setCode(AtdcResultCode.S_OK);
             res.setSummary(AtdcResultSummary.ATDC108.NO_DATA);
@@ -1380,43 +1247,43 @@ public class AttendReportServiceImpl implements AttendReportService
 
         if (TimeUtil.convert2long(req.getAttendanceMonth(),TimeUtil.BASE_DATE_FORMAT_YYYY_MM) <
             TimeUtil.convert2long("2018-11",TimeUtil.BASE_DATE_FORMAT_YYYY_MM)){
-             rowsName = new String[] { "名称", "contactId","考勤组", "工作总时长(分钟)", "正常",
+             rowsName = new String[] { "名称", "contactId","手机号码","考勤组", "工作总时长(分钟)", "正常",
                 "外勤", "迟到", "早退", "未打卡", "已申诉" };
             for (TeamMonthEntity entity : list) {
                 objs = new Object[rowsName.length];
                 objs[0] = entity.getEmployeeName();
                 objs[1] = entity.getContactId();
-//                objs[2] = entity.getPhone()==null?"-":entity.getPhone().equals("")?"-":entity.getPhone();
-                objs[2] = entity.getAttendanceName();
-                objs[3] = entity.getTotalWorkTime();
-                objs[4] = entity.getNormalDays();
-                objs[5] = entity.getOutsideDays();
-                objs[6] = entity.getLateDays();
-                objs[7] = entity.getEarlyDays();
-                objs[8] = entity.getNotClockedDays();
-                objs[9] = entity.getAppealDays();
+                objs[2] = entity.getPhone()==null || entity.getPhone().equals("")  ? "-" : entity.getPhone();
+                objs[3] = entity.getAttendanceName();
+                objs[4] = entity.getTotalWorkTime();
+                objs[5] = entity.getNormalDays();
+                objs[6] = entity.getOutsideDays();
+                objs[7] = entity.getLateDays();
+                objs[8] = entity.getEarlyDays();
+                objs[9] = entity.getNotClockedDays();
+                objs[10] = entity.getAppealDays();
                 dataList.add(objs);
             }
         }else {
-            rowsName = new String[] { "名称", "contactId", "考勤组", "工作总时长(分钟)", "正常",
+            rowsName = new String[] { "名称", "contactId","手机号码", "考勤组", "工作总时长(分钟)", "正常",
                 "外勤", "迟到","迟到时长(分钟)", "早退","早退时长(分钟)", "上班未打卡", "下班未打卡", "已申诉" };
             // 循环组装单元格数据
             for (TeamMonthEntity entity : list) {
                 objs = new Object[rowsName.length];
                 objs[0] = entity.getEmployeeName();
                 objs[1] = entity.getContactId();
-//                objs[2] = entity.getPhone()==null?"-":entity.getPhone().equals("")?"-":entity.getPhone();
-                objs[2] = entity.getAttendanceName();
-                objs[3] = entity.getTotalWorkTime();
-                objs[4] = entity.getNormalDays();
-                objs[5] = entity.getOutsideDays();
-                objs[6] = entity.getLateDays();
-                objs[7] = entity.getLateMinutes();
-                objs[8] = entity.getEarlyDays();
-                objs[9] = entity.getEarlyMinutes();
-                objs[10] = entity.getGoNotClockedDays();
-                objs[11] = entity.getLeaveNotClockedDays();
-                objs[12] = entity.getAppealDays();
+                objs[2] = entity.getPhone()==null || entity.getPhone().equals("") ?"-":entity.getPhone();
+                objs[3] = entity.getAttendanceName();
+                objs[4] = entity.getTotalWorkTime();
+                objs[5] = entity.getNormalDays();
+                objs[6] = entity.getOutsideDays();
+                objs[7] = entity.getLateDays();
+                objs[8] = entity.getLateMinutes();
+                objs[9] = entity.getEarlyDays();
+                objs[10] = entity.getEarlyMinutes();
+                objs[11] = entity.getGoNotClockedDays();
+                objs[12] = entity.getLeaveNotClockedDays();
+                objs[13] = entity.getAppealDays();
                 dataList.add(objs);
             }
         }
@@ -1504,50 +1371,6 @@ public class AttendReportServiceImpl implements AttendReportService
         // TODO 目前数据量较小，直接查整个企业的数据导出即可，后续量增多时可调整成分页查询
         List<EmployeeMonthDetail> list = reportDao.queryExportEmpMonthPc(req);
 
-        List<EmployeeMonthDetail> insertList = new ArrayList<EmployeeMonthDetail>();
-
-        //导出团队月报需要新增手机 但该项是允许为空的 因此需要调用通讯来获取手机号
-//        for (EmployeeMonthDetail entity : list) {
-//            if (AssertUtil.isEmpty(entity.getPhone())) {
-//                Map<String, Object> itemMap;
-//                try {
-//                    itemMap = QytxlUtil.getInstance().getItem(entity.getEnterId(), entity.getContactId());
-//                } catch (Exception e) {
-//                    logger.error("getItem error 一次 EnterId={}|ContactId()={}|e={}",req.getUserInfo().getEnterId(), req.getUserInfo().getContactId(),e);
-//                    e.printStackTrace();
-//                    try {
-//                        itemMap =  QytxlUtil.getInstance().getItem(req.getUserInfo().getEnterId(),req.getUserInfo().getContactId());
-//                    } catch (Exception e1) {
-//                        e1.printStackTrace();
-//                        logger.error("getItem error 二次 EnterId={}|ContactId()={}|e={}",req.getUserInfo().getEnterId(), req.getUserInfo().getContactId(),e);
-//                        itemMap = null;
-//                    }
-//                }
-//                String phone = "已离职";
-//                if (AssertUtil.isNotEmpty(itemMap.get("item"))) {
-//                    Map jsonObject = (Map) itemMap.get("item");
-//                    phone = (String) jsonObject.get("regMobile");
-//                    try {
-//                        phone = AesUtils.decrypt(phone, AttendanceConfig.getInstance()
-//                            .getProperty("attend.qytxl.aes_key",
-//                                "258e5059518c4f56"));
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                        logger.error("AES 解密异常 regMobile={}|e={}",phone,e);
-//                    }
-//                }
-//                entity.setPhone(phone);
-//                insertList.add(entity);
-//            }
-//        }
-
-        if (AssertUtil.isNotEmpty(insertList)) {
-            if (!reportDao.batchInsertPhone(insertList)){
-                res.setCode(AtdcResultCode.S_OK);
-                res.setSummary(AtdcResultSummary.ATDC107.DATA_PERSISTENCE_ERROR);
-                return res;
-            }
-        }
 
         if (AssertUtil.isEmpty(list))
         {
@@ -1564,7 +1387,7 @@ public class AttendReportServiceImpl implements AttendReportService
     {
         String title = "【" + req.getUserInfo().getEnterName() + "】考勤明细 统计时间 "
             + req.getStartDate() + "至" + req.getEndDate();
-        String[] rowsName = new String[] { "名称", "contactId","日期", "考勤组", "最早打卡时间", "打卡状态描述",
+        String[] rowsName = new String[] { "名称", "contactId","手机号码","日期", "考勤组", "最早打卡时间", "打卡状态描述",
             "打卡地点", "最晚打卡时间", "打卡状态描述", "打卡地点", "工作时长(分钟)" ,"是否外勤"};
 
         List<Object[]> dataList = new ArrayList<Object[]>();
@@ -1575,23 +1398,23 @@ public class AttendReportServiceImpl implements AttendReportService
             objs = new Object[rowsName.length];
             objs[0] = entity.getEmployeeName();
             objs[1] = entity.getContactId();
-//            objs[2] = entity.getPhone()==null?"-":entity.getPhone().equals("")?"-":entity.getPhone();
-            objs[2] = TimeUtil.date2String(entity.getAttendanceDate(), "yyyy-MM-dd");
-            objs[3] = entity.getAttendanceName();
-            objs[4] = entity.getGoWorkTime() == null ? " " : entity
+            objs[2] = entity.getPhone()==null || entity.getPhone().equals("") ? "-" : entity.getPhone();
+            objs[3] = TimeUtil.date2String(entity.getAttendanceDate(), "yyyy-MM-dd");
+            objs[4] = entity.getAttendanceName();
+            objs[5] = entity.getGoWorkTime() == null ? " " : entity
                 .getGoWorkTime();
-            objs[5] = entity.getGoWorkDesc() == null ? entity.getRemark() : entity
+            objs[6] = entity.getGoWorkDesc() == null ? entity.getRemark() : entity
                 .getGoWorkDesc();
-            objs[6] = entity.getGoLocation() == null ? " " : entity
+            objs[7] = entity.getGoLocation() == null ? " " : entity
                 .getGoLocation();
-            objs[7] = entity.getLeaveWorkTime() == null ? " " : entity
+            objs[8] = entity.getLeaveWorkTime() == null ? " " : entity
                 .getLeaveWorkTime();
-            objs[8] = entity.getLeaveWorkDesc() == null ? entity.getRemark() : entity
+            objs[9] = entity.getLeaveWorkDesc() == null ? entity.getRemark() : entity
                 .getLeaveWorkDesc();
-            objs[9] = entity.getLeaveLocation() == null ? " " : entity
+            objs[10] = entity.getLeaveLocation() == null ? " " : entity
                 .getLeaveLocation();
-            objs[10] = entity.getWorkMinutes();
-            objs[11] = entity.getRegionStatus() == 0 ? "否" : "是";
+            objs[11] = entity.getWorkMinutes();
+            objs[12] = entity.getRegionStatus() == 0 ? "否" : "是";
             dataList.add(objs);
         }
 
@@ -2485,51 +2308,6 @@ public class AttendReportServiceImpl implements AttendReportService
         // TODO 目前数据量较小，直接查整个企业的数据导出即可，后续量增多时可调整成分页查询
         List<AttendEntity> list = reportDao.exportOriginalClockDataPc(reportReq);
 
-        List<AttendEntity> insertList = new ArrayList<AttendEntity>();
-
-        //导出团队月报需要新增手机 但该项是允许为空的 因此需要调用通讯来获取手机号
-//        for (AttendEntity entity : list) {
-//            if (AssertUtil.isEmpty(entity.getPhone())) {
-//                Map<String, Object> itemMap;
-//                try {
-//                    itemMap = QytxlUtil.getInstance().getItem(reportReq.getEnterId(), entity.getContactId());
-//                } catch (Exception e) {
-//                    logger.error("getItem error 一次 EnterId={}|ContactId()={}|e={}",reportReq.getUserInfo().getEnterId(), reportReq.getUserInfo().getContactId(),e);
-//                    e.printStackTrace();
-//                    try {
-//                        itemMap =  QytxlUtil.getInstance().getItem(reportReq.getUserInfo().getEnterId(),reportReq.getUserInfo().getContactId());
-//                    } catch (Exception e1) {
-//                        e1.printStackTrace();
-//                        logger.error("getItem error 二次 EnterId={}|ContactId()={}|e={}",reportReq.getUserInfo().getEnterId(), reportReq.getUserInfo().getContactId(),e);
-//                        itemMap = null;
-//                    }
-//                }
-//                String phone = "已离职";
-//                if (AssertUtil.isNotEmpty(itemMap.get("item"))) {
-//                    Map jsonObject = (Map) itemMap.get("item");
-//                    phone = (String) jsonObject.get("regMobile");
-//                    try {
-//                        phone = AesUtils.decrypt(phone, AttendanceConfig.getInstance()
-//                            .getProperty("attend.qytxl.aes_key",
-//                                "258e5059518c4f56"));
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                        logger.error("AES 解密异常 regMobile={}|e={}",phone,e);
-//                    }
-//                }
-//                entity.setPhone(phone);
-//                insertList.add(entity);
-//            }
-//        }
-
-        if (AssertUtil.isNotEmpty(insertList)) {
-            if (!reportDao.batchInsertPhone(insertList)){
-                res.setCode(AtdcResultCode.S_OK);
-                res.setSummary(AtdcResultSummary.ATDC107.DATA_PERSISTENCE_ERROR);
-                return res;
-            }
-        }
-
         if (AssertUtil.isEmpty(list))
         {
             res.setCode(AtdcResultCode.S_OK);
@@ -2549,7 +2327,7 @@ public class AttendReportServiceImpl implements AttendReportService
     private void buildOriginalClockDataPcExcel(AttendReportReq req, List<AttendEntity> list, AttendExportReptRes res) {
         String title = "【" + req.getUserInfo().getEnterName() + "】考勤原始数据 统计时间 "
             + req.getStartDate() + "至" + req.getEndDate();
-        String[] rowsName = new String[] { "名称", "contactId", "考勤组", "日期", "打卡时间",
+        String[] rowsName = new String[] { "名称", "contactId","手机号码", "考勤组", "日期", "打卡时间",
             "打卡地点","详细位置", "是否外勤","外勤打卡备注"};
 
         List<Object[]> dataList = new ArrayList<Object[]>();
@@ -2560,14 +2338,14 @@ public class AttendReportServiceImpl implements AttendReportService
             objs = new Object[rowsName.length];
             objs[0] = entity.getEmployeeName();
             objs[1] = entity.getContactId();
-//            objs[2] = entity.getPhone()==null?"-":entity.getPhone().equals("")?"-":entity.getPhone();
-            objs[2] = entity.getAttendanceName();
-            objs[3] = TimeUtil.date2String(entity.getAttendanceDate(), "yyyy-MM-dd");
-            objs[4] = TimeUtil.date2String(entity.getAttendanceTime(), TimeUtil.BASE_TIME_FORMAT);
-            objs[5] =entity.getLocation();
-            objs[6] =entity.getDetailAddr();
-            objs[7] =entity.getStatus()==0 ? "否": "是";
-            objs[8] =entity.getOutWorkRemark()==null?" ":entity.getOutWorkRemark();
+            objs[2] = entity.getPhone() ==null || entity.getPhone().equals("") ? "-":entity.getPhone();
+            objs[3] = entity.getAttendanceName();
+            objs[4] = TimeUtil.date2String(entity.getAttendanceDate(), "yyyy-MM-dd");
+            objs[5] = TimeUtil.date2String(entity.getAttendanceTime(), TimeUtil.BASE_TIME_FORMAT);
+            objs[6] =entity.getLocation();
+            objs[7] =entity.getDetailAddr();
+            objs[8] =entity.getStatus()==0 ? "否": "是";
+            objs[9] =entity.getOutWorkRemark()==null?" ":entity.getOutWorkRemark();
             dataList.add(objs);
         }
 

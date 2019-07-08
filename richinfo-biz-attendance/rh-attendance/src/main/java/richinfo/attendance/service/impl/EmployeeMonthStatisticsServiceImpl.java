@@ -54,6 +54,8 @@ public class EmployeeMonthStatisticsServiceImpl extends ServiceObject implements
     private String amTime;
     /** 下午工作时间*/
     private String pmTime;
+    /** 弹性开关*/
+    private boolean isFlexible = false;
     private Map<String,AttendanceSchedule> currentMonthScheduleMap;
     
     private Map<Long,AttendanceScheduleShift> shiftMap;
@@ -198,7 +200,7 @@ public class EmployeeMonthStatisticsServiceImpl extends ServiceObject implements
             //预防从跑过去日子数据
             if (AssertUtil.isNotEmpty(employeeMonthDetail) && AssertUtil.isNotEmpty(employeeMonthDetail.getRecordState())){
                 int recordState = employeeMonthDetail.getRecordState();
-                if (detail.getAttendType() == employeeMonthDetail.getAttendType()) {
+                if (detail.getAttendType().equals(employeeMonthDetail.getAttendType())) {
                     detail.setRecordState(recordState);
                 }
 
@@ -247,10 +249,10 @@ public class EmployeeMonthStatisticsServiceImpl extends ServiceObject implements
              {
         	//是否工作日
         	boolean workday = isFixedAttendWorkDay();
-        	logger.debug("attendCalendar.isWeekDay() = {}",attendCalendar.isWeekDay());
+//        	logger.debug("attendCalendar.isWeekDay() = {}",attendCalendar.isWeekDay());
         	//是否是补班日期
             boolean rowday = getRowDays();
-        	logger.debug("判断是不是补班日期 = {}",rowday);
+//        	logger.debug("判断是不是补班日期 = {}",rowday);
         	//补班日期判断 需要在非节假日和工作日之前
              if (rowday && attendGroup.getRelyHoliday()==RelyHoliday.NotRely.getValue()) {
                  detail = statisticsWeekdayAttend(user, attendList);
@@ -535,11 +537,13 @@ public class EmployeeMonthStatisticsServiceImpl extends ServiceObject implements
         AttendEntity lastAttend = attendList.get(attendList.size() - 1);
 
         //判断是否为上午班次
+
         if (isMorningHours(firstAttend.getAttendanceTime())) {
             //判断上午考勤状态 true为正常 false为迟到
             boolean flag = false;
             //处理上午打卡的情况
             flag = dealMorningCase(firstAttend,detail,flag);
+            isFlexible = true;
             dealeAfternoonCase(detail,lastAttend,flag);
 
             int workTime = 0;
@@ -1015,7 +1019,7 @@ public class EmployeeMonthStatisticsServiceImpl extends ServiceObject implements
     {
         // 截取时间
         String time = TimeUtil.date2String(attendanceTime, TimeUtil.BASE_TIME_FORMAT);
-//        setStartAndEndTimeInFlexibleRule();
+        setStartAndEndTimeInFlexibleRule();
 //        if (this.morningEndTime.compareTo(time) >= 0) {
 //            // 设置上午班次打卡的开始时间 09:00:00
 //            this.morningStartTime = AtdcTimeUtil.getStartTime(this.amTime) + ":00";
@@ -1025,6 +1029,7 @@ public class EmployeeMonthStatisticsServiceImpl extends ServiceObject implements
 //        } else {
 //            return false;
 //        }
+
         return this.morningEndTime.compareTo(time) >= 0;
     }
 
@@ -1051,7 +1056,7 @@ public class EmployeeMonthStatisticsServiceImpl extends ServiceObject implements
         // 截取时间
         String time = TimeUtil.date2String(attendanceTime,
             TimeUtil.BASE_TIME_FORMAT);
-        if (attendGroup.getUseFlexibleRule()==0) {
+        if (isFlexible && attendGroup.getUseFlexibleRule()==0) {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat(TimeUtil.BASE_TIME_FORMAT);
             long worktimeDistance = 0;
             long realDistance = 0;
@@ -1071,6 +1076,13 @@ public class EmployeeMonthStatisticsServiceImpl extends ServiceObject implements
             }
             return realDistance<worktimeDistance;
         } else {
+            String fixedAttendRule = attendGroup.getFixedAttendRule();
+            Map jsonMap = JSON.parseObject(fixedAttendRule);
+            int day = AtdcTimeUtil.getWeekNum(attendCalendar.getWeek());
+            Map attendRuleMap = JSON.parseObject(jsonMap.get(day).toString());
+            String pmTime = (String)attendRuleMap.get("pmTime");
+            this.pmTime = pmTime;
+            this.afternoonEndTime = AtdcTimeUtil.getEndTime(pmTime) + ":00";
             return this.afternoonEndTime.compareTo(time) > 0;
         }
     }
@@ -1112,13 +1124,13 @@ public class EmployeeMonthStatisticsServiceImpl extends ServiceObject implements
    
     		if(AssertUtil.isNotEmpty(jsonObject))
     		{
-    			logger.debug("isFixedAttendWorkDay week={}|jsonObject={}",attendCalendar.getWeek(),jsonObject);
+//    			logger.debug("isFixedAttendWorkDay week={}|jsonObject={}",attendCalendar.getWeek(),jsonObject);
                 //根据星期几获取来转换成相应数字
     			int week = AtdcTimeUtil.getWeekNum(attendCalendar.getWeek());
-    			logger.debug("isFixedAttendWorkDay weekInt={}",week);
+//    			logger.debug("isFixedAttendWorkDay weekInt={}",week);
     			//解析固定班规则 用数字截取出班次
     			JSONObject workTime = (JSONObject)jsonObject.get(ConverUtil.object2String(week)); 
-    			logger.debug("isFixedAttendWorkDay workTime={}",workTime);
+//    			logger.debug("isFixedAttendWorkDay workTime={}",workTime);
                 //若解析出来有结果 则表明是工作日 若无则表示非工作日
         		if(AssertUtil.isNotEmpty(workTime))
         		{

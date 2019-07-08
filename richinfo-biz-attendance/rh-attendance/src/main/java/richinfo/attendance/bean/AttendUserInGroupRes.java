@@ -30,6 +30,16 @@ public class AttendUserInGroupRes extends ResBean
 
     private String allowOutRangeClock;
 
+    private String charge;
+
+    public String getCharge() {
+        return charge;
+    }
+
+    public void setCharge(String charge) {
+        this.charge = charge;
+    }
+
     public String getAllowOutRangeClock() {
         return allowOutRangeClock;
     }

@@ -2,6 +2,7 @@
 {
     "code": "${code?default('S_OK')}",
     "summary": "${summary?default('')}",
+    "charge": "${charge?default('0')}",
     <#--"allowOutRangeClock": "${allowOutRangeClock?default('0')}",-->
     "var": {
 	    <#if userGroup?exists>

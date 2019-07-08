@@ -264,7 +264,6 @@ public class AttendGroupAction extends BaseAttendanceAction {
                 }
             }
         }
-
             AttendGroupRes groupRes = groupService.updateGroup(reqParam);
             processJsonTemplate(response, "attendance/updateGroup_json.ftl", groupRes);
     }
@@ -1003,4 +1002,130 @@ public class AttendGroupAction extends BaseAttendanceAction {
 
         processJsonTemplate(response,"attendance/checkEnterGroup_json.ftl", res);
     }
+
+    /**
+     * 查询设备列表
+     * @param request
+     * @param response
+     */
+    @RequestMapping(value = "/queryEquipmentList", method = RequestMethod.POST)
+    public void queryEquipmentList(HttpServletRequest request, HttpServletResponse response){
+        AttendGroupReq attendGroupReq = new AttendGroupReq();
+
+        Map<String, Object> reqMap = parserReqJsonParam(request);
+
+        setReqBean(attendGroupReq, request);
+
+        parseQueryEquipmentListParam(reqMap,attendGroupReq);
+
+        AttendGroupRes res = groupService.queryEquipmentList(attendGroupReq,request);
+
+        processJsonTemplate(response,"attendance/queryEquipmentList_json.ftl", res);
+    }
+
+    /**
+     * 解析查询设备列表请求参数
+     */
+    private void parseQueryEquipmentListParam(Map<String, Object> map, AttendGroupReq attendGroupReq){
+        attendGroupReq.setEnterId((String) map.get("enterId"));
+        if (AssertUtil.isNotEmpty(map.get("attendanceId"))) {
+            attendGroupReq.setAttendId((String) map.get("attendanceId"));
+        }
+        if (AssertUtil.isNotEmpty(map.get("employeeName"))) {
+            attendGroupReq.setEmployeeName((String) map.get("employeeName"));
+        }
+    }
+
+    /**
+     * 设备后台管理系统删除设备
+     * @param request
+     * @param response
+     */
+    @RequestMapping(value = "/removeEquipment", method = RequestMethod.POST)
+    public void removeEquipment(HttpServletRequest request, HttpServletResponse response){
+        AttendGroupReq attendGroupReq = new AttendGroupReq();
+
+        Map<String, Object> reqMap = parserReqJsonParam(request);
+
+        setReqBean(attendGroupReq, request);
+
+        parsRemoveEquipmentParam(reqMap,attendGroupReq);
+
+        AttendGroupRes res = groupService.removeEquipment(attendGroupReq,request);
+
+        processJsonTemplate(response,"attendance/common_json.ftl", res);
+    }
+
+    /**
+     * 解析设备后台管理系统删除设备请求参数
+     */
+    private void parsRemoveEquipmentParam(Map<String, Object> map, AttendGroupReq attendGroupReq){
+        attendGroupReq.setEnterId((String) map.get("enterId"));
+        attendGroupReq.setUid((String) map.get("uid"));
+        if (AssertUtil.isNotEmpty(map.get("equipmentSerial"))) {
+            attendGroupReq.setEquipmentSerial((String) map.get("equipmentSerial"));
+        }
+    }
+
+    /**
+     * 设备后台管理系统设置设备数量限制
+     * @param request
+     * @param response
+     */
+    @RequestMapping(value = "/setEquipmentLimit", method = RequestMethod.POST)
+    public void setEquipmentLimit(HttpServletRequest request, HttpServletResponse response){
+        AttendGroupReq attendGroupReq = new AttendGroupReq();
+
+        Map<String, Object> reqMap = parserReqJsonParam(request);
+
+        setReqBean(attendGroupReq, request);
+
+        parseSetEquipmentLimitParam(reqMap,attendGroupReq);
+
+        AttendGroupRes res = groupService.setEquipmentLimit(attendGroupReq,request);
+
+        processJsonTemplate(response,"attendance/common_json.ftl", res);
+    }
+
+    /**
+     * 解析设备后台管理系统设置设备数量限制请求参数
+     */
+    private void parseSetEquipmentLimitParam(Map<String, Object> map, AttendGroupReq attendGroupReq){
+        attendGroupReq.setEnterId((String) map.get("enterId"));
+        for (Map.Entry s:map.entrySet()) {
+
+        }
+        attendGroupReq.setEquipmentLimit((String) map.get("equipmentLimit"));
+        attendGroupReq.setEquipmentStatus((String) map.get("equipmentUseStatus"));
+    }
+
+    /**
+     * 设备打卡入库
+     * @param request
+     * @param response
+     */
+    @RequestMapping(value = "/setEquipment", method = RequestMethod.POST)
+    public void insertEquipment(HttpServletRequest request, HttpServletResponse response){
+        AttendGroupReq attendGroupReq = new AttendGroupReq();
+
+        Map<String, Object> reqMap = parserReqJsonParam(request);
+
+        setReqBean(attendGroupReq, request);
+
+        parsSetEquipmentParam(reqMap,attendGroupReq);
+
+        AttendGroupRes res = groupService.insertEquipment(attendGroupReq,request);
+
+        processJsonTemplate(response,"attendance/common_json.ftl", res);
+    }
+
+    /**
+     * 解析设备打卡入库请求参数
+     */
+    private void parsSetEquipmentParam(Map<String, Object> map, AttendGroupReq attendGroupReq){
+        attendGroupReq.setEquipmentSerial((String) map.get("equipmentSerial")==null?"":(String) map.get("equipmentSerial"));
+        attendGroupReq.setAttendanceName((String) map.get("attendanceName"));
+        attendGroupReq.setEquipmentDeviceType((String) map.get("equipmentDeviceType")==null?"":(String) map.get("equipmentDeviceType"));
+    }
+
 }

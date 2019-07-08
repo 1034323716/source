@@ -100,6 +100,16 @@ public class AttendGroupReq extends AttendReqBean
     /** 白名单创建人id*/
     private String creatorId;
 
+    private String equipmentUseStatus;
+
+    public String getEquipmentUseStatus() {
+        return equipmentUseStatus;
+    }
+
+    public void setEquipmentUseStatus(String equipmentUseStatus) {
+        this.equipmentUseStatus = equipmentUseStatus;
+    }
+
     /** 考勤人员列表 */
     private List<UserInfo> chargemanList;
     /*审批限制实体*/
@@ -146,6 +156,65 @@ public class AttendGroupReq extends AttendReqBean
         this.flexitime = flexitime;
     }
 
+    private String employeeName;
+
+    private String attendId;
+
+    public String getAttendId() {
+        return attendId;
+    }
+
+    public void setAttendId(String attendId) {
+        this.attendId = attendId;
+    }
+
+    public String getEmployeeName() {
+        return employeeName;
+    }
+
+    public void setEmployeeName(String employeeName) {
+        this.employeeName = employeeName;
+    }
+
+    private String equipmentSerial;
+
+    private String equipmentDeviceType;
+
+    private String equipmentStatus;
+
+    public String getEquipmentSerial() {
+        return equipmentSerial;
+    }
+
+    public void setEquipmentSerial(String equipmentSerial) {
+        this.equipmentSerial = equipmentSerial;
+    }
+
+    public String getEquipmentDeviceType() {
+        return equipmentDeviceType;
+    }
+
+    public void setEquipmentDeviceType(String equipmentDeviceType) {
+        this.equipmentDeviceType = equipmentDeviceType;
+    }
+
+    public String getEquipmentStatus() {
+        return equipmentStatus;
+    }
+
+    public void setEquipmentStatus(String equipmentStatus) {
+        this.equipmentStatus = equipmentStatus;
+    }
+
+    private String equipmentLimit;
+
+    public String getEquipmentLimit() {
+        return equipmentLimit;
+    }
+
+    public void setEquipmentLimit(String equipmentLimit) {
+        this.equipmentLimit = equipmentLimit;
+    }
 
     public String getExamineContactId() {
         return examineContactId;

@@ -44,6 +44,16 @@ public class AttendLoginReq extends AttendReqBean
     //超级管理员标识 1是0否
     private  String aM;
 
+    private  String equipmentSerial;
+
+    public String getEquipmentSerial() {
+        return equipmentSerial;
+    }
+
+    public void setEquipmentSerial(String equipmentSerial) {
+        this.equipmentSerial = equipmentSerial;
+    }
+
     public String getaM() {
         return aM;
     }
