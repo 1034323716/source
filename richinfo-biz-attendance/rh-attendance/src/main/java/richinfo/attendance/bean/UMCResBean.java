@@ -55,4 +55,13 @@ public class UMCResBean extends BeanObject implements Serializable
         this.body = body;
     }
 
+    @Override
+    public String toString(){
+        StringBuilder sb =new StringBuilder();
+        sb.append("header=")
+            .append(header)
+            .append(", body=")
+            .append(body);
+        return sb.toString();
+    }
 }

@@ -42,11 +42,16 @@ public class UMCReqHeader  extends BeanObject implements Serializable
      * 统一认证sourceId
      */
     private String sourceid;
+
+    private String id;
+    private String idtype;
     
     /**
      * 业务平台编码定义 1BOSS、2web 、3wap 、4pc客户端 、5手机客户端
      */
     private String apptype;
+
+    private String sign;
     
 
     public String getVersion()
@@ -99,4 +104,27 @@ public class UMCReqHeader  extends BeanObject implements Serializable
         this.apptype = apptype;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getIdtype() {
+        return idtype;
+    }
+
+    public void setIdtype(String idtype) {
+        this.idtype = idtype;
+    }
+
+    public String getSign() {
+        return sign;
+    }
+
+    public void setSign(String sign) {
+        this.sign = sign;
+    }
 }

@@ -15,6 +15,7 @@ package richinfo.attendance.service;
 import richinfo.attendance.bean.AttendLoginReq;
 import richinfo.attendance.bean.AttendLoginRes;
 import richinfo.attendance.bean.UmcGetArtifactRes;
+import richinfo.attendance.entity.SMSAttendancInfo;
 import richinfo.attendance.entity.UserInfo;
 
 /**
@@ -43,5 +44,16 @@ public interface AttendLoginService
      * @return
      */
 	public UmcGetArtifactRes getArtifactPc(UserInfo userinfo);
+
+
+    /**
+     * 短信打卡token登录校验
+     */
+    SMSAttendancInfo ssoAttendanceSMS(AttendLoginReq req);
+
+    /**
+     * 短信打卡取号登录校验
+     */
+    SMSAttendancInfo ssoAttendanceTakeNum(AttendLoginReq req);
 
 }

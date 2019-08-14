@@ -76,6 +76,11 @@ public class AttendEmployee extends BeanObject implements Serializable
      */
     private Integer roleType;
 
+    /**
+     * 短信开关设置   0:关闭  1:开启
+     */
+    private Integer smsSwitch;
+
     public Integer getRoleType() {
         return roleType;
     }
@@ -84,7 +89,15 @@ public class AttendEmployee extends BeanObject implements Serializable
         this.roleType = roleType;
     }
 
-//    private int roleType;
+    public Integer getSmsSwitch() {
+        return smsSwitch;
+    }
+
+    public void setSmsSwitch(Integer smsSwitch) {
+        this.smsSwitch = smsSwitch;
+    }
+
+    //    private int roleType;
 //
 //    public int getRoleType() {
 //        return roleType;

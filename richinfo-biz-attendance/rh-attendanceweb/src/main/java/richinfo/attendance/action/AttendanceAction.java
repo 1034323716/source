@@ -15,14 +15,19 @@ package richinfo.attendance.action;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 import richinfo.attendance.bean.AttendReq;
 import richinfo.attendance.bean.AttendRes;
 import richinfo.attendance.common.AtdcResultCode;
 import richinfo.attendance.common.AtdcResultSummary;
 import richinfo.attendance.common.PublicConstant;
+import richinfo.attendance.common.ResBean;
+import richinfo.attendance.service.AttendEmployService;
 import richinfo.attendance.service.AttendService;
+import richinfo.attendance.service.impl.AttendEmployServiceImpl;
 import richinfo.attendance.service.impl.AttendServiceImpl;
 import richinfo.attendance.util.AtdcStringUtil;
 import richinfo.attendance.util.AttendanceConfig;
@@ -32,6 +37,7 @@ import richinfo.bcomponet.cache.comm.CacheKey;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -41,6 +47,7 @@ import java.util.Map;
 @RequestMapping("/attend")
 public class AttendanceAction extends BaseAttendanceAction {
     private AttendService attednService = new AttendServiceImpl();
+    private AttendEmployService attendEmployService = new AttendEmployServiceImpl();
 
     private final Logger logger = LoggerFactory.getLogger(AttendanceAction.class);
 
@@ -116,6 +123,7 @@ public class AttendanceAction extends BaseAttendanceAction {
         attendReq.setLongitude(ConverUtil.string2Double((String) reqMap.get("longitude")));
         attendReq.setLatitude(ConverUtil.string2Double((String) reqMap.get("latitude")));
         attendReq.setStatus(ConverUtil.string2Int((String) reqMap.get("status")));
+        attendReq.setClockSource((String) reqMap.get("clockSource"));
         if ("1".equals(reqMap.get("status"))) {
             attendReq.setOutWorkRemark((String) reqMap.get("outWorkRemark"));
         }
@@ -125,4 +133,50 @@ public class AttendanceAction extends BaseAttendanceAction {
         return attendReq;
     }
 
+    /**
+     * 短信打卡设置接口
+     */
+    @RequestMapping(value = "/updateEmploySMSSwitch", method = RequestMethod.POST)
+    public void updateEmploySMSSwitch(HttpServletRequest request, HttpServletResponse response) {
+//        AttendReq req = new AttendReq();
+//        setReqBean(req, request);
+        Map<String, Object> map = parserReqJsonParam(request);
+        String uid = (String) map.get("uid");
+        String smsSwitch = (String) map.get("smsSwitch");
+        boolean modifyLine = attendEmployService.settingSMSRemider(uid, Integer.valueOf(smsSwitch));
+        ResBean resultResp = new ResBean();
+        resultResp.setSummary("短信打卡设置成功");
+        if(!modifyLine) {
+            resultResp.setCode("S_ERROR");
+            resultResp.setSummary("短信打卡设置失败");
+        }
+        processJsonTemplate(response, "attendance/common_json.ftl", resultResp);
+    }
+
+    /**
+     * 短信打卡设置接口
+     */
+    @RequestMapping(value = "/getEmploySMSSwitch", method = RequestMethod.POST)
+    @ResponseBody
+    public Map getEmploySMSSwitch(HttpServletRequest request) {
+//        AttendReq req = new AttendReq();
+//        setReqBean(req, request);
+        Map<String, Object> map = parserReqJsonParam(request);
+        String uid = (String) map.get("uid");
+        Map<String,Object> responseObj = new HashMap<>();
+        if(StringUtils.isEmpty(uid)) {
+            responseObj.put("code","S_ERROR");
+            responseObj.put("summary","uid入参不能为空");
+            return responseObj;
+        }
+
+        int modifyLine = attendEmployService.getSMSRemiderStatus(uid);
+        Map<String,Integer> SMSStatus = new HashMap<>();
+        SMSStatus.put("status", modifyLine);
+        responseObj.put("code","S_OK");
+        responseObj.put("summary","查询成功");
+        responseObj.put("var", SMSStatus);
+
+        return responseObj;
+    }
 }

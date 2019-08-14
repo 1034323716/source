@@ -112,7 +112,7 @@ public class AESEncryptUtil {
 		
 		return new String(decryptBytes,"utf-8");
 	}
-	
+
 	public static String aesDecryptByBytes(byte[] encryptBytes, byte[] decryptKey) throws Exception {
 		KeyGenerator kgen = KeyGenerator.getInstance("AES");
 		kgenInit(kgen, decryptKey);

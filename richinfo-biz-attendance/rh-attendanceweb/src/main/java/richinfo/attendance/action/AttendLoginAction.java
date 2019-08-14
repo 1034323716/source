@@ -19,17 +19,22 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+import richinfo.attendance.SMS.SmsSendUtil;
 import richinfo.attendance.bean.AttendGroupWithEmpRes;
 import richinfo.attendance.bean.AttendLoginReq;
 import richinfo.attendance.bean.AttendLoginRes;
 import richinfo.attendance.bean.UmcGetArtifactRes;
 import richinfo.attendance.dao.AttendEmployeeDao;
 import richinfo.attendance.dao.AttendGroupDao;
-import richinfo.attendance.entity.AttendDepartmentChooser;
-import richinfo.attendance.entity.AttendEmployee;
-import richinfo.attendance.entity.UserInfo;
+import richinfo.attendance.dao.MessageDao;
+import richinfo.attendance.entity.*;
 import richinfo.attendance.service.AttendGroupService;
+import richinfo.attendance.service.AttendLoginService;
+import richinfo.attendance.service.MessageService;
 import richinfo.attendance.service.impl.AttendGroupServiceImpl;
+import richinfo.attendance.service.impl.AttendLoginServiceImpl;
+import richinfo.attendance.service.impl.MessageServiceImpl;
 import richinfo.attendance.util.AssertUtil;
 import richinfo.attendance.util.AttendanceConfig;
 import richinfo.attendance.util.Base64Coder;
@@ -39,6 +44,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -55,6 +65,7 @@ public class AttendLoginAction extends BaseAttendanceAction {
     private AttendGroupDao groupDao = new AttendGroupDao();
 
     private AttendGroupService groupService = new AttendGroupServiceImpl();
+    private AttendLoginService attendLoginService = new AttendLoginServiceImpl();
 
     /**
      * 单点登录请求
@@ -394,6 +405,120 @@ public class AttendLoginAction extends BaseAttendanceAction {
             unicodeBytes = unicodeBytes + "\\u" + hexB;
         }
         return unicodeBytes;
+    }
+
+
+    /**
+     * SMS单点登录
+     */
+    @RequestMapping(value = "/ssoSMSAttendance", method = RequestMethod.POST)
+    @ResponseBody
+    public Map ssoSMSAttendance(HttpServletRequest request, HttpServletResponse response){
+        Map<String, Object> map = parserReqJsonParam(request);
+        String token = (String) map.get("token");
+        Map<String,Object> responseObj = new HashMap<>();
+        if(StringUtils.isEmpty(token)) {
+            responseObj.put("code","S_ERROR");
+            responseObj.put("summary","token入参不能为空");
+            return responseObj;
+        }
+
+        // 参数设置
+        AttendLoginReq req = new AttendLoginReq();
+        req.setToken(token);
+        req.setUid((String) map.get("uid"));
+        SMSAttendancInfo attendancInfo = attendLoginService.ssoAttendanceSMS(req);
+
+
+        if(null == attendancInfo) {
+            responseObj.put("code","S_ERROR");
+            responseObj.put("summary","登录失败，请重新登录");
+            return responseObj;
+        } else if(attendancInfo.getSsoStatus() == -1) {
+            responseObj.put("code","S_ERROR");
+            responseObj.put("summary","查询不到该用户");
+            return responseObj;
+        } else if(attendancInfo.getSsoStatus() == -2) {
+            responseObj.put("code","S_ERROR");
+            responseObj.put("summary","不能代人打卡哦");
+            return responseObj;
+        } else {
+            saveCookie("token", attendancInfo.getToken(), response);
+            saveCookie("loginToken", attendancInfo.getToken(), response);
+            UserGroupEntity groupEntity = attendancInfo.getUserGroup();
+            if(null != groupEntity) {
+                saveCookie("enterId", groupEntity.getEnterId(), response);
+                saveCookie("enterName", groupEntity.getEnterName(), response);
+                saveCookie("phone", groupEntity.getPhone(), response);
+                saveCookie("uid", groupEntity.getUid(), response);
+            }
+
+            Map<String,Object> SMSStatus = new HashMap<>();
+            SMSStatus.put("attendRecord",attendancInfo.getAttendRecord());
+            SMSStatus.put("attendClockVos",attendancInfo.getAttendClockVos());
+            SMSStatus.put("userGroup",attendancInfo.getUserGroup());
+            SMSStatus.put("allowOutRangeClock",attendancInfo.getAllowOutRangeClock());
+            SMSStatus.put("charge",attendancInfo.getCharge());
+            SMSStatus.put("token",attendancInfo.getToken());
+            responseObj.put("code","S_OK");
+            responseObj.put("summary","登录成功");
+            responseObj.put("var", SMSStatus);
+        }
+
+        return responseObj;
+    }
+
+    /**
+     * 取号回调
+     */
+    @RequestMapping(value = "/SMSVerificationCallback", method = RequestMethod.POST)
+    public void SMSVerificationCallback(HttpServletRequest request){
+
+    }
+
+
+    /**
+     * SMS单点登录
+     */
+    @RequestMapping(value = "/takeNumLoginAttendance", method = RequestMethod.POST)
+    @ResponseBody
+    public Map takeNumLoginAttendance(HttpServletRequest request, HttpServletResponse response){
+        Map<String, Object> map = parserReqJsonParam(request);
+        Map<String,Object> responseObj = new HashMap<>();
+        String uid = (String) map.get("uid");
+        if(StringUtils.isEmpty(uid)) {
+            responseObj.put("code","S_ERROR");
+            responseObj.put("summary","uid入参不能为空");
+            return responseObj;
+        }
+        // 参数设置
+        AttendLoginReq req = new AttendLoginReq();
+        req.setUid(uid);
+        SMSAttendancInfo attendancInfo = attendLoginService.ssoAttendanceTakeNum(req);
+
+        if(null != attendancInfo) {
+            saveCookie("token", attendancInfo.getToken(), response);
+            saveCookie("loginToken", attendancInfo.getToken(), response);
+            UserGroupEntity groupEntity = attendancInfo.getUserGroup();
+            if(null != groupEntity) {
+                saveCookie("enterId", groupEntity.getEnterId(), response);
+                saveCookie("enterName", groupEntity.getEnterName(), response);
+                saveCookie("phone", groupEntity.getPhone(), response);
+                saveCookie("uid", groupEntity.getUid(), response);
+            }
+        }
+        Map<String,Object> SMSStatus = new HashMap<>();
+        SMSStatus.put("attendRecord",attendancInfo.getAttendRecord());
+        SMSStatus.put("attendClockVos",attendancInfo.getAttendClockVos());
+        SMSStatus.put("userGroup",attendancInfo.getUserGroup());
+        SMSStatus.put("allowOutRangeClock",attendancInfo.getAllowOutRangeClock());
+        SMSStatus.put("charge",attendancInfo.getCharge());
+        SMSStatus.put("token",attendancInfo.getToken());
+        responseObj.put("code","S_OK");
+        responseObj.put("summary","登录成功");
+        responseObj.put("var", SMSStatus);
+
+        return responseObj;
     }
 
 }

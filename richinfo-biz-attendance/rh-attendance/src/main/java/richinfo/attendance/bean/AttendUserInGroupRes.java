@@ -57,5 +57,10 @@ public class AttendUserInGroupRes extends ResBean
     {
         this.userGroup = userGroup;
     }
+
+    @Override
+    public String toString() {
+        return "UserGroupEntity:" +userGroup;
+    }
     
 }

@@ -15,6 +15,8 @@ package richinfo.attendance.service.impl;
 import com.google.gson.internal.LinkedTreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import richinfo.attendance.SMS.SmsSendUtil;
 import richinfo.attendance.asyn.HistoryMessageAsynTask;
 import richinfo.attendance.asyn.MessageAsynTask;
 import richinfo.attendance.asyn.SendMessageAsynTask;
@@ -26,8 +28,10 @@ import richinfo.attendance.entity.AttendGroup.AttendType;
 import richinfo.attendance.entity.AttendGroup.GroupStatus;
 import richinfo.attendance.msg.Constants;
 import richinfo.attendance.msg.RcsMsgUtil;
+import richinfo.attendance.service.AttendEmployService;
 import richinfo.attendance.service.MessageService;
 import richinfo.attendance.util.*;
+import richinfo.dbcomponent.resourceloader.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -43,9 +47,14 @@ public class MessageServiceImpl extends ServiceObject implements MessageService
     private final Logger logger = LoggerFactory
         .getLogger(MessageServiceImpl.class);
 
+    private String mSMSClockURL = AttendanceConfig.getInstance().getProperty(
+        "attend.sms.clock.Url", "https://120.196.212.78:8080/satdc/rcs/index.html");
+
     private AttendGroupDao groupDao = new AttendGroupDao();
 
     private AttendEmployeeDao employeeDao = new AttendEmployeeDao();
+
+    private AttendLoginDao loginDao = new AttendLoginDao();
 
     private MessageDao messageDao = new MessageDao();
 
@@ -832,6 +841,7 @@ public class MessageServiceImpl extends ServiceObject implements MessageService
         Date nowDate = new Date();
         msg.setCreateTime(nowDate);
         msg.setModifyTime(nowDate);
+        msg.setSmsSwitch(user.getSmsSwitch());
 
         // 签到消息标题、内容、摘要，发送时间
         if (Constants.MsgType.Sign.getValue() == msgType)
@@ -1263,6 +1273,30 @@ public class MessageServiceImpl extends ServiceObject implements MessageService
                         successNum++;
                     }
                 }
+
+                //短信推送
+                if(msg.getSmsSwitch() == 1) {
+                    UserInfo userInfo = loginDao.queryUserInfoByUid(msg.getUid(), 0);
+                    logger.info("sms userInfo : {}", userInfo);
+                    if(null != userInfo) {
+                        int msgType = msg.getMsgType();
+                        if(msgType == 1 || msgType == 2) {
+                            //place_holder_id1##替换内容|@|place_holder_id2##替换内容
+                            String placeHolderContent = "{[placeholder:url]}##"+ mSMSClockURL +"?uid="+ userInfo.getUid()
+                                +"|@|{[placeholder:remark]}##，目前只支持4G环境打卡\n如遇到IOS终端无法登录，请关闭“设置-safari浏览器-阻止跨网站跟踪”按钮或使用其它浏览器\n退订请在和飞信考勤应用设置";
+                            //手机
+//                            boolean sendResult = SmsSendUtil.sendSmsWithOutAddressBook(userInfo.getPhone(),
+//                                userInfo.getEmployeeName(), userInfo.getEnterName(), placeHolderContent, 3, false, msgType);
+                            //contactId
+                            boolean sendResult = SmsSendUtil.sendSmsWithInAddressBook(userInfo.getEnterId(), userInfo.getContactId(),
+                                AttendanceConfig.getInstance().getProperty("attend.qytxl.appid", "9fdcd721d954456b8c7ea53f80635456"), placeHolderContent, 3, false, msgType);
+
+                            logger.info("send user data : {}, sms sendResult : {}",userInfo, sendResult);
+                        }
+
+                    }
+                }
+
             }
             logger
                 .info(

@@ -169,7 +169,7 @@
 	<select id="queryUserList" parameterClass="java.util.HashMap"
 		resultClass="richinfo.attendance.entity.UserInfo">
 		SELECT
-		employeeId,uid,employeeName,enterId,enterName,deptId,deptName,attendanceId,phone,email
+		employeeId,uid,employeeName,enterId,enterName,deptId,deptName,attendanceId,phone,email,smsSwitch
 		FROM attendance_employee_info
 		WHERE attendanceId
 		= #attendanceId# AND
@@ -1303,7 +1303,7 @@
 	<!-- 通过uid查询是否为审批员 -->
 	<select id="queryExaminerByUid" parameterClass="java.lang.String"
 		resultClass="richinfo.attendance.entity.AttendExamineEntity">
-		select
+		selectqueryUserInfoByUid
 		attExamineId,enterId,attendanceId,examineName,examineUid,examinerState
 		from
 		attendance_examine_table
@@ -1316,9 +1316,9 @@
 		insert
 		into
 		msg_table(attendanceId,appealId,enterId,uid,appId,sender,topic,content,
-		summary,serverNo,msgType,createTime,sendTime,modifyTime)
+		summary,serverNo,msgType,createTime,sendTime,modifyTime,smsSwitch)
 		values(#attendanceId#,#appealId#,#enterId#,#uid#,#appId#,#sender#,#topic#,#content#,
-		#summary#,#serverNo#,#msgType#,#createTime#,#sendTime#,#modifyTime#)
+		#summary#,#serverNo#,#msgType#,#createTime#,#sendTime#,#modifyTime#,#smsSwitch#)
 		ON DUPLICATE KEY
 		UPDATE modifyTime = #modifyTime#
 	</insert>
@@ -1343,7 +1343,7 @@
 		resultClass="richinfo.attendance.entity.Message">
 		select
 		msgId,attendanceId,appealId,enterId,uid,appId,sender,topic,content,
-		summary,serverNo,msgType,createTime,sendTime,modifyTime
+		summary,serverNo,msgType,createTime,sendTime,modifyTime,smsSwitch
 		from msg_table
 		where <![CDATA[ sendTime <= #endDate# ]]>
 		<dynamic>
@@ -3977,4 +3977,50 @@
             #delEnter[]#
         </iterate>
     </delete>
+
+    <!-- 更新员工短信打卡开关 -->
+    <update id="updateEmployeeSMSSwitch" parameterClass="java.util.Map">
+        update
+        attendance_employee_info
+        set
+        smsSwitch=#status#
+        where
+        uid=#uid#
+    </update>
+
+    <!-- 用户更改短信打卡设置 -->
+    <update id="updateMessageBySSMSwitch" parameterClass="java.util.Map">
+        update
+        msg_table
+        set
+        smsSwitch=#status#
+        where
+        uid=#uid#
+        and
+        sendTime > #nowTime#
+        and
+        (msgType=1 or msgType=2)
+    </update>
+
+    <!-- 获取用户更改短信打卡状态 -->
+    <select id="getMessageBySSMSwitch" parameterClass="java.lang.String" resultClass="java.lang.Integer">
+        select
+        smsSwitch
+        from
+        `attendance`.`attendance_employee_info`
+        where
+        uid=#uid#
+    </select>
+
+    <select id="queryUserInfoByUid" parameterClass="java.util.HashMap"
+            resultClass="richinfo.attendance.entity.UserInfo">
+    SELECT
+    e.uid,
+    e.employeeName as employeeName,e.roleType,e.contactId,
+    e.phone,e.enterId,e.enterName,e.deptId,e.deptName,e.attendanceId,e.status,e.email,e.position
+    FROM attendance_employee_info e
+    WHERE e.uid = #uid#
+    AND e.status = #status#
+    </select>
+
 </sqlMap>

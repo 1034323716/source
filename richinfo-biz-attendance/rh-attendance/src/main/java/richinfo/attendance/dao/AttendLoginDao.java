@@ -82,4 +82,26 @@ public class AttendLoginDao extends BaseAttendanceDao
 
         return null;
     }
+
+    public UserInfo queryUserInfoByUid(String uid, int status) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("uid", uid);
+        map.put("status", status);
+
+        try {
+            UserInfo userInfo = (UserInfo) attendanceDao.queryForObject(
+                "attendance.queryUserInfoByUid", map);
+            if (userInfo == null){
+                userInfo = new UserInfo();
+                userInfo.setUid(uid);
+            }
+            logger.info("queryUserInfo  userInfo={}||map{}", userInfo, map);
+            return userInfo;
+        } catch (PersistException e) {
+            e.printStackTrace();
+            logger.info("queryUserInfo params {},  exception {}", map, e.toString());
+        }
+
+        return null;
+    }
 }

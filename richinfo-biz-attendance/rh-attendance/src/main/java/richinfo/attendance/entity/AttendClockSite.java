@@ -32,6 +32,17 @@ public class AttendClockSite implements Serializable{
     /** 有效范围 (内勤) */
     private int attendanceRange;
 
+    /** 为了兼容短信打卡**/
+    private int range;
+
+    public int getRange() {
+        return range;
+    }
+
+    public void setRange(int range) {
+        this.range = range;
+    }
+
     public long getSiteId() {
         return siteId;
     }

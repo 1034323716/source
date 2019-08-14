@@ -13,8 +13,10 @@
 package richinfo.attendance.service.impl;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.util.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richinfo.attendance.SMS.AESUtil;
 import richinfo.attendance.bean.*;
 import richinfo.attendance.cache.UserInfoCache;
 import richinfo.attendance.common.AtdcResultCode;
@@ -23,14 +25,16 @@ import richinfo.attendance.common.ResultCode;
 import richinfo.attendance.dao.AttendEmployeeDao;
 import richinfo.attendance.dao.AttendGroupDao;
 import richinfo.attendance.dao.AttendLoginDao;
+import richinfo.attendance.dao.AttendReportDao;
+import richinfo.attendance.entity.*;
 import richinfo.attendance.entity.AttendEmployee.EmployeeType;
-import richinfo.attendance.entity.AttendWhitelistEntity;
-import richinfo.attendance.entity.AttendanceEquipmentControl;
-import richinfo.attendance.entity.UserInfo;
+import richinfo.attendance.service.AttendGroupService;
 import richinfo.attendance.service.AttendLoginService;
+import richinfo.attendance.service.AttendService;
 import richinfo.attendance.util.*;
 import richinfo.bcomponet.cache.CachedUtil;
 import richinfo.bcomponet.cache.comm.CacheKey;
+import richinfo.bcomponet.resource.BComponetConfig;
 
 import java.util.*;
 
@@ -43,8 +47,11 @@ public class AttendLoginServiceImpl implements AttendLoginService
         .getLogger(AttendLoginServiceImpl.class);
     private UserInfoCache userInfoCache = UserInfoCache.getInstance();
     AttendLoginDao loginDao = new AttendLoginDao();
+    private AttendReportDao attendReportDao = new AttendReportDao();
     private AttendEmployeeDao employeeDao = new AttendEmployeeDao();
     private AttendGroupDao groupDao = new AttendGroupDao();
+    private AttendService attednService = new AttendServiceImpl();
+    private AttendGroupService groupService = new AttendGroupServiceImpl();
     /** 用管凭证校验请求参数密钥 */
     private static final String ARTIFACT_SECRET = "3*7-AB3S$69@94a0";
 
@@ -453,6 +460,179 @@ public class AttendLoginServiceImpl implements AttendLoginService
         res = UMCUtil.getInstance().getArtifactByUmc(
             userInfo);
 		return res;
+    }
+
+    @Override
+    public SMSAttendancInfo ssoAttendanceSMS(AttendLoginReq req) {
+        // 前往统一认证平台校验token
+        UMCResBean resBean = UMCUtil.getInstance().checkTokenBySMS(req.getToken());
+        SMSAttendancInfo attendancInfo = null;
+        if (AssertUtil.isNotEmpty(resBean.getHeader())
+            && "103000".equals(resBean.getHeader().getResultcode())) {
+
+            attendancInfo = new SMSAttendancInfo();
+            //获取登录手机号
+            String phone = resBean.getBody().getMsisdn();
+            // 由于之前此处查询是空的，也无影响，在此处查询做关联审批员角色查询
+            UserInfo userInfo = loginDao.queryUserInfoByUid(req.getUid(), 0);
+            logger.info("=========================>> userInfo : {}, uid:{}",userInfo, req.getUid());
+            try {
+                String desPhone = AESUtil.deCodeAES(phone,AttendanceConfig.getInstance().getProperty("attend.sms.token.phone.secret", "hHMogstx1gcJQLcu"));
+                //不存在
+                if(null == userInfo) {
+                    attendancInfo.setSsoStatus(-1);
+                    return attendancInfo;
+                }
+
+                if(StringUtils.isEmpty(userInfo.getPhone())) {
+                    String remotePhone = getUserMobile(userInfo.getEnterId(), userInfo.getContactId());
+                    if(null == remotePhone) {
+                        attendancInfo.setSsoStatus(-1);
+                        return attendancInfo;
+                    }
+
+                    userInfo.setPhone(remotePhone);
+                    //入库
+                    List<Map<String, String>> phoneList = new ArrayList<>();
+                    Map<String, String> phoneItem = new HashMap<>();
+                    phoneItem.put("phone",remotePhone);
+                    phoneItem.put("uid",userInfo.getUid());
+                    phoneList.add(phoneItem);
+                    attendReportDao.batchInsertPhone(phoneList);
+                }
+                logger.info("=========================>> resBean : {}, phoneNum : {}, " +
+                    "desPhone : {}, userPhone:{}",resBean,phone,desPhone,userInfo.getPhone());
+
+                //替人打卡
+                if(!userInfo.getPhone().equals(desPhone)) {
+                    attendancInfo.setSsoStatus(-2);
+                    return attendancInfo;
+                }
+
+            } catch (Exception e) {
+                logger.error("Aes phone error : {}", e.toString());
+                attendancInfo.setSsoStatus(-1);
+                return attendancInfo;
+            }
+            String usessionid = UUID.randomUUID().toString();
+
+
+            userInfo.setCacheupdatetime(System.currentTimeMillis());
+            userInfo.setLoginupdatetime(System.currentTimeMillis());
+            userInfo.setToken(usessionid);
+
+            // 缓存用户信息 默认缓存半小时
+            logger.info("sms login usessionid {}", usessionid);
+            userInfoCache.save(
+                usessionid,
+                userInfo,
+                AttendanceConfig.getInstance().getPropertyLong(
+                    "attend.user.cacheTime", 1800000));
+
+            //获取打卡数据
+            AttendReq employRecordReq = new AttendReq();
+            employRecordReq.setUid(req.getUid());
+            employRecordReq.setUserInfo(userInfo);
+            employRecordReq.setToken(usessionid);
+            AttendRes attendRes = attednService.queryEmployRecord(employRecordReq);
+            //获取考勤组
+            AttendGroupReq reqBean = new AttendGroupReq();
+            reqBean.setUserInfo(userInfo);
+            AttendUserInGroupRes res = groupService.queryOwnGroup(reqBean);
+            attendancInfo.setToken(usessionid);
+            if(null != res) {
+                attendancInfo.setAllowOutRangeClock(res.getAllowOutRangeClock());
+                attendancInfo.setCharge(res.getCharge());
+                UserGroupEntity userGroupEntity = res.getUserGroup();
+                List<AttendClockSite> attendClockSites = null;
+                if(null != userGroupEntity
+                    && (attendClockSites = userGroupEntity.getAttendClockSites()) != null) {
+                    for (AttendClockSite item : attendClockSites) {
+                        item.setRange(item.getAttendanceRange());
+                    }
+                }
+                attendancInfo.setUserGroup(userGroupEntity);
+            }
+
+            if(null != attendRes) {
+                attendancInfo.setAttendClockVos(attendRes.getAttendClockVos());
+                attendancInfo.setAttendRecord(attendRes.getAttendRecord());
+            }
+        }
+
+        logger.info("attendance data is {}", attendancInfo);
+        return attendancInfo;
+    }
+
+    private String getUserMobile(String entpId, String contactId) {
+        int retry = 2;
+        while (true) {
+            try {
+                Map<String, Object> repMap = QytxlUtil.getInstance().getItem(entpId, contactId);
+                if (0 == (Double) repMap.get("error_code")){
+                    Map<String,Object> itemMap = (Map<String, Object>) repMap.get("item");
+                    String regMobile =  (String)itemMap.get("regMobile");
+                    regMobile =  AesUtils.decrypt(regMobile, AttendanceConfig.getInstance().getProperty("attend.qytxl.aes_key", "6af15ca383ee45dd"));
+                    logger.info("decrypt ContactId={}|enterId={}|regMobile={}",contactId, entpId,regMobile);
+                    return regMobile;
+                }else {
+                    logger.error("获取失败==========》ContactId={}|enterId={}|msg={}", contactId, entpId,repMap.get("error_msg"));
+                    if(retry < 0) {
+                        return null;
+                    }
+                }
+                retry--;
+            } catch (Exception e) {
+                if(retry < 0) {
+                    return null;
+                }
+                retry--;
+            }
+        }
+    }
+
+    @Override
+    public SMSAttendancInfo ssoAttendanceTakeNum(AttendLoginReq req) {
+        String usessionid = UUID.randomUUID().toString();
+        // 由于之前此处查询是空的，也无影响，在此处查询做关联审批员角色查询
+        UserInfo userInfo = loginDao.queryUserInfoByUid(req.getUid(), 0);
+        userInfo.setCacheupdatetime(System.currentTimeMillis());
+        userInfo.setLoginupdatetime(System.currentTimeMillis());
+        userInfo.setToken(usessionid);
+        req.setUserInfo(userInfo);
+        // 缓存用户信息 默认缓存半小时
+        logger.info("take number login usessionid {}", usessionid);
+        userInfoCache.save(
+            usessionid,
+            userInfo,
+            AttendanceConfig.getInstance().getPropertyLong(
+                "attend.user.cacheTime", 1800000));
+
+        //获取打卡数据
+        AttendReq employRecordReq = new AttendReq();
+        employRecordReq.setUid(req.getUid());
+        employRecordReq.setUserInfo(userInfo);
+        employRecordReq.setToken(usessionid);
+        AttendRes attendRes = attednService.queryEmployRecord(employRecordReq);
+        //获取考勤组
+        AttendGroupReq reqBean = new AttendGroupReq();
+        reqBean.setUserInfo(userInfo);
+        AttendUserInGroupRes res = groupService.queryOwnGroup(reqBean);
+
+        SMSAttendancInfo attendancInfo = new SMSAttendancInfo();
+        attendancInfo.setToken(usessionid);
+        if(null != res) {
+            attendancInfo.setAllowOutRangeClock(res.getAllowOutRangeClock());
+            attendancInfo.setCharge(res.getCharge());
+            attendancInfo.setUserGroup(res.getUserGroup());
+        }
+
+        if(null != attendRes) {
+            attendancInfo.setAttendClockVos(attendRes.getAttendClockVos());
+            attendancInfo.setAttendRecord(attendRes.getAttendRecord());
+        }
+
+        return attendancInfo;
     }
 
     /**

@@ -15,8 +15,16 @@
         </rollingPolicy>
     </appender>
 
+    <!-- ch.qos.logback.core.ConsoleAppender 控制台输出 -->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS}  %cyan(%-40.40logger{39}) : %m%n</pattern>
+        </encoder>
+    </appender>
+
     <logger name="richinfo.attendance" level="DEBUG" additivity="false">
         <appender-ref ref="attendLog" />
+        <appender-ref ref="console" />
     </logger>
 
     <root level="INFO">

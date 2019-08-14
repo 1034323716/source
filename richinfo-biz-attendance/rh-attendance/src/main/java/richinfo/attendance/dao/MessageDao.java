@@ -12,6 +12,8 @@
  */
 package richinfo.attendance.dao;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import richinfo.attendance.entity.AttendEmployee;
 import richinfo.attendance.entity.Message;
+import richinfo.attendance.util.TimeUtil;
 import richinfo.dbcomponent.exception.PersistException;
 import richinfo.attendance.util.AssertUtil;
 
@@ -132,7 +135,9 @@ public class MessageDao extends BaseAttendanceDao
             reqMap.put("skip", skip);
             reqMap.put("limit", limit);
             reqMap.put("currentServerNo", currentServerNo);
-            reqMap.put("endDate", endDate);
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String nowdayTime = dateFormat.format(endDate);
+            reqMap.put("endDate", nowdayTime);
             return attendanceDao.queryForList(
                 "attendance.queryPageNeedSendMsgs", reqMap);
         }
@@ -198,6 +203,22 @@ public class MessageDao extends BaseAttendanceDao
             log.warn("batchSaveMessage failed,list is empty.");
             log.error("batchSaveMessage error.", e);
             return id;
+        }
+    }
+
+    public int updateMessageBySSMSwitch(String uid, int SMSSwitch) {
+        Map<String, Object> reqMap = new HashMap<String, Object>();
+        try
+        {
+            reqMap.put("uid", uid);
+            reqMap.put("status", SMSSwitch);
+            reqMap.put("nowTime", TimeUtil.formatDateTime(new Date(), TimeUtil.BASE_DATETIME_FORMAT));
+            return attendanceDao.update("attendance.updateMessageBySSMSwitch", reqMap);
+        }
+        catch (PersistException e)
+        {
+            log.error("updateMessageBySSMSwitch error, params : {}, exception : {}", reqMap, e);
+            return 0;
         }
     }
 }

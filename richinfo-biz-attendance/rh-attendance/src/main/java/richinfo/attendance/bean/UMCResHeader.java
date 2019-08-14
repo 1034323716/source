@@ -93,5 +93,18 @@ public class UMCResHeader extends BeanObject implements Serializable
     {
         this.resultcode = resultcode;
     }
-    
+
+    @Override
+    public String toString(){
+        StringBuilder sb =new StringBuilder();
+        sb.append("version=")
+            .append(version)
+            .append(", inresponseto=")
+            .append(inresponseto)
+            .append(", systemtime=")
+            .append(systemtime)
+            .append(", resultcode=")
+            .append(resultcode);
+        return sb.toString();
+    }
 }

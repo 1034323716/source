@@ -93,6 +93,19 @@ public class UserInfo implements Serializable
      */
     private Integer roleType;
 
+    /**
+     * 短信开关设置   0:关闭  1:开启
+     */
+    private Integer smsSwitch;
+
+    public Integer getSmsSwitch() {
+        return smsSwitch;
+    }
+
+    public void setSmsSwitch(Integer smsSwitch) {
+        this.smsSwitch = smsSwitch;
+    }
+
     public Integer getRoleType() {
         return roleType;
     }
@@ -330,6 +343,7 @@ public class UserInfo implements Serializable
             ", cacheupdatetime=" + cacheupdatetime +
             ", umcArtifactValidRes=" + umcArtifactValidRes +
             ", roleType=" + roleType +
+            ", smsSwitch=" + smsSwitch +
             '}';
     }
 

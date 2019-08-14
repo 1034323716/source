@@ -2,8 +2,6 @@ package richinfo.attendance.common;
 
 import java.io.Serializable;
 
-import richinfo.basemodel.validate.annotation.IgnoreBinding;
-
 /**
  * 功能描述：请求服务的参数基类
  * 

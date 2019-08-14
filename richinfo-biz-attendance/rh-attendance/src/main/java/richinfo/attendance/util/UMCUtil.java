@@ -13,9 +13,9 @@
 package richinfo.attendance.util;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.security.MessageDigest;
+import java.util.*;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -73,6 +73,14 @@ public class UMCUtil
     private String UMC_GET_ARTICFACT = AttendanceConfig.getInstance()
         .getProperty("attend.getArtifact.url",
             "http://auth.cmpassport.com:6500/UmcWeb/s?func=GetArtifactRequest");
+
+    /**
+     * SMS验证
+     */
+    private String UMC_SMS_URL = AttendanceConfig.getInstance()
+        .getProperty("attend.umc.sms.url",
+            "http://117.136.240.92/mobile/unitemptoken");
+
     /**
      * 统一认证sourceID
      */
@@ -167,6 +175,58 @@ public class UMCUtil
     }
 
     /**
+     * 通过统一认证平台认证token的有效性
+     * @param token
+     * @return
+     */
+    public UMCResBean checkTokenBySMS(String token)
+    {
+        UMCResBean resBean = new UMCResBean();
+
+        String resultJson = null;
+        HttpParamVo reqVo = umcSMSParam(token);
+        try
+        {
+            // 使用通讯组件调用UMC token校验接口
+            resultJson = new String((byte[]) CallService.callService(UMC_SMS_URL,
+                reqVo), "utf-8");
+            log.info(
+                "checkTokenBySMS params={} | resultJson={}", reqVo.getParam(), resultJson);
+
+            // 校验结果解析
+            resBean = JsonUtil.jsonToBean(resultJson, UMCResBean.class);
+
+        }
+        catch (Exception e)
+        {
+            log.error(
+                "checkTokenByUMC call socket server failed! uid={}|enterId={}|reqJson={}",reqVo.getParam(), e);
+            // UMC接口稳定性不佳，失败进行一次重试
+            try
+            {
+                // 有网络问题？，先睡眠10ms
+                Thread.sleep(10);
+                // 使用通讯组件调用UMC token校验接口
+                resultJson = new String((byte[]) CallService.callService(
+                    UMC_SMS_URL, reqVo), "utf-8");
+                log.info(
+                    "second checkTokenByUMC  uid={}|enterId={}|reqJson={}|resultJson={}", reqVo.getParam(), resultJson);
+
+                // 校验结果解析
+                resBean = JsonUtil.jsonToBean(resultJson, UMCResBean.class);
+            }
+            catch (Exception e2)
+            {
+                log.error(
+                    "second checkTokenByUMC call socket server,  still failed! uid={}|enterId={}|token={}", token, e2);
+            }
+
+        }
+
+        return resBean;
+    }
+
+    /**
      * 统一认证请求参数组装
      * {"header":{"apptype":"2","msgid":"1443434372620","sourceid":"100000",
      * "systemtime":"20170317185000123","version":"1.0"},"body":{"token":
@@ -201,6 +261,83 @@ public class UMCUtil
         reqVo.setParam(JsonUtil.beanToJson(reqBean));
 
         return reqVo;
+    }
+
+    private HttpParamVo umcSMSParam(String token)
+    {
+        HttpParamVo reqVo = new HttpParamVo();
+        UMCReqBean reqBean = new UMCReqBean();
+        // 请求头head
+        UMCReqHeader head = new UMCReqHeader();
+        head.setVersion("1.0");
+        head.setMsgid(UUID.randomUUID().toString());
+        head.setSystemtime(TimeUtil
+            .getCurrentDateTime(TimeUtil.DATETIME_FORMAT_yyyyMMddHHmmssSSS));
+        head.setId(UMC_SOURCEID);
+        head.setIdtype("0");
+        // 业务平台编码定义 1BOSS、2web 、3wap 、4pc客户端 、5手机客户端
+        head.setApptype("3");
+        Map<String, Object> map = new TreeMap<>();
+        map.put("version", head.getVersion());
+        map.put("id", head.getId());
+        map.put("idtype", head.getIdtype());
+        map.put("msgid", head.getMsgid());
+        map.put("token", token);
+        map.put("systemtime", head.getSystemtime());
+        map.put("apptype", head.getApptype());
+        String sign = md5(mapToString(map));
+        head.setSign(sign);
+        reqBean.setHeader(head);
+
+        // 请求body
+        UMCReqBody body = new UMCReqBody();
+        body.setToken(token);
+        reqBean.setBody(body);
+
+        // UMC接口指定contentType
+        String contentType = "application/json;charset=utf-8";
+        reqVo.setContentType(contentType);
+        reqVo.setParam(JsonUtil.beanToJson(reqBean));
+
+        return reqVo;
+    }
+
+    public static String md5(String text) {
+        String result = "";
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(text.getBytes("UTF-8"));
+            byte[] b = md.digest();
+            int i;
+            StringBuffer buf = new StringBuffer("");
+            for (int offset = 0; offset < b.length; offset++) {
+                i = b[offset];
+                if (i < 0) {
+                    i += 256;
+                }
+                if (i < 16) {
+                    buf.append("0");
+                }
+                buf.append(Integer.toHexString(i));
+            }
+            result = buf.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public String mapToString(Map<String, Object> map) {
+        if (null == map || map.isEmpty()) {
+            return null;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            sb.append(entry.getValue());
+        }
+
+        return sb.toString();
     }
 
     /**
@@ -681,6 +818,7 @@ public class UMCUtil
 
         return str.toString();
     }
+
 
     public static void main(String[] args)
     {

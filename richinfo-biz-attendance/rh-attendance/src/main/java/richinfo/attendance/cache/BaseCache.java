@@ -45,6 +45,7 @@ public class BaseCache<T>
     public T get(Serializable key)
     {
         String skey = String.format(cacheKey, key);
+        skey = skey.replaceAll("\"","");
         return (T) CachedUtil.get(skey);
     }
 

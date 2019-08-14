@@ -1,69 +1,69 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>richinfo.cn</groupId>
-		<artifactId>richinfo-parent</artifactId>
-		<version>1.0.0-SNAPSHOT</version>
-	</parent>
-	<artifactId>rh-dbcomponent</artifactId>
-	<version>2.4.10</version>
-	<name>dbcomponent</name>	
-	<description>数据库组件,ibatis包装</description>
-	
-	<properties>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
-       <tools.version>2.5.29</tools.version>
-       <logger.version>1.10.7</logger.version>
-       <!--<rh-tools.version>2.5.13</rh-tools.version>
-       <rh-logger.version>1.10.5</rh-logger.version>-->
-    </properties>
-		    
-	<dependencies>
-		<dependency>
-			<groupId>richinfo.cn</groupId>
-			<artifactId>tools</artifactId>
-			<version>${tools.version}</version>
-		</dependency>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>richinfo.cn</groupId>
+        <artifactId>richinfo-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>rh-dbcomponent</artifactId>
+    <version>2.4.10</version>
+    <name>dbcomponent</name>
+    <description>数据库组件,ibatis包装</description>
 
-		<dependency>
-			<groupId>richinfo.cn</groupId>
-			<artifactId>logger</artifactId>
-			<version>${logger.version}</version>
-		</dependency>
-		<!-- 第三方jar包 -->
-		<dependency>
-			<groupId>org.mongodb</groupId>
-			<artifactId>mongo-java-driver</artifactId>
-			<scope>provided</scope>
-			<version>3.2.2</version>
-		</dependency>
-		<dependency>
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <tools.version>2.5.29</tools.version>
+        <logger.version>1.10.7</logger.version>
+        <!--<rh-tools.version>2.5.13</rh-tools.version>
+        <rh-logger.version>1.10.5</rh-logger.version>-->
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>richinfo.cn</groupId>
+            <artifactId>tools</artifactId>
+            <version>${tools.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>richinfo.cn</groupId>
+            <artifactId>logger</artifactId>
+            <version>${logger.version}</version>
+        </dependency>
+        <!-- 第三方jar包 -->
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+            <scope>provided</scope>
+            <version>3.2.2</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.ibatis</groupId>
             <artifactId>ibatis-sqlmap</artifactId>
-			<version>2.3.0.677</version>
+            <version>2.3.0.677</version>
         </dependency>
-		<dependency>
-			<groupId>ojdbc</groupId>
-			<artifactId>ojdbc14</artifactId>
-			<version>10.2</version>
-		</dependency>
-		<dependency>
-			<groupId>proxool</groupId>
-			<artifactId>proxool</artifactId>
-			<version>0.9.1</version>
-		</dependency>		
-		<dependency>
-			<groupId>dom4j</groupId>
-			<artifactId>dom4j</artifactId>
-			<version>1.6.1</version>
-		</dependency>
-		<dependency>
-		  <groupId>org.apache.tomcat</groupId>
-		  <artifactId>tomcat-jdbc</artifactId>
-		  <version>7.0.25</version>
-		</dependency>
+        <!--<dependency>-->
+        <!--<groupId>ojdbc</groupId>-->
+        <!--<artifactId>ojdbc14</artifactId>-->
+        <!--<version>10.2</version>-->
+        <!--</dependency>-->
+        <dependency>
+            <groupId>proxool</groupId>
+            <artifactId>proxool</artifactId>
+            <version>0.9.1</version>
+        </dependency>
+        <dependency>
+            <groupId>dom4j</groupId>
+            <artifactId>dom4j</artifactId>
+            <version>1.6.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-jdbc</artifactId>
+            <version>7.0.25</version>
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -73,6 +73,30 @@
             <groupId>com.alibaba</groupId>
             <artifactId>druid</artifactId>
             <version>1.1.10</version>
+        </dependency>
+
+        <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>3.7</version>
+        </dependency>
+
+        <dependency>
+        <groupId>commons-codec</groupId>
+        <artifactId>commons-codec</artifactId>
+        <version>1.11</version>
+        </dependency>
+
+        <dependency>
+        <groupId>com.alibaba</groupId>
+        <artifactId>fastjson</artifactId>
+        <version>1.2.45</version>
+        </dependency>
+
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>4.1.0</version>
         </dependency>
     </dependencies>
 </project>

@@ -207,4 +207,33 @@ public class UMCResBody extends BeanObject implements Serializable
         this.relateToAndPassport = relateToAndPassport;
     }
 
+    @Override
+    public String toString(){
+        StringBuilder sb =new StringBuilder();
+        sb.append("usessionid=")
+            .append(usessionid)
+            .append(", passid=")
+            .append(passid)
+            .append(", andid=")
+            .append(andid)
+            .append(", msisdn=")
+            .append(msisdn)
+            .append(", email=")
+            .append(email)
+            .append(", loginidtype=")
+            .append(loginidtype)
+            .append(", msisdntype=")
+            .append(msisdntype)
+            .append(", province=")
+            .append(province)
+            .append(", authtype=")
+            .append(authtype)
+            .append(", authtime=")
+            .append(authtime)
+            .append(", lastactivetime=")
+            .append(lastactivetime)
+            .append(", relateToAndPassport=")
+            .append(relateToAndPassport);
+        return sb.toString();
+    }
 }

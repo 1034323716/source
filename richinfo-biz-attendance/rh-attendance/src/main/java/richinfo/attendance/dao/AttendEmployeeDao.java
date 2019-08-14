@@ -845,4 +845,36 @@ public class AttendEmployeeDao extends BaseAttendanceDao
             logger.error("batchSaveComplementEmployee failed,|e={}",  e);
         }
     }
+
+    /**
+     * 更新用户短信打卡开关设置
+     * @return 更新的行数
+     */
+    public int updateEmployeeSMSSwitch(String uid, int status) {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("uid", uid);
+        params.put("status", status);
+        int modifyLine = 0;
+        try {
+            modifyLine = attendanceDao.update("attendance.updateEmployeeSMSSwitch",params);
+        } catch (PersistException e) {
+            e.printStackTrace();
+            logger.error("updateEmployee error params : {}, exception : {}", params, e.toString());
+        }
+        return modifyLine;
+    }
+
+    /**
+     * 获取用户短信打卡开关状态
+     */
+    public int getEmployeeSMSSwitch(String uid) {
+        int SMSSwitchStatum = 0;
+        try {
+            SMSSwitchStatum = (int) attendanceDao.queryForObject("attendance.getMessageBySSMSwitch",uid);
+        } catch (PersistException e) {
+            e.printStackTrace();
+            logger.error("getEmployeeSMSSwitch error params : {}, exception : {}", uid, e.toString());
+        }
+        return SMSSwitchStatum;
+    }
 }

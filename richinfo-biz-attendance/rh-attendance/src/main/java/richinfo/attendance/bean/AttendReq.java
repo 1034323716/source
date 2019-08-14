@@ -47,6 +47,17 @@ public class AttendReq extends AttendReqBean
 
     private String equipmentSerial;
 
+    /** 打卡来源  0、app打卡  1、短信打卡 **/
+    private String clockSource;
+
+    public String getClockSource() {
+        return clockSource;
+    }
+
+    public void setClockSource(String clockSource) {
+        this.clockSource = clockSource;
+    }
+
     public String getEquipmentSerial() {
         return equipmentSerial;
     }
@@ -140,7 +151,7 @@ public class AttendReq extends AttendReqBean
             .append(super.getAttendanceId()).append(",location=")
             .append(location).append(",longitude=").append(longitude)
             .append(",latitude=").append(latitude).append(",status=")
-            .append(status).append("]");
+            .append(status).append(", clockSource=").append(clockSource).append("]");
         return sb.toString();
     }
 

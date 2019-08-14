@@ -70,6 +70,19 @@ public class Message extends BeanObject implements Serializable
     /** 最后修改时间 */
     private Date modifyTime;
 
+    /**
+     * 短信开关设置   0:关闭  1:开启
+     */
+    private Integer smsSwitch;
+
+    public Integer getSmsSwitch() {
+        return smsSwitch;
+    }
+
+    public void setSmsSwitch(Integer smsSwitch) {
+        this.smsSwitch = smsSwitch;
+    }
+
     public long getAppealId() {
         return appealId;
     }
@@ -234,7 +247,7 @@ public class Message extends BeanObject implements Serializable
             + ", sender=" + sender + ", topic=" + topic + ", content="
             + content + ", summary=" + summary + ", serverNo=" + serverNo
             + ", msgType=" + msgType + ", createTime=" + createTime
-            + ", sendTime=" + sendTime + ", modifyTime=" + modifyTime + "]";
+            + ", sendTime=" + sendTime + ", modifyTime=" + modifyTime + ", smsSwitch=" + smsSwitch + "]";
     }
 
 }
