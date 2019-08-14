@@ -311,7 +311,6 @@
 		mon.leaveWork AS lastDate,
 		mon.leaveWorkDesc AS lastTimeDesc,
 		mon.remark AS remark,
-		mon.phone,
 		mon.leaveLocation AS
 		lastTimeLocation,
         aei.employeeName, att.attendanceName,
