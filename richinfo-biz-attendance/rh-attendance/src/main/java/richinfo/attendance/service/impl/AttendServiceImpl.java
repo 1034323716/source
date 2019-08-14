@@ -357,23 +357,24 @@ public class AttendServiceImpl implements AttendService
                     List<AttendanceEquipment> equipmentList = attendGroupDao.queryEquipments(temp);
                     temp.put("uid",attendReq.getUserInfo().getUid());
                     int i = attendGroupDao.queryEquipmentNumByUid(temp);
-                    boolean flag = false;
+                    boolean flag = true;
                     //若该列表为空 则说明没有录入过
-                    if (AssertUtil.isEmpty(equipmentList)) {
-                        flag = true;
-                    } else {
-                        for (AttendanceEquipment equipment:equipmentList) {
+                    if (AssertUtil.isNotEmpty(equipmentList)) {
+                        for (AttendanceEquipment equipment : equipmentList) {
                             //判断是否已经有录入过相同的设备 若已经录入则不再录入 若已录入的设备被删除则还原
                             if (attendReq.getEquipmentSerial().equals(equipment.getEquipmentSerial()) && "0".equals(equipment.getEquipmentStatus())) {
                                 //判断该设备是否是本人的
-                                flag = attendReq.getUid().equals(equipment.getUid());
-                                break;
-                            } else {
-                                flag = true;
-                                break;
+                                if (attendReq.getUid().equals(equipment.getUid())) {
+                                    logger.info("**********************clockSerial={}", attendReq.getEquipmentSerial() + "******************************");
+                                    return attendDao.saveAttendRecord(attendRecord);
+                                } else {
+                                    flag = false;
+                                    break;
+                                }
                             }
                         }
                     }
+
                     if (flag) {
                         //判断该员工的设备是否已经满额
                         if (Integer.parseInt(attendanceEquipmentControl.getEquipmentLimit()) < i) {
