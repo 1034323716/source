@@ -1545,6 +1545,7 @@
                 aei.employeeName LIKE CONCAT('%', #employeeName#, '%')
 			</isNotEmpty>
 		</dynamic>
+        order by t.attendanceId ASC
 	</select>
 
 	<!-- 查询需要导出PC端的团队月报信息总量 -->
@@ -3128,7 +3129,8 @@
         WHERE DATE_FORMAT(emd.attendanceDate,'%Y-%m') = #attendanceMonth#
         AND emd.remark = "工作日"
         AND emd.enterId = #enterId#
-        GROUP BY emd.uid
+        GROUP BY emd.uid ,emd.attendanceId
+        order by emd.attendanceId ASC;
     </select>
     <!--新版统计部分end-->
 
