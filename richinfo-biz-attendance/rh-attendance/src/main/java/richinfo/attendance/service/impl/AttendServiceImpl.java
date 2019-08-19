@@ -376,7 +376,7 @@ public class AttendServiceImpl implements AttendService
 
                     if (flag) {
                         //判断该员工的设备是否已经满额
-                        if (Integer.parseInt(attendanceEquipmentControl.getEquipmentLimit()) < i) {
+                        if (Integer.parseInt(attendanceEquipmentControl.getEquipmentLimit()) <= i) {
                             attendRes.setCode(AtdcResultCode.S_ERROR);
                             attendRes.setSummary("设备数量超出了限制");
                             return attendRes;
