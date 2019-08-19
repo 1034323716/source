@@ -64,9 +64,9 @@ public class DataSourceInfo {
     /** 指明连接是否被空闲连接回收器( 如果有) 进行检验. 如果检测失败, 则连接将被从池中去除 tomcat */
     private boolean testWhileIdle = true;
     /** 指明是否在从池中取出连接前进行检验, 如果检验失败, 则从池中去除连接并尝试取出另一个 tomcat */
-    private boolean testOnBorrow = false;
+    private boolean testOnBorrow = true;
     /** 指明是否在归还到池中前进行检验 tomcat */
-    private boolean testOnReturn = false;
+    private boolean testOnReturn = true;
     /** 在空闲连接回收器线程运行期间休眠的时间值 tomcat */
     private String timeBetweenEvictionRunsMillis;
     /** 最大建立连接等待时间。如果超过此时间将接到异常。设为-1表示无限制 tomcat */

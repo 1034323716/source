@@ -1,24 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tasks>
 
-    <task name="AttendCalendarTask" 
+    <task name="AttendCalendarTask"
           class="richinfo.attendance.task.AttendCalendarTask">
-        <desc>保存公共日历数据</desc>        
-    </task>   
+        <desc>保存公共日历数据</desc>
+    </task>
 
-    <task name="employeeMonthDetailTask" 
+    <task name="employeeMonthDetailTask1"
           class="richinfo.attendance.task.EmployeeMonthDetailTask">
-        <desc>员工个人月报明细统计</desc>        
-    </task>       
+        <desc>9:30员工个人月报明细统计</desc>
+    </task>
+    <task name="employeeMonthDetailTask2"
+          class="richinfo.attendance.task.EmployeeMonthDetailTask">
+        <desc>12:00员工个人月报明细统计</desc>
+    </task>
+    <task name="employeeMonthDetailTask3"
+          class="richinfo.attendance.task.EmployeeMonthDetailTask">
+        <desc>20:00员工个人月报明细统计</desc>
+    </task>
+    <task name="employeeMonthDetailTask4"
+          class="richinfo.attendance.task.EmployeeMonthDetailTask">
+        <desc>00:00员工个人月报明细统计</desc>
+    </task>
+    <task name="employeeMonthDetailTask5"
+          class="richinfo.attendance.task.EmployeeMonthDetailTask">
+        <desc>05:00员工个人月报明细统计</desc>
+    </task>
 
-	<task name="teamDailyReportTask" 
-          class="richinfo.attendance.task.TeamDailyTask">
-        <desc>团队日报统计</desc>        
-    </task>	
-	
-	<task name="teamMonthReportTask" 
+
+    <task name="employeeMonthDetailOnceTask"
+          class="richinfo.attendance.task.EmployeeMonthDetailOnceTask">
+        <desc>修复历史数据任务</desc>
+    </task>
+
+
+    <task name="teamMonthReportTask"
           class="richinfo.attendance.task.TeamMonthReportTask">
-        <desc>团队月报统计</desc>        
+        <desc>团队月报统计</desc>
     </task>
 
     <task name="messageTask"
@@ -29,46 +47,71 @@
     <task name="schedule-send-task"
           class="richinfo.attendance.task.ScheduleMsgSendTask">
         <desc>定时消息发送任务</desc>
-    </task>	
-    
+    </task>
+
     <task name="downLoadTempFile-del-task"
           class="richinfo.attendance.task.DownLoadTempFileDelTask">
         <desc>删除导出报表产生的临时文件任务</desc>
-    </task>    
+    </task>
 
+    <task name="ComplementNumberTask"
+          class="richinfo.attendance.task.ComplementNumberTask">
+        <desc>定时补充手机号码</desc>
+    </task>
 
-    <!-- 定时任务 -->
-	
-    <timer>                    
-        <cron>12 17 25 12 *</cron>     
+    <!-- 定时任务 12 17 25 12 *-->
+
+    <timer>
+        <cron>27 16 20 11 *</cron>
         <task-ref ref="AttendCalendarTask" />
-    </timer> 
-	
-    <timer>                    
-        <cron>11 09 * * *</cron>
-        <cron>00 11 * * *</cron>
+    </timer>
+
+    <timer>
+        <cron>15 10 29 10  *</cron>
+        <task-ref ref="employeeMonthDetailOnceTask" />
+    </timer>
+
+    <timer>
+
+        <cron>00 05 * * *</cron>
+        <task-ref ref="employeeMonthDetailTask5" />
+    </timer>
+
+
+    <timer>
+        <cron>00 09 * * *</cron>
+        <task-ref ref="employeeMonthDetailTask1" />
+    </timer>
+
+    <timer>
+        <cron>00 12 * * *</cron>
+        <task-ref ref="employeeMonthDetailTask2" />
+    </timer>
+
+    <timer>
         <cron>00 20 * * *</cron>
+        <task-ref ref="employeeMonthDetailTask3" />
+    </timer>
+
+    <timer>
         <cron>00 00 * * *</cron>
-        <task-ref ref="employeeMonthDetailTask" />
-    </timer> 	
-	<timer>                    
-        <cron>00 4 * * *</cron>     
-        <task-ref ref="teamDailyReportTask" />
-    </timer> 
-	
-	<timer>                    
-        <cron>30 4 * * *</cron>     
+        <task-ref ref="employeeMonthDetailTask4" />
+    </timer>
+
+    <timer>
+        <cron>00 03 * * *</cron>
         <task-ref ref="teamMonthReportTask" />
-    </timer> 
+    </timer>
 
-    <timer>  
-        <cron>30 01 * * *</cron>
+    <timer>
+        <repeat-interval>20m</repeat-interval>
+        <fail-retry-times>2</fail-retry-times>
         <task-ref ref="messageTask" />
-    </timer> 
+    </timer>
 
-    <timer>        
+    <timer>
         <repeat-interval>1m</repeat-interval>
-        <fail-retry-times>2</fail-retry-times>    
+        <fail-retry-times>2</fail-retry-times>
         <task-ref ref="schedule-send-task" />
     </timer>
 
@@ -76,5 +119,9 @@
         <repeat-interval>1h</repeat-interval>
         <fail-retry-times>2</fail-retry-times>
         <task-ref ref="downLoadTempFile-del-task" />
+    </timer>
+    <timer>
+        <cron>12 17 * * *</cron>
+        <task-ref ref="ComplementNumberTask" />
     </timer>
 </tasks>
