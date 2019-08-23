@@ -1302,7 +1302,7 @@
 	<!-- 通过uid查询是否为审批员 -->
 	<select id="queryExaminerByUid" parameterClass="java.lang.String"
 		resultClass="richinfo.attendance.entity.AttendExamineEntity">
-		selectqueryUserInfoByUid
+		select
 		attExamineId,enterId,attendanceId,examineName,examineUid,examinerState
 		from
 		attendance_examine_table
