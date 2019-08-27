@@ -538,6 +538,7 @@ public class AttendGroupAction extends BaseAttendanceAction {
                         }
                         String employeeName = (String) employeeMap.get("name");
                         if (AssertUtil.isNotEmpty(employeeName)) {
+                             logger.info("解密前employeeName={}",employeeName);
                             try {
                                 employeeName = AesUtils.decrypt(employeeName, AttendanceConfig.getInstance()
                                     .getProperty("attend.qytxl.aes_key",
@@ -545,7 +546,7 @@ public class AttendGroupAction extends BaseAttendanceAction {
                             } catch (Exception e)
                             {}
                         }
-                       // logger.info("AES解密用户姓名employeeName={}",employeeName);
+                        logger.info("解密后employeeName={}",employeeName);
                         user.setEmployeeName(employeeName);
                         user.setContactId((String) employeeMap.get("contactId"));
                         String phone = (String) employeeMap.get("regMobile");
