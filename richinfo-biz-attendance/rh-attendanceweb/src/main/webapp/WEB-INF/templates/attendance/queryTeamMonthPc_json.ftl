@@ -9,6 +9,7 @@
     	<#if data?exists>
 		<#list data as list>
 		{
+        "deptName":"${fm(list.deptName?default(''))}",
 		"attendanceId": "${fm(list.attendanceId?default(''))}",
 		"attendanceName": "${fm(list.attendanceName?default(''))}",
 		"employeeName": "${fm(list.employeeName?default(''))}",

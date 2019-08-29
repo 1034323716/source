@@ -134,6 +134,16 @@ public class EmployeeMonthDetail extends BeanObject implements Serializable
     private Integer amPmStatue;
 
     private String outWorkRemark;
+    /**部门名称*/
+    private String deptName;
+
+    public String getDeptName() {
+        return deptName;
+    }
+
+    public void setDeptName(String deptName) {
+        this.deptName = deptName;
+    }
 
     public String getOutWorkRemark() {
         return outWorkRemark;

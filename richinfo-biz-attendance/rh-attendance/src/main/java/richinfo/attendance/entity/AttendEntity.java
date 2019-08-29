@@ -37,6 +37,9 @@ public class AttendEntity implements Serializable
     /** 手机号 */
     private String phone;
 
+    /**部门名称*/
+    private String deptName;
+
     /** 考勤组ID */
     private long attendanceId;
 
@@ -63,6 +66,15 @@ public class AttendEntity implements Serializable
 
     //外勤打卡备注
     private String outWorkRemark;
+
+
+    public String getDeptName() {
+        return deptName;
+    }
+
+    public void setDeptName(String deptName) {
+        this.deptName = deptName;
+    }
 
     public String getOutWorkRemark() {
         return outWorkRemark;

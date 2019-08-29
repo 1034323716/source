@@ -1403,7 +1403,7 @@
 		select
 		t.enterId,t.attendanceId,aei.employeeName,t.normalDays,t.outsideDays,t.lateDays,t.lateMinutes,t.earlyDays,
         t.earlyMinutes,t.notClockedDays,t.goNotClockedDays,t.leaveNotClockedDays,t.appealDays,t.totalWorkTime,
-        att.attendanceName,aei.contactId
+        att.attendanceName,aei.contactId,aei.deptName
 		from
 		team_month_report t
 		inner join
@@ -1492,7 +1492,7 @@
 		select
 		e.enterId,e.attendanceDate,goWork,goWorkDate,goWorkDesc,leaveWork,leaveWorkDate,leaveWorkDesc,
         goLocation,leaveLocation,aei.employeeName,att.attendanceName,e.attendanceId,e.workMinutes,
-        e.regionStatus,e.outWorkRemark,aei.contactId
+        e.regionStatus,e.outWorkRemark,aei.contactId,aei.deptName
 		from
 		employee_month_detail e inner join attendance_group_info att
 		on
@@ -1522,6 +1522,7 @@
 		select
 		t.enterId,t.attendanceId,aei.employeeName,aei.phone,t.normalDays,t.outsideDays,t.lateDays,t.lateMinutes,t.earlyDays,t.earlyMinutes,
 		t.notClockedDays,t.goNotClockedDays,t.leaveNotClockedDays,t.appealDays,t.totalWorkTime,att.attendanceName,aei.contactId
+        ,aei.deptName
 		from
 		team_month_report t
 		inner join
@@ -1580,7 +1581,7 @@
 		resultClass="richinfo.attendance.entity.EmployeeMonthDetail">
 		select
 		e.enterId,e.attendanceDate,goWork,goWorkDate,goWorkDesc,leaveWork,leaveWorkDate,leaveWorkDesc,goLocation,leaveLocation,aei.employeeName,remark,
-		att.attendanceName,e.attendanceId,e.workMinutes,e.regionStatus,aei.contactId,aei.phone
+		att.attendanceName,e.attendanceId,e.workMinutes,e.regionStatus,aei.contactId,aei.phone,aei.deptName
 		from
 		employee_month_detail e inner join attendance_group_info att
 		on
@@ -3163,7 +3164,7 @@
     <select id="queryOriginalClockDataPc"  parameterClass="richinfo.attendance.bean.AttendReportReq" resultClass="richinfo.attendance.entity.AttendEntity">
         SELECT
         ar.attendanceDate,ar.attendanceTime,ar.location,ar.detailAddr,ar.status,ar.outWorkRemark,
-        ag.attendanceName,ae.employeeName,ae.contactId
+        ag.attendanceName,ae.employeeName,ae.contactId,ae.deptName
         FROM attendance_record ar
         INNER JOIN attendance_group_info ag
         ON ag.attendanceId = ar.attendanceId
@@ -3192,7 +3193,8 @@
     <select id="exportOriginalClockDataPc"  parameterClass="richinfo.attendance.bean.AttendReportReq" resultClass="richinfo.attendance.entity.AttendEntity">
 
         SELECT
-        ar.attendanceDate,ar.attendanceTime,ar.location,ar.detailAddr,ar.status,ar.outWorkRemark,ag.attendanceName,ae.employeeName,ae.contactId,ae.phone
+        ar.attendanceDate,ar.attendanceTime,ar.location,ar.detailAddr,
+        ar.status,ar.outWorkRemark,ag.attendanceName,ae.employeeName,ae.contactId,ae.phone,ae.deptName
         FROM attendance_record ar
         INNER JOIN attendance_group_info ag
         ON ag.attendanceId = ar.attendanceId
