@@ -11,6 +11,7 @@
 		{
 			"date":"${temp.attendanceDate?string('yyyy-MM-dd')?default('')}",
 			"employeeName":"${temp.employeeName?default('')}",
+            "deptName":"${temp.deptName?default('')}",
 			"attendanceName":"${temp.attendanceName?default('')}",
 			"goWork":"${temp.goTime?default('')}",
 			"goWorkDesc":"${temp.goWorkDesc?default('')}",

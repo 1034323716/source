@@ -1247,21 +1247,22 @@ public class AttendReportServiceImpl implements AttendReportService
 
         if (TimeUtil.convert2long(req.getAttendanceMonth(),TimeUtil.BASE_DATE_FORMAT_YYYY_MM) <
             TimeUtil.convert2long("2018-11",TimeUtil.BASE_DATE_FORMAT_YYYY_MM)){
-             rowsName = new String[] { "名称", "contactId","手机号码","考勤组", "工作总时长(分钟)", "正常",
+             rowsName = new String[] { "名称", "contactId","手机号码","部门","考勤组", "工作总时长(分钟)", "正常",
                 "外勤", "迟到", "早退", "未打卡", "已申诉" };
             for (TeamMonthEntity entity : list) {
                 objs = new Object[rowsName.length];
                 objs[0] = entity.getEmployeeName();
                 objs[1] = entity.getContactId();
                 objs[2] = entity.getPhone()==null || entity.getPhone().equals("")  ? "-" : entity.getPhone();
-                objs[3] = entity.getAttendanceName();
-                objs[4] = entity.getTotalWorkTime();
-                objs[5] = entity.getNormalDays();
-                objs[6] = entity.getOutsideDays();
-                objs[7] = entity.getLateDays();
-                objs[8] = entity.getEarlyDays();
-                objs[9] = entity.getNotClockedDays();
-                objs[10] = entity.getAppealDays();
+                objs[3] = entity.getDeptName() == null ? " " : entity.getDeptName();
+                objs[4] = entity.getAttendanceName();
+                objs[5] = entity.getTotalWorkTime();
+                objs[6] = entity.getNormalDays();
+                objs[7] = entity.getOutsideDays();
+                objs[8] = entity.getLateDays();
+                objs[9] = entity.getEarlyDays();
+                objs[10] = entity.getNotClockedDays();
+                objs[11] = entity.getAppealDays();
                 dataList.add(objs);
             }
         }else {
@@ -1273,17 +1274,18 @@ public class AttendReportServiceImpl implements AttendReportService
                 objs[0] = entity.getEmployeeName();
                 objs[1] = entity.getContactId();
                 objs[2] = entity.getPhone()==null || entity.getPhone().equals("") ?"-":entity.getPhone();
-                objs[3] = entity.getAttendanceName();
-                objs[4] = entity.getTotalWorkTime();
-                objs[5] = entity.getNormalDays();
-                objs[6] = entity.getOutsideDays();
-                objs[7] = entity.getLateDays();
-                objs[8] = entity.getLateMinutes();
-                objs[9] = entity.getEarlyDays();
-                objs[10] = entity.getEarlyMinutes();
-                objs[11] = entity.getGoNotClockedDays();
-                objs[12] = entity.getLeaveNotClockedDays();
-                objs[13] = entity.getAppealDays();
+                objs[3] = entity.getDeptName() == null ? " " : entity.getDeptName();
+                objs[4] = entity.getAttendanceName();
+                objs[5] = entity.getTotalWorkTime();
+                objs[6] = entity.getNormalDays();
+                objs[7] = entity.getOutsideDays();
+                objs[8] = entity.getLateDays();
+                objs[9] = entity.getLateMinutes();
+                objs[10] = entity.getEarlyDays();
+                objs[11] = entity.getEarlyMinutes();
+                objs[12] = entity.getGoNotClockedDays();
+                objs[13] = entity.getLeaveNotClockedDays();
+                objs[14] = entity.getAppealDays();
                 dataList.add(objs);
             }
         }
@@ -1387,7 +1389,7 @@ public class AttendReportServiceImpl implements AttendReportService
     {
         String title = "【" + req.getUserInfo().getEnterName() + "】考勤明细 统计时间 "
             + req.getStartDate() + "至" + req.getEndDate();
-        String[] rowsName = new String[] { "名称", "contactId","手机号码","日期", "考勤组", "最早打卡时间", "打卡状态描述",
+        String[] rowsName = new String[] { "名称", "contactId","手机号码","日期","部门", "考勤组", "最早打卡时间", "打卡状态描述",
             "打卡地点", "最晚打卡时间", "打卡状态描述", "打卡地点", "工作时长(分钟)" ,"是否外勤"};
 
         List<Object[]> dataList = new ArrayList<Object[]>();
@@ -1400,21 +1402,22 @@ public class AttendReportServiceImpl implements AttendReportService
             objs[1] = entity.getContactId();
             objs[2] = entity.getPhone()==null || entity.getPhone().equals("") ? "-" : entity.getPhone();
             objs[3] = TimeUtil.date2String(entity.getAttendanceDate(), "yyyy-MM-dd");
-            objs[4] = entity.getAttendanceName();
-            objs[5] = entity.getGoWorkTime() == null ? " " : entity
+            objs[4] = entity.getDeptName() == null ? " " : entity.getDeptName();
+            objs[5] = entity.getAttendanceName();
+            objs[6] = entity.getGoWorkTime() == null ? " " : entity
                 .getGoWorkTime();
-            objs[6] = entity.getGoWorkDesc() == null ? entity.getRemark() : entity
+            objs[7] = entity.getGoWorkDesc() == null ? entity.getRemark() : entity
                 .getGoWorkDesc();
-            objs[7] = entity.getGoLocation() == null ? " " : entity
+            objs[8] = entity.getGoLocation() == null ? " " : entity
                 .getGoLocation();
-            objs[8] = entity.getLeaveWorkTime() == null ? " " : entity
+            objs[9] = entity.getLeaveWorkTime() == null ? " " : entity
                 .getLeaveWorkTime();
-            objs[9] = entity.getLeaveWorkDesc() == null ? entity.getRemark() : entity
+            objs[10] = entity.getLeaveWorkDesc() == null ? entity.getRemark() : entity
                 .getLeaveWorkDesc();
-            objs[10] = entity.getLeaveLocation() == null ? " " : entity
+            objs[11] = entity.getLeaveLocation() == null ? " " : entity
                 .getLeaveLocation();
-            objs[11] = entity.getWorkMinutes();
-            objs[12] = entity.getRegionStatus() == 0 ? "否" : "是";
+            objs[12] = entity.getWorkMinutes();
+            objs[13] = entity.getRegionStatus() == 0 ? "否" : "是";
             dataList.add(objs);
         }
 
@@ -2327,7 +2330,7 @@ public class AttendReportServiceImpl implements AttendReportService
     private void buildOriginalClockDataPcExcel(AttendReportReq req, List<AttendEntity> list, AttendExportReptRes res) {
         String title = "【" + req.getUserInfo().getEnterName() + "】考勤原始数据 统计时间 "
             + req.getStartDate() + "至" + req.getEndDate();
-        String[] rowsName = new String[] { "名称", "contactId","手机号码", "考勤组", "日期", "打卡时间",
+        String[] rowsName = new String[] { "名称", "contactId","手机号码","部门", "考勤组", "日期", "打卡时间",
             "打卡地点","详细位置", "是否外勤","外勤打卡备注"};
 
         List<Object[]> dataList = new ArrayList<Object[]>();
@@ -2339,13 +2342,14 @@ public class AttendReportServiceImpl implements AttendReportService
             objs[0] = entity.getEmployeeName();
             objs[1] = entity.getContactId();
             objs[2] = entity.getPhone() ==null || entity.getPhone().equals("") ? "-":entity.getPhone();
-            objs[3] = entity.getAttendanceName();
-            objs[4] = TimeUtil.date2String(entity.getAttendanceDate(), "yyyy-MM-dd");
-            objs[5] = TimeUtil.date2String(entity.getAttendanceTime(), TimeUtil.BASE_TIME_FORMAT);
-            objs[6] =entity.getLocation();
-            objs[7] =entity.getDetailAddr();
-            objs[8] =entity.getStatus()==0 ? "否": "是";
-            objs[9] =entity.getOutWorkRemark()==null?" ":entity.getOutWorkRemark();
+            objs[3] = entity.getDeptName() == null ? " " : entity.getDeptName();
+            objs[4] = entity.getAttendanceName();
+            objs[5] = TimeUtil.date2String(entity.getAttendanceDate(), "yyyy-MM-dd");
+            objs[6] = TimeUtil.date2String(entity.getAttendanceTime(), TimeUtil.BASE_TIME_FORMAT);
+            objs[7] =entity.getLocation();
+            objs[8] =entity.getDetailAddr();
+            objs[9] =entity.getStatus()==0 ? "否": "是";
+            objs[10] =entity.getOutWorkRemark()==null?" ":entity.getOutWorkRemark();
             dataList.add(objs);
         }
 

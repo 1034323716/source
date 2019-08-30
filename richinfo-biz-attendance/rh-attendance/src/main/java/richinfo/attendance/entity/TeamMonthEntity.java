@@ -51,6 +51,9 @@ public class TeamMonthEntity implements Serializable
     /** 企业Id */
     private String enterId;
 
+    /**部门名称*/
+    private String deptName;
+
     /** 考勤组Id */
     private String attendanceId;
 
@@ -95,6 +98,14 @@ public class TeamMonthEntity implements Serializable
 
     /*下班未打卡*/
     private Integer leaveNotClockedDays;
+
+    public String getDeptName() {
+        return deptName;
+    }
+
+    public void setDeptName(String deptName) {
+        this.deptName = deptName;
+    }
 
     public Integer getLateMinutes() {
         return lateMinutes;

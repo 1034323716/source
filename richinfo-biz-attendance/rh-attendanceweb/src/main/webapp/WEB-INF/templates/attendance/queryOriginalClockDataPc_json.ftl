@@ -9,6 +9,7 @@
 	<#if attendRecord?exists>
 		<#list attendRecord as temp>
 		{
+            "deptName":"${temp.deptName?default('')}",
 			"attendanceDate":"${temp.attendanceDate?string('yyyy-MM-dd')?default('')}",
 			"attendanceTime":"${temp.attendanceTime?string('HH:mm:ss')?default('')}",
 			"location":"${temp.location?default('')}",
