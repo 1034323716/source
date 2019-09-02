@@ -1252,7 +1252,6 @@ public class MessageServiceImpl extends ServiceObject implements MessageService
                                 msg.getUid(),msg.getEnterId(),attendList);
                         continue;
                     }
-
                 }
                 // 推送消息
                 HistoryMessage hisMsg = RcsMsgUtil.sendMsg(msg, consumerKey,
