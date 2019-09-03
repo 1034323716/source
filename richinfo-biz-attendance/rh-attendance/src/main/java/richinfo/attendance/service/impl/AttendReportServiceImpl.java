@@ -1266,7 +1266,7 @@ public class AttendReportServiceImpl implements AttendReportService
                 dataList.add(objs);
             }
         }else {
-            rowsName = new String[] { "名称", "contactId","手机号码", "考勤组", "工作总时长(分钟)", "正常",
+            rowsName = new String[] { "名称", "contactId","手机号码", "部门","考勤组", "工作总时长(分钟)", "正常",
                 "外勤", "迟到","迟到时长(分钟)", "早退","早退时长(分钟)", "上班未打卡", "下班未打卡", "已申诉" };
             // 循环组装单元格数据
             for (TeamMonthEntity entity : list) {
