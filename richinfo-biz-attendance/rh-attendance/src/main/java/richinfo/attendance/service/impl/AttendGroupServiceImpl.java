@@ -2612,7 +2612,10 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             return null;
             //为空判断 则进行部门选择器操作
         }*/
-        if(userInfo.getAttendanceId() != 0 || userInfo.getWhitelistStatus() == 1){
+      /*  if(userInfo.getAttendanceId() != 0 || userInfo.getWhitelistStatus() == 1){
+            return null;
+        }*/
+        if( userInfo.getWhitelistStatus() == 1){
             return null;
         }
 
@@ -2688,7 +2691,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         }*/
         //查询是否存在考勤组
         AttendEmployee attendEmployee = employeeDao.queryEmployeeByUidAndWhitelist(uid);
-        //添加考勤组id
+        /*//添加考勤组id
         if (AssertUtil.isNotEmpty(attendEmployee) && attendEmployee.getStatus() == EmployeeStatus.Abnormal.getValue()){
             attendEmployee.setAttendanceId(attendanceId);
             //更新
@@ -2702,6 +2705,29 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             employeeDao.updateEmployee(attendEmployee);
             againCacheUser(userInfo);
             return null;
+        }*/
+
+        //如果用户已加入考勤组,更新用户的考勤组信息,否则用户不在考勤组,添加进考勤组
+        if (AssertUtil.isNotEmpty(attendEmployee)){
+            if(attendEmployee.getStatus() == EmployeeStatus.Abnormal.getValue()||attendEmployee.getAttendanceId() != attendanceId) {
+                attendEmployee.setAttendanceId(attendanceId);
+                //更新
+                attendEmployee.setModifyTime(new Date());
+                attendEmployee.setStatus(employee.getStatus());
+                //查询是否是考勤组负责人: RoleType为1则为考勤组负责人
+                //查询负责的考勤组
+                List<String> groupIds = groupDao.queryGroupPrincipalByUid(attendEmployee.getUid());
+                attendEmployee.setRoleType(groupIds != null && groupIds.size() > 0 ? 1 : 0);
+
+                //只存在一个考勤组时,将用户考勤组信息更新
+                employeeDao.updateEmployee(attendEmployee);
+
+                //第二次缓存用户信息
+                againCacheUser(userInfo);
+                logger.info("更新部门成功=>>", attendEmployee);
+                return null;
+            }
+
         }
         //由于用户跳转过来没有带用户名  所以需要查询企业通讯录获取用户名
         Map<String, Object> itemMap ;
