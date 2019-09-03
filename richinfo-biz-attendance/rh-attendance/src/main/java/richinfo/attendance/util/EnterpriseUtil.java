@@ -30,8 +30,8 @@ public class EnterpriseUtil {
 	private static Gson gson=new Gson(); 
 	
 	/*APPID相当于通讯录的APPKEY*/
-	private static String appid = AttendanceConfig.getInstance().getProperty("attend.qytxl.appid", "9fdcd721d954456b8c7ea53f80635456");
-	private static String appkey = AttendanceConfig.getInstance().getProperty("attend.qytxl.appkey", "6af15ca383ee45dd959bf0e84d8eadac");
+	private static String appkey = AttendanceConfig.getInstance().getProperty("attend.qytxl.appkey", "9fdcd721d954456b8c7ea53f80635456");
+	private static String appsecret = AttendanceConfig.getInstance().getProperty("attend.qytxl.appsecret", "6af15ca383ee45dd959bf0e84d8eadac");
 	private static String url = AttendanceConfig.getInstance().getProperty("attend.qytxl.callbackUrl", "http://121.15.167.235:10721/atdc/sync/getRegisterCallBackInfo");
 	private static String postUrl = AttendanceConfig.getInstance().getProperty("qytxl.register.url", "https://open.cytxl.com.cn/enterprise/registerCallBack.json");
 	private static String aeskey = AttendanceConfig.getInstance().getProperty("attend.qytxl.aes_key", "6af15ca383ee45dd");
@@ -162,10 +162,10 @@ public class EnterpriseUtil {
     		eventTypeString="event_user_remove";
     	}
     	logger.debug("enterpriseId:"+enterpriseId+",method:"+method+",eventType:"+eventTypeString);
-    	String app_key= appid;
+    	String app_key= appkey;
     	String once = EnterpriseUtil.getNum(12);
     	String version = "2.0";
-    	String channel = appid;
+    	String channel = appkey;
     	String sdk_from = "java";
 		JSONArray eventType = new JSONArray();
 		eventType.add(eventTypeString);
@@ -191,7 +191,7 @@ public class EnterpriseUtil {
 			Map.put("token", token);
 			Map.put("aes_key", aes_key);	
 		}
-		String signature = EnterpriseUtil.getNornmalSignature(Map, appkey);
+		String signature = EnterpriseUtil.getNornmalSignature(Map, appsecret);
 		
 		StringBuffer params = new StringBuffer();
 		params.append("app_key="+app_key);

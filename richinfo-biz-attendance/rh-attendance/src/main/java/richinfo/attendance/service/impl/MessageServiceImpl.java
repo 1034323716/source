@@ -15,7 +15,6 @@ package richinfo.attendance.service.impl;
 import com.google.gson.internal.LinkedTreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import richinfo.attendance.SMS.SmsSendUtil;
 import richinfo.attendance.asyn.HistoryMessageAsynTask;
 import richinfo.attendance.asyn.MessageAsynTask;
@@ -28,10 +27,8 @@ import richinfo.attendance.entity.AttendGroup.AttendType;
 import richinfo.attendance.entity.AttendGroup.GroupStatus;
 import richinfo.attendance.msg.Constants;
 import richinfo.attendance.msg.RcsMsgUtil;
-import richinfo.attendance.service.AttendEmployService;
 import richinfo.attendance.service.MessageService;
 import richinfo.attendance.util.*;
-import richinfo.dbcomponent.resourceloader.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -1289,7 +1286,7 @@ public class MessageServiceImpl extends ServiceObject implements MessageService
 //                                userInfo.getEmployeeName(), userInfo.getEnterName(), placeHolderContent, 3, false, msgType);
                             //contactId
                             boolean sendResult = SmsSendUtil.sendSmsWithInAddressBook(userInfo.getEnterId(), userInfo.getContactId(),
-                                AttendanceConfig.getInstance().getProperty("attend.qytxl.appid", "9fdcd721d954456b8c7ea53f80635456"), placeHolderContent, 3, false, msgType);
+                                AttendanceConfig.getInstance().getProperty("attend.qytxl.appkey", "9fdcd721d954456b8c7ea53f80635456"), placeHolderContent, 3, false, msgType);
 
                             logger.info("send user data : {}, sms sendResult : {}",userInfo, sendResult);
                         }
