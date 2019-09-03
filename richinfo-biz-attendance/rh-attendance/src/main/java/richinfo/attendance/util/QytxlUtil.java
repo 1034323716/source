@@ -707,7 +707,7 @@ public class QytxlUtil
 //        String app_key= "d7eec29775ca42a894ab3ce432667e70";
         String mobile = "";
         try {
-            mobile = AesUtils.encrypt(phone, "ca7dc22b57fa45a7");
+            mobile = AesUtils.encrypt(phone, QYTXL_AES_KEY);
         } catch (Exception e) {
             e.printStackTrace();
         }

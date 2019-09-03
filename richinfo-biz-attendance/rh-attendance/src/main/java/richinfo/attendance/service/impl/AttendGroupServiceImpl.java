@@ -3217,9 +3217,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
                 Map jsonObject = (Map) itemMap.get("item");
                 String name = (String) jsonObject.get("name");
                 try {
-                    name = AesUtils.decrypt(name, AttendanceConfig.getInstance()
-                        .getProperty("attend.qytxl.aes_key",
-                            "6af15ca383ee45dd"));
+                    name = AesUtils.decrypt(name, PublicConstant.AES_KEY);
                 } catch (Exception e) {
                     e.printStackTrace();
                     logger.error("AES 解密异常 name={}|e={}",name,e);
@@ -3233,7 +3231,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
                     try {
                         String items = QytxlUtil.getInstance().getEmployeesByEnterId(req.getUserInfo().getEnterId(),req.getUserInfo().getPhone()==null?"17620868870":req.getUserInfo().getPhone(),req.getUserInfo().getPhone()==null?"17620868870":req.getUserInfo().getPhone());
                         try {
-                            items = AesUtils.decrypt(items, "ca7dc22b57fa45a7");
+                            items = AesUtils.decrypt(items, PublicConstant.AES_KEY);
                         } catch (Exception e) {
                             e.printStackTrace();
                             logger.error("AES 解密异常 items={}|e={}",items,e);
