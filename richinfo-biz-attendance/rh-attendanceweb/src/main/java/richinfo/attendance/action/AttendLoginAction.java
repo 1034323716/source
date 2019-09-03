@@ -188,6 +188,7 @@ public class AttendLoginAction extends BaseAttendanceAction {
                    // logger.info("进来企业考勤组  =============list={} ",list);
                     saveCookie("firstLogStatus",list.isEmpty()?"1":"0",response);
                     if ("1".equals(res.getFirstLogin()) ) {
+                        logger.info("用户第一次登陆");
                         //判断是管理员，没有考勤组，则定义不是让前端跳转创建考勤组页面
                         if (list.isEmpty() &&  "1".equals(res.getStatus())) {
                             //首次进入状态 1为无考勤组 0为有考勤组
@@ -222,6 +223,7 @@ public class AttendLoginAction extends BaseAttendanceAction {
                     }else {
                         //用户不是第一次登陆
                         // 用户只有一个考勤组条件下:未加入考勤组则添加进考勤组,已加入考勤组如果再次匹配成功则更新考勤组
+                        logger.info("用户不是第一次登陆");
                         AttendEmployee employee = new AttendEmployee();
                         employee.setEnterId(req.getEnterId());
                         employee.setStatus(AttendEmployee.EmployeeStatus.Normal.getValue());
