@@ -2617,11 +2617,13 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         }*/
         if( userInfo.getWhitelistStatus() == 1){
             return null;
+            logger.info("白名单用户直接退出",userInfo);
         }
 
             //获取企业下所有部门的考勤组的部门选择器
             List<AttendDepartmentChooser> attendDepartmentChoosers = attendDepartmentDao.queryEnterDepartmentChooser(enterId);
             //为空说明企业所有考勤组没有启用部门选择器
+        logger.info("数据库中的部门列表===>attendDepartmentChoosers={}",attendDepartmentChoosers);
             if (AssertUtil.isEmpty(attendDepartmentChoosers)){
                 return null;
 
@@ -2646,6 +2648,8 @@ public class AttendGroupServiceImpl extends ServiceObject implements
                 return null;
             }
             List<String>departmentIds = (List<String>) repMap.get("departmentIds");
+        logger.info("企业通讯录用户所属部门列表====>>departmentIds={}",departmentIds);
+
             if (AssertUtil.isEmpty(departmentIds)){
                 return null;
             }
@@ -2678,6 +2682,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             }
         //获取考勤组id
         long attendanceId = attendanceIds.iterator().next();
+        logger.info("只存在一个部门====>>attendanceId={}",attendanceId);
         //强行回收
         attendanceIds = null;
         //只有一个考勤组 自动加入考勤组
@@ -2710,6 +2715,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         //如果用户已加入考勤组,更新用户的考勤组信息,否则用户不在考勤组,添加进考勤组
         if (AssertUtil.isNotEmpty(attendEmployee)){
             if(attendEmployee.getStatus() == EmployeeStatus.Abnormal.getValue()||attendEmployee.getAttendanceId() != attendanceId) {
+                logger.info("更新考勤组====>>attendanceId={}",attendanceId);
                 attendEmployee.setAttendanceId(attendanceId);
                 //更新
                 attendEmployee.setModifyTime(new Date());
@@ -2724,7 +2730,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
 
                 //第二次缓存用户信息
                 againCacheUser(userInfo);
-                logger.info("更新部门成功=>>", attendEmployee);
+                logger.info("更新部门成功==>attendEmployee={}", attendEmployee);
                 return null;
             }
 
@@ -2767,6 +2773,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         List<String> groupIds = groupDao.queryGroupPrincipalByUid(employee.getUid());
         employee.setRoleType(groupIds != null && groupIds.size() > 0 ? 1:0);
         employeeDao.saveEmployee(employee);
+        logger.info("登陆时添加进考勤组成功====>employee={}",employee);
         againCacheUser(userInfo);
             return null;
     }
