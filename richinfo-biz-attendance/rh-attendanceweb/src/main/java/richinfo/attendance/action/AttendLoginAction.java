@@ -101,9 +101,11 @@ public class AttendLoginAction extends BaseAttendanceAction {
             req.setFirstDeptId(reqMap.get("firstDeptId"));
 
             String enterName = reqMap.get("enterName");
+            log.debug("enterName before base64:" + enterName);
             // RCS通过url传过来的base64编码有问题，要替换
             try {
                 enterName = base64Dcode(enterName);
+                log.debug("enterName after base64:" + enterName);
                 req.setEnterName(enterName);
             } catch (Exception e) {}
 

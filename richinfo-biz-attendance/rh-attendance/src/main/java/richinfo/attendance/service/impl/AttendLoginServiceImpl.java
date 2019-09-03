@@ -55,6 +55,11 @@ public class AttendLoginServiceImpl implements AttendLoginService
     /** 用管凭证校验请求参数密钥 */
     private static final String ARTIFACT_SECRET = "3*7-AB3S$69@94a0";
 
+    private static long cacheTime =AttendanceConfig.getInstance()
+        .getPropertyLong("attend.user.cacheTime", 1800000);
+    private static String jumpUrl = AttendanceConfig.getInstance()
+        .getProperty("attend.login.successUrl", "");
+
     @Override
     public AttendLoginRes ssoAttendance(AttendLoginReq req)
     {
@@ -199,14 +204,12 @@ public class AttendLoginServiceImpl implements AttendLoginService
                 res.setUsessionid(usessionid);
                 res.setPhone(phone);
                 res.setEnterName(userInfo.getEnterName());
-                res.setJumpUrl(AttendanceConfig.getInstance().getProperty(
-                    "attend.login.successUrl", ""));
+                res.setJumpUrl(jumpUrl);
                 // 缓存用户信息 默认缓存半小时
                 userInfoCache.save(
                     usessionid,
                     userInfo,
-                    AttendanceConfig.getInstance().getPropertyLong(
-                        "attend.user.cacheTime", 1800000));
+                    cacheTime);
 
                 // 用户首次登录标识
                 String firstLogin = checkFirstLogin(uid);

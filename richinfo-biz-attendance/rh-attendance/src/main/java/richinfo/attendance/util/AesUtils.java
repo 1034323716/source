@@ -32,14 +32,15 @@ public class AesUtils {
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE,secretKeySpec);
             output = cipher.doFinal(Base64.decodeBase64(input));
+            return new String(output, "UTF-8");
         } catch (Exception e) {
             System.out.println(e);
+            return null;
         }
-        return new String(output);
     }
 
     public static void main(String[] args) throws Exception {
-        String beforeName = "qJJqQW3OGZdcvmjgDQNjjA==";
+        String beforeName = "Ke3++Ec+pfqjfcPRfbQBjQ==";
         String afterName = AesUtils.decrypt(beforeName, "ca7dc22b57fa45a7");
         System.out.println(afterName);
     }

@@ -52,13 +52,13 @@ public class AttendanceSyncAction {
     private final  String REQUEST_KEY = "REQUEST_KEY_q9PLS5V8y3qxbiMj9y8Xgw==";
     
     /*APPID相当于通讯录的APPKEY*/
-    private static String appKey = AttendanceConfig.getInstance().getProperty("attend.qytxl.appkey", "9fdcd721d954456b8c7ea53f80635456");
-    private static String appSecret = AttendanceConfig.getInstance().getProperty("attend.qytxl.appsecret", "6af15ca383ee45dd959bf0e84d8eadac");
+//    private static String appKey = AttendanceConfig.getInstance().getProperty("attend.qytxl.appkey", "9fdcd721d954456b8c7ea53f80635456");
+//    private static String appSecret = AttendanceConfig.getInstance().getProperty("attend.qytxl.appsecret", "6af15ca383ee45dd959bf0e84d8eadac");
+//    private static String aeskey = AttendanceConfig.getInstance().getProperty("attend.qytxl.aes_key", "6af15ca383ee45dd");
     private static String url = AttendanceConfig.getInstance().getProperty("attend.qytxl.callbackUrl", "http://121.15.167.235:10721/atdc/sync/getRegisterCallBackInfo");
-//	String postUrl = AttendanceConfig.getInstance().getProperty("qytxl.register.url", "https://open.cytxl.com.cn/enterprise/registerCallBack.json");
+    //	String postUrl = AttendanceConfig.getInstance().getProperty("qytxl.register.url", "https://open.cytxl.com.cn/enterprise/registerCallBack.json");
     private static  String postUrl = AttendanceConfig.getInstance().getProperty("qytxl.register.url", "https://open.cytxl.com.cn/enterprise/getCallBack.json");
 //    	String postUrl = AttendanceConfig.getInstance().getProperty("attend.enterprise.postUrl", "https://api1.cytxl.com.cn/enterprise/deleteCallBack.json");
-    private static String aeskey = AttendanceConfig.getInstance().getProperty("attend.qytxl.aes_key", "6af15ca383ee45dd");
 
 
     /**
@@ -94,10 +94,10 @@ public class AttendanceSyncAction {
     		eventTypeString="event_user_remove";
     	}
     	logger.debug("注册回调---enterpriseId:"+enterpriseId+",method:"+method+",eventType:"+eventTypeString);
-    	String app_key= appKey;
+    	String app_key= Constants.APP_KEY;
     	String once = EnterpriseUtil.getNum(12);
     	String version = "2.0";
-    	String channel = appKey;
+    	String channel = Constants.APP_KEY;
     	String sdk_from = "java";
 		JSONArray eventType = new JSONArray();
 		eventType.add(eventTypeString);
@@ -105,7 +105,7 @@ public class AttendanceSyncAction {
 		String token ="3ad8id23i907o2kmli03";
 		String aes_key = null;
 		try {
-			aes_key = AESEncryptUtil.aesEncrypt(aeskey, "PKCS5Padding");
+			aes_key = AESEncryptUtil.aesEncrypt(Constants.AES_KEY, "PKCS5Padding");
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
@@ -123,7 +123,7 @@ public class AttendanceSyncAction {
 			Map.put("token", token);
 			Map.put("aes_key", aes_key);	
 		}
-		String signature = EnterpriseUtil.getNornmalSignature(Map, appSecret);
+		String signature = EnterpriseUtil.getNornmalSignature(Map, Constants.APP_SECRET);
 		
 		StringBuffer params = new StringBuffer();
 		params.append("app_key="+app_key);
@@ -172,8 +172,8 @@ public class AttendanceSyncAction {
 			map.put("timeStamp",timeStamp);
 			map.put("nonce",nonce);
 			try {
-				logger.info("getRegisterCallBackInfo request msg_signature={}|timeStamp={}| nonce={}|encrypt={}|aeskey={}",msg_signature,timeStamp,nonce,encrypt,aeskey);
-				String aesDecrypt = AESEncryptUtil.aesDecrypt(encrypt, AESEncryptUtil.getAESKey(AESEncryptUtil.aesEncrypt(aeskey, "PKCS5Padding").replaceAll("\\+","")));
+				logger.info("getRegisterCallBackInfo request msg_signature={}|timeStamp={}| nonce={}|encrypt={}|aeskey={}",msg_signature,timeStamp,nonce,encrypt,Constants.AES_KEY);
+				String aesDecrypt = AESEncryptUtil.aesDecrypt(encrypt, AESEncryptUtil.getAESKey(AESEncryptUtil.aesEncrypt(Constants.AES_KEY, "PKCS5Padding").replaceAll("\\+","")));
 				//String aesDecrypt = AesUtils.decrypt(encrypt, aeskey);
 				logger.info("aesDecrypt:"+aesDecrypt);
 				JSONObject msg = JSONObject.parseObject(aesDecrypt);
@@ -233,7 +233,7 @@ public class AttendanceSyncAction {
 			logger.debug("recept message:msg_signature"+msg_signature+",timeStamp:"+timeStamp+",nonce:"+nonce+",encrypt:"+encrypt);
 			String success = null;
 			try {
-				success = AESEncryptUtil.aesEncrypt("success",AESEncryptUtil.getAESKey(AESEncryptUtil.aesEncrypt(aeskey, "PKCS5Padding").replaceAll("\\+","")));
+				success = AESEncryptUtil.aesEncrypt("success",AESEncryptUtil.getAESKey(AESEncryptUtil.aesEncrypt(Constants.AES_KEY, "PKCS5Padding").replaceAll("\\+","")));
 			} catch (Exception e) {
 			    logger.error("getRegisterCallBackInfo error msg_signature={}|encrypt={}", msg_signature, encrypt, e);
 			}
