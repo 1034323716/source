@@ -1283,7 +1283,7 @@ public class MessageServiceImpl extends ServiceObject implements MessageService
                         if(msgType == 1 || msgType == 2) {
                             String placeHolderContent = "{[placeholder:url]}##" + mSMSClockURL + "?uid=" + userInfo.getUid()
                                 + "|@|{[placeholder:remark]}##";
-                            if (AssertUtil.isEmpty(userInfo.getFirstSend())) {
+                            if (userInfo.getFirstSend()==1) {
                                 //place_holder_id1##替换内容|@|place_holder_id2##替换内容
                                 placeHolderContent = "{[placeholder:url]}##" + mSMSClockURL + "?uid=" + userInfo.getUid()
                                     + "|@|{[placeholder:remark]}##，目前只支持4G环境打卡\n如遇到IOS终端无法登录，请关闭“设置-safari浏览器-阻止跨网站跟踪”按钮或使用其它浏览器\n退订请在和飞信考勤应用设置";
@@ -1293,10 +1293,10 @@ public class MessageServiceImpl extends ServiceObject implements MessageService
 //                                userInfo.getEmployeeName(), userInfo.getEnterName(), placeHolderContent, 3, false, msgType);
                             //contactId
 
-//                            boolean sendResult = SmsSendUtil.sendSmsWithInAddressBook(userInfo.getEnterId(), userInfo.getContactId(),
-//                                AttendanceConfig.getInstance().getProperty("attend.qytxl.appid", "9fdcd721d954456b8c7ea53f80635456"), placeHolderContent, 3, false, msgType);
-                            boolean sendResult = true;
-                            if (sendResult == true && AssertUtil.isEmpty(userInfo.getFirstSend())){
+                            boolean sendResult = SmsSendUtil.sendSmsWithInAddressBook(userInfo.getEnterId(), userInfo.getContactId(),
+                                AttendanceConfig.getInstance().getProperty("attend.qytxl.appid", "9fdcd721d954456b8c7ea53f80635456"), placeHolderContent, 3, false, msgType);
+
+                            if (sendResult == true && userInfo.getFirstSend()==1){
                                 employeeDao.updateEmployeeFirstSend(userInfo.getUid());
                             }
                             logger.info("send user data : {}, sms sendResult : {}",userInfo, sendResult);
