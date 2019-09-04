@@ -103,14 +103,14 @@ public class QytxlUtil
     /**
      * 企业通讯录注册-appid
      */                       
-    private String QYTXL_APPID = AttendanceConfig.getInstance()
-        .getProperty("attend.qytxl.appid",
+    private String QYTXL_APPKEY = AttendanceConfig.getInstance()
+        .getProperty("attend.qytxl.appkey",
             "9fdcd721d954456b8c7ea53f80635456");
     /**
      * 企业通讯录注册-app_key
      */                       
-    private String QYTXL_APPKEY= AttendanceConfig.getInstance()
-        .getProperty("attend.qytxl.appkey",
+    private String QYTXL_APPSECRET = AttendanceConfig.getInstance()
+        .getProperty("attend.qytxl.appsecret",
             "6af15ca383ee45dd959bf0e84d8eadac");
    
     
@@ -293,10 +293,10 @@ public class QytxlUtil
 	 * @return
 	 */
 	private String getItemParam(String enterpriseId, String contactId) {
-        String app_key = QYTXL_APPID;
+        String app_key = QYTXL_APPKEY;
         String once = EnterpriseUtil.getNum(12);
         String version = QYTXL_VERSION;
-        String channel = QYTXL_APPID;
+        String channel = QYTXL_APPKEY;
         String sdk_from = QYTXL_SDK_FROM;
         HashMap<String, String> Map = new HashMap<String, String>();
         Map.put("app_key", app_key);
@@ -306,7 +306,7 @@ public class QytxlUtil
         Map.put("sdk_from", sdk_from);
         Map.put("enterpriseId", enterpriseId);
         Map.put("contactId", contactId);
-        String signature = EnterpriseUtil.getNornmalSignature(Map, QYTXL_APPKEY);
+        String signature = EnterpriseUtil.getNornmalSignature(Map, QYTXL_APPSECRET);
         StringBuffer params = new StringBuffer();
         params.append("app_key=" + app_key);
         params.append("&once=" + once);
@@ -340,10 +340,10 @@ public class QytxlUtil
 	 * @param euserId
 	 */
 	private String getDeptIdsByEuserIdParam(String enterpriseId, String euserId) {
-		String app_key = QYTXL_APPID;
+		String app_key = QYTXL_APPKEY;
 		String once = EnterpriseUtil.getNum(12);
 		String version = QYTXL_VERSION;
-		String channel = QYTXL_APPID;
+		String channel = QYTXL_APPKEY;
 		String sdk_from = QYTXL_SDK_FROM;
 		HashMap<String,String> Map = new HashMap<String,String>();
 		Map.put("app_key",app_key);
@@ -353,7 +353,7 @@ public class QytxlUtil
 		Map.put("sdk_from",sdk_from);
 		Map.put("enterpriseId",enterpriseId);
 		Map.put("euserId",euserId);
-		String signature = EnterpriseUtil.getNornmalSignature(Map, QYTXL_APPKEY);
+		String signature = EnterpriseUtil.getNornmalSignature(Map, QYTXL_APPSECRET);
 		StringBuffer params = new StringBuffer();
 		params.append("app_key="+app_key);
 		params.append("&once="+once);
@@ -389,10 +389,10 @@ public class QytxlUtil
 	 * @return
 	 */
 	private String gainDepartmentStaffParam(String departmentId , String enterpriseId) {
-		String app_key = QYTXL_APPID;
+		String app_key = QYTXL_APPKEY;
 		String once = EnterpriseUtil.getNum(12);
 		String version = QYTXL_VERSION;
-		String channel = QYTXL_APPID;
+		String channel = QYTXL_APPKEY;
 		String sdk_from = QYTXL_SDK_FROM;
 		HashMap<String,String> Map = new HashMap<String,String>();
 		Map.put("app_key",app_key);
@@ -402,7 +402,7 @@ public class QytxlUtil
 		Map.put("sdk_from",sdk_from);
 		Map.put("enterpriseId",enterpriseId);
 		Map.put("departmentId",departmentId);
-		String signature = EnterpriseUtil.getNornmalSignature(Map, QYTXL_APPKEY);
+		String signature = EnterpriseUtil.getNornmalSignature(Map, QYTXL_APPSECRET);
 		StringBuffer params = new StringBuffer();
 		params.append("app_key="+app_key);
 		params.append("&once="+once);
@@ -424,10 +424,10 @@ public class QytxlUtil
      */
     private String getRegisterParam(String eventTypeString,String enterpriseId,String method){
     	
-    	String app_key= QYTXL_APPID;
+    	String app_key= QYTXL_APPKEY;
     	String once = EnterpriseUtil.getNum(12);
     	String version = QYTXL_VERSION;
-    	String channel = QYTXL_APPID;
+    	String channel = QYTXL_APPKEY;
     	String sdk_from = QYTXL_SDK_FROM;
 		JSONArray eventType = new JSONArray();
 		eventType.add(eventTypeString);
@@ -458,7 +458,7 @@ public class QytxlUtil
 			Map.put("token", token);
 			Map.put("aes_key", aes_key);
 		}
-		String signature = EnterpriseUtil.getNornmalSignature(Map, QYTXL_APPKEY);
+		String signature = EnterpriseUtil.getNornmalSignature(Map, QYTXL_APPSECRET);
 		StringBuffer params = new StringBuffer();
 		params.append("app_key="+app_key);
 		params.append("&once="+once);
@@ -485,10 +485,10 @@ public class QytxlUtil
      */
     private String getDelByUrlParam(String enterpriseId,String url,String eventTypeString){
 
-        String app_key= QYTXL_APPID;
+        String app_key= QYTXL_APPKEY;
         String once = EnterpriseUtil.getNum(12);
         String version = QYTXL_VERSION;
-        String channel = QYTXL_APPID;
+        String channel = QYTXL_APPKEY;
         String sdk_from = QYTXL_SDK_FROM;
         JSONArray eventType = new JSONArray();
         eventType.add(eventTypeString);
@@ -503,7 +503,7 @@ public class QytxlUtil
         Map.put("enterpriseId", enterpriseId);
         Map.put("departmentId", departmentId);
         Map.put("url", url);
-        String signature = EnterpriseUtil.getNornmalSignature(Map, QYTXL_APPKEY);
+        String signature = EnterpriseUtil.getNornmalSignature(Map, QYTXL_APPSECRET);
         StringBuffer params = new StringBuffer();
         params.append("app_key="+app_key);
         params.append("&once="+once);
@@ -559,10 +559,10 @@ public class QytxlUtil
      * @return
      */
     private String getCallBackMsgParam(String enterpriseId) {
-        String app_key= QYTXL_APPID;
+        String app_key= QYTXL_APPKEY;
         String once = EnterpriseUtil.getNum(12);
         String version = QYTXL_VERSION;
-        String channel = QYTXL_APPID;
+        String channel = QYTXL_APPKEY;
         String sdk_from = QYTXL_SDK_FROM;
         HashMap<String,String> Map = new HashMap<String,String>();
         Map.put("app_key", app_key);
@@ -572,7 +572,7 @@ public class QytxlUtil
         Map.put("sdk_from", sdk_from);
         Map.put("enterpriseId", enterpriseId);
 
-        String signature = EnterpriseUtil.getNornmalSignature(Map, QYTXL_APPKEY);
+        String signature = EnterpriseUtil.getNornmalSignature(Map, QYTXL_APPSECRET);
         StringBuffer params = new StringBuffer();
         params.append("app_key="+app_key);
         params.append("&once="+once);
@@ -644,11 +644,11 @@ public class QytxlUtil
      * @return
      */
     private String getContactIdByEuserIdParams(String enterpriseId, String euserId) {
-        String app_key= QYTXL_APPID;
+        String app_key= QYTXL_APPKEY;
 //        String app_key= "2b5aa5bbace54212b5036640db943db0";
         String once = EnterpriseUtil.getNum(12);
         String version = QYTXL_VERSION;
-        String channel = QYTXL_APPID;
+        String channel = QYTXL_APPKEY;
         //String channel = "2b5aa5bbace54212b5036640db943db0";
         String sdk_from = QYTXL_SDK_FROM;
         HashMap<String,String> Map = new HashMap<String,String>();
@@ -660,7 +660,7 @@ public class QytxlUtil
         Map.put("enterpriseId", enterpriseId);
         Map.put("euserId", euserId);
 
-        String signature = EnterpriseUtil.getNornmalSignature(Map, QYTXL_APPKEY);
+        String signature = EnterpriseUtil.getNornmalSignature(Map, QYTXL_APPSECRET);
 //        String signature = EnterpriseUtil.getNornmalSignature(Map, "258e5059518c4f56a56658d7172d29c5");
         StringBuffer params = new StringBuffer();
         params.append("app_key="+app_key);
@@ -703,18 +703,18 @@ public class QytxlUtil
      * @return
      */
     private String getEmployeesByEnterIdParams(String enterpriseId,String phone,String matchHint) {
-//        String app_key= QYTXL_APPID;
-        String app_key= "d7eec29775ca42a894ab3ce432667e70";
+        String app_key= QYTXL_APPKEY;
+//        String app_key= "d7eec29775ca42a894ab3ce432667e70";
         String mobile = "";
         try {
-            mobile = AesUtils.encrypt(phone, "ca7dc22b57fa45a7");
+            mobile = AesUtils.encrypt(phone, QYTXL_AES_KEY);
         } catch (Exception e) {
             e.printStackTrace();
         }
         String once = EnterpriseUtil.getNum(12);
         String version = QYTXL_VERSION;
-//        String channel = QYTXL_APPID;
-        String channel= "d7eec29775ca42a894ab3ce432667e70";
+        String channel = QYTXL_APPKEY;
+//        String channel= "d7eec29775ca42a894ab3ce432667e70";
         String sdk_from = QYTXL_SDK_FROM;
         HashMap<String,String> Map = new HashMap<String,String>();
         Map.put("app_key", app_key);

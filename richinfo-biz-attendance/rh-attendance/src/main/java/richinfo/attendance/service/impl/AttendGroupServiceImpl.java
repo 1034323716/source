@@ -2612,13 +2612,18 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             return null;
             //为空判断 则进行部门选择器操作
         }*/
-        if(userInfo.getAttendanceId() != 0 || userInfo.getWhitelistStatus() == 1){
+      /*  if(userInfo.getAttendanceId() != 0 || userInfo.getWhitelistStatus() == 1){
             return null;
+        }*/
+        if( userInfo.getWhitelistStatus() == 1){
+            return null;
+            logger.info("白名单用户直接退出",userInfo);
         }
 
             //获取企业下所有部门的考勤组的部门选择器
             List<AttendDepartmentChooser> attendDepartmentChoosers = attendDepartmentDao.queryEnterDepartmentChooser(enterId);
             //为空说明企业所有考勤组没有启用部门选择器
+        logger.info("数据库中的部门列表===>attendDepartmentChoosers={}",attendDepartmentChoosers);
             if (AssertUtil.isEmpty(attendDepartmentChoosers)){
                 return null;
 
@@ -2643,6 +2648,8 @@ public class AttendGroupServiceImpl extends ServiceObject implements
                 return null;
             }
             List<String>departmentIds = (List<String>) repMap.get("departmentIds");
+        logger.info("企业通讯录用户所属部门列表====>>departmentIds={}",departmentIds);
+
             if (AssertUtil.isEmpty(departmentIds)){
                 return null;
             }
@@ -2675,6 +2682,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             }
         //获取考勤组id
         long attendanceId = attendanceIds.iterator().next();
+        logger.info("只存在一个部门====>>attendanceId={}",attendanceId);
         //强行回收
         attendanceIds = null;
         //只有一个考勤组 自动加入考勤组
@@ -2688,7 +2696,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         }*/
         //查询是否存在考勤组
         AttendEmployee attendEmployee = employeeDao.queryEmployeeByUidAndWhitelist(uid);
-        //添加考勤组id
+        /*//添加考勤组id
         if (AssertUtil.isNotEmpty(attendEmployee) && attendEmployee.getStatus() == EmployeeStatus.Abnormal.getValue()){
             attendEmployee.setAttendanceId(attendanceId);
             //更新
@@ -2702,6 +2710,30 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             employeeDao.updateEmployee(attendEmployee);
             againCacheUser(userInfo);
             return null;
+        }*/
+
+        //如果用户已加入考勤组,更新用户的考勤组信息,否则用户不在考勤组,添加进考勤组
+        if (AssertUtil.isNotEmpty(attendEmployee)){
+            if(attendEmployee.getStatus() == EmployeeStatus.Abnormal.getValue()||attendEmployee.getAttendanceId() != attendanceId) {
+                logger.info("更新考勤组====>>attendanceId={}",attendanceId);
+                attendEmployee.setAttendanceId(attendanceId);
+                //更新
+                attendEmployee.setModifyTime(new Date());
+                attendEmployee.setStatus(employee.getStatus());
+                //查询是否是考勤组负责人: RoleType为1则为考勤组负责人
+                //查询负责的考勤组
+                List<String> groupIds = groupDao.queryGroupPrincipalByUid(attendEmployee.getUid());
+                attendEmployee.setRoleType(groupIds != null && groupIds.size() > 0 ? 1 : 0);
+
+                //只存在一个考勤组时,将用户考勤组信息更新
+                employeeDao.updateEmployee(attendEmployee);
+
+                //第二次缓存用户信息
+                againCacheUser(userInfo);
+                logger.info("更新部门成功==>attendEmployee={}", attendEmployee);
+                return null;
+            }
+
         }
         //由于用户跳转过来没有带用户名  所以需要查询企业通讯录获取用户名
         Map<String, Object> itemMap ;
@@ -2741,6 +2773,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         List<String> groupIds = groupDao.queryGroupPrincipalByUid(employee.getUid());
         employee.setRoleType(groupIds != null && groupIds.size() > 0 ? 1:0);
         employeeDao.saveEmployee(employee);
+        logger.info("登陆时添加进考勤组成功====>employee={}",employee);
         againCacheUser(userInfo);
             return null;
     }
@@ -3184,9 +3217,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
                 Map jsonObject = (Map) itemMap.get("item");
                 String name = (String) jsonObject.get("name");
                 try {
-                    name = AesUtils.decrypt(name, AttendanceConfig.getInstance()
-                        .getProperty("attend.qytxl.aes_key",
-                            "6af15ca383ee45dd"));
+                    name = AesUtils.decrypt(name, PublicConstant.AES_KEY);
                 } catch (Exception e) {
                     e.printStackTrace();
                     logger.error("AES 解密异常 name={}|e={}",name,e);
@@ -3200,7 +3231,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
                     try {
                         String items = QytxlUtil.getInstance().getEmployeesByEnterId(req.getUserInfo().getEnterId(),req.getUserInfo().getPhone()==null?"17620868870":req.getUserInfo().getPhone(),req.getUserInfo().getPhone()==null?"17620868870":req.getUserInfo().getPhone());
                         try {
-                            items = AesUtils.decrypt(items, "ca7dc22b57fa45a7");
+                            items = AesUtils.decrypt(items, PublicConstant.AES_KEY);
                         } catch (Exception e) {
                             e.printStackTrace();
                             logger.error("AES 解密异常 items={}|e={}",items,e);

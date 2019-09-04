@@ -63,7 +63,9 @@ public abstract class BaseAttendanceAction extends BaseAction {
      */
     protected void setReqBean(AttendReqBean reqBean, HttpServletRequest request) {
         String token = BUtils.getCookie(request, "token");
+        logger.debug("token:" + token);
         UserInfo userInfo = userInfoCache.get(token);
+        logger.debug("userInfo:" + userInfo);
         // 内部接口测试 先new一个对象便于测试，2017-06-21，注释测试代码
 /*        if(AssertUtil.isEmpty(userInfo)){
             userInfo = new UserInfo();

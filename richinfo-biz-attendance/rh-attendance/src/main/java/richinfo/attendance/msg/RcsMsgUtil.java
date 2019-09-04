@@ -168,8 +168,8 @@ public class RcsMsgUtil
             String urlData = RcsoaplusSignHelper.concatParams(params);
 
             String title = msg.getTopic();
-            String msgPullType = conf.getMsgPullType();
-            title = msgPullType + title;
+//            String msgPullType = conf.getMsgPullType();
+//            title = msgPullType + title;
             String text = msg.getContent();
             String summary = msg.getSummary();
             params.put("title", title);

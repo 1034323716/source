@@ -39,7 +39,9 @@ public class LoginValidateInterceptor extends HandlerInterceptorAdapter {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        log.info("request url:" + request.getRequestURL());
         String token = getToken(request);
+        log.debug("token:" + token);
         if (AssertUtil.isEmpty(token)) {
             log.info("don't get loginToken from cookie,ip={}|requestUrl={}", request.getRemoteHost(),request.getRequestURI());
             checkLoginFailure(response);
@@ -97,6 +99,7 @@ public class LoginValidateInterceptor extends HandlerInterceptorAdapter {
      * @param resp
      */
     private void checkLoginFailure(HttpServletResponse resp) {
+        log.info("chekLoginFailue:没有Userinfo");
         Map<String, Object> resultMap = new HashMap<String, Object>();
         resultMap.put("code", AtdcResultCode.ATDC102.USER_SESSION_ERROR);
         resultMap.put("summary",AtdcResultSummary.ATDC102.USER_SESSION_ERROR);

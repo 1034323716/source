@@ -37,10 +37,10 @@ public class AttendDaoTest
     }
 
     public static void main(String[] args) {
-        String appid = AttendanceConfig.getInstance().getProperty("attend.qytxl.appid", "9fdcd721d954456b8c7ea53f80635456");
+        String appid = AttendanceConfig.getInstance().getProperty("attend.qytxl.appkey", "9fdcd721d954456b8c7ea53f80635456");
         String aeskey = AttendanceConfig.getInstance().getProperty("attend.qytxl.aes_key", "6af15ca383ee45dd");
         String url = AttendanceConfig.getInstance().getProperty("attend.qytxl.callbackUrl", "http://121.15.167.235:10721/atdc/sync/getRegisterCallBackInfo");
-        String appkey = AttendanceConfig.getInstance().getProperty("attend.qytxl.appkey", "6af15ca383ee45dd959bf0e84d8eadac");
+        String appkey = AttendanceConfig.getInstance().getProperty("attend.qytxl.appsecret", "6af15ca383ee45dd959bf0e84d8eadac");
         String postUrl = AttendanceConfig.getInstance().getProperty("qytxl.register.url", "https://open.cytxl.com.cn/enterprise/getCallBack.json");
 
         String app_key= appid;

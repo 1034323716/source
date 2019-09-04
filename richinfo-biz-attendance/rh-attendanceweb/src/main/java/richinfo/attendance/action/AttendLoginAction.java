@@ -101,9 +101,11 @@ public class AttendLoginAction extends BaseAttendanceAction {
             req.setFirstDeptId(reqMap.get("firstDeptId"));
 
             String enterName = reqMap.get("enterName");
+            log.debug("enterName before base64:" + enterName);
             // RCS通过url传过来的base64编码有问题，要替换
             try {
                 enterName = base64Dcode(enterName);
+                log.debug("enterName after base64:" + enterName);
                 req.setEnterName(enterName);
             } catch (Exception e) {}
 
@@ -188,6 +190,7 @@ public class AttendLoginAction extends BaseAttendanceAction {
                    // logger.info("进来企业考勤组  =============list={} ",list);
                     saveCookie("firstLogStatus",list.isEmpty()?"1":"0",response);
                     if ("1".equals(res.getFirstLogin()) ) {
+                        logger.info("用户第一次登陆");
                         //判断是管理员，没有考勤组，则定义不是让前端跳转创建考勤组页面
                         if (list.isEmpty() &&  "1".equals(res.getStatus())) {
                             //首次进入状态 1为无考勤组 0为有考勤组
@@ -219,36 +222,29 @@ public class AttendLoginAction extends BaseAttendanceAction {
                                // jumpToUrl=("http://120.196.212.78:8080/satdc/rcs/index.html#/Chosedepartment");
                             }
                         }
-                    }else{
-                        //用户不是第一次登陆,查询用户是否已加入考勤组,未加入则添加进考勤组(只有一个考勤组条件下)
-                        //根据uid查询用户是否加入考勤组
-                        AttendEmployee attendEmployee = employeeDao.queryEmployeeByUidAndWhitelist(uid);
-                        if (AssertUtil.isEmpty(attendEmployee)){
-                            AttendEmployee employee = new AttendEmployee();
-                            employee.setEnterId(req.getEnterId());
-                            employee.setStatus(AttendEmployee.EmployeeStatus.Normal.getValue());
-                            employee.setContactId(reqMap.get("contactId"));
-                            employee.setEnterName(enterName);
-                            employee.setPhone(res.getPhone());
-                            employee.setUid(uid);
+                    }else {
+                        //用户不是第一次登陆
+                        // 用户只有一个考勤组条件下:未加入考勤组则添加进考勤组,已加入考勤组如果再次匹配成功则更新考勤组
+                        logger.info("用户不是第一次登陆");
+                        AttendEmployee employee = new AttendEmployee();
+                        employee.setEnterId(req.getEnterId());
+                        employee.setStatus(AttendEmployee.EmployeeStatus.Normal.getValue());
+                        employee.setContactId(reqMap.get("contactId"));
+                        employee.setEnterName(enterName);
+                        employee.setPhone(res.getPhone());
+                        employee.setUid(uid);
 
-                            //判断部门选择器就行自动/手动加入考勤组
-                            //先从缓存中通过Usessionid获取缓存的用户信息
-                            UserInfo userInfo = userInfoCache.get(res.getUsessionid());
+                        //先从缓存中通过Usessionid获取缓存的用户信息
+                        UserInfo userInfo = userInfoCache.get(res.getUsessionid());
 
-                            List<AttendDepartmentChooser> attendDepartmentChoosers = groupService.detectionJoinGroup(employee, userInfo);
-                            if (AssertUtil.isNotEmpty(attendDepartmentChoosers)){
-                                String departmentJson = JSON.toJSONString(attendDepartmentChoosers);
-                                logger.info("response attendDepartmentChoosers = {}",departmentJson);
-                                departmentJson = gbEncoding(departmentJson);
-                                logger.info("response 编码后 attendDepartmentChoosers = {}", departmentJson);
-                                //saveCookie("employeeStatus","0",response);
-                                saveCookie("departments",departmentJson,response);
-                                //跳转地址 选择地址
-                                // jumpToUrl=("http://120.196.212.78:8080/satdc/rcs/index.html#/Chosedepartment");
-                            }
+                        List<AttendDepartmentChooser> attendDepartmentChoosers = groupService.detectionJoinGroup(employee, userInfo);
+                        if (AssertUtil.isNotEmpty(attendDepartmentChoosers)) {
+                            String departmentJson = JSON.toJSONString(attendDepartmentChoosers);
+                            logger.info("response attendDepartmentChoosers = {}", departmentJson);
+                            departmentJson = gbEncoding(departmentJson);
+                            logger.info("response 编码后 attendDepartmentChoosers = {}", departmentJson);
+                            saveCookie("departments", departmentJson, response);
                         }
-
                     }
                 }
             }
