@@ -3,7 +3,8 @@
 
   <proxool>
     <alias>attendance</alias>
-    <driver-url>jdbc:mysql://127.0.0.1:3306/attendance?characterEncoding=UTF-8</driver-url>
+    <!--<driver-url>jdbc:mysql://127.0.0.1:3306/attendance?characterEncoding=UTF-8</driver-url>-->
+      <driver-url>jdbc:mysql://127.0.0.1:3306/attendance?useUnicode=true&amp;characterEncoding=utf-8&amp;useSSL=false&amp;serverTimezone=UTC</driver-url>
     <driver-class>com.mysql.jdbc.Driver</driver-class>
     <driver-properties>
       <property name="user" value="root"/>
