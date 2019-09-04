@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richinfo.attendance.util.AttendanceConfig;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,8 +37,10 @@ public class SmsSendUtil {
     //    private static final String SECRET_ID = "zgyd1";
 //    private static final String SECRET_KEY = "88assadsfsdfsffsf6dsfsdfd";
 //    private static final String TOKEN = "9adkcieiq907a2pmli09";
-    private static final String SECRET_ID = "KBvMyuuljsRY6";
-    private static final String SECRET_KEY = "3r3J8Sfi5j5Y1DUMeFlPljsRY6";
+//    private static final String SECRET_ID = "KBvMyuuljsRY6";
+//    private static final String SECRET_KEY = "3r3J8Sfi5j5Y1DUMeFlPljsRY6";
+    private static final String SECRET_ID = AttendanceConfig.getInstance().getProperty("attend.qytxl.secretId","7g7lXzVS55nJv");
+    private static final String SECRET_KEY = AttendanceConfig.getInstance().getProperty("attend.qytxl.secretKey","EPRpv8IWpIPQSj1V24ZVS55nJv");
     private static final String TOKEN = "9adkcieiq907a2pmli09";
 
     private static final String TEMPLATE_CONTENT = "小和提醒您 ：准备开始新一天的工作啦，不要忘记打卡哦~{[placeholder:url]}{[placeholder:remark]}";
