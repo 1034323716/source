@@ -98,6 +98,19 @@ public class UserInfo implements Serializable
      */
     private Integer smsSwitch;
 
+    /**
+     * 首次发送信息表示 空位第一次 1：非第一次发送
+     * */
+    private Integer firstSend;
+
+    public Integer getFirstSend() {
+        return firstSend;
+    }
+
+    public void setFirstSend(Integer firstSend) {
+        this.firstSend = firstSend;
+    }
+
     public Integer getSmsSwitch() {
         return smsSwitch;
     }

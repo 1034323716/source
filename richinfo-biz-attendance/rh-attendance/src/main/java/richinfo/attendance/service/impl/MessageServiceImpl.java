@@ -15,6 +15,7 @@ package richinfo.attendance.service.impl;
 import com.google.gson.internal.LinkedTreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import richinfo.attendance.SMS.SmsSendUtil;
 import richinfo.attendance.asyn.HistoryMessageAsynTask;
 import richinfo.attendance.asyn.MessageAsynTask;
@@ -27,8 +28,11 @@ import richinfo.attendance.entity.AttendGroup.AttendType;
 import richinfo.attendance.entity.AttendGroup.GroupStatus;
 import richinfo.attendance.msg.Constants;
 import richinfo.attendance.msg.RcsMsgUtil;
+import richinfo.attendance.service.AttendEmployService;
 import richinfo.attendance.service.MessageService;
 import richinfo.attendance.util.*;
+import richinfo.bcomponet.cache.CachedUtil;
+import richinfo.dbcomponent.resourceloader.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -1249,7 +1253,6 @@ public class MessageServiceImpl extends ServiceObject implements MessageService
                                 msg.getUid(),msg.getEnterId(),attendList);
                         continue;
                     }
-
                 }
                 // 推送消息
                 HistoryMessage hisMsg = RcsMsgUtil.sendMsg(msg, consumerKey,
@@ -1278,16 +1281,24 @@ public class MessageServiceImpl extends ServiceObject implements MessageService
                     if(null != userInfo) {
                         int msgType = msg.getMsgType();
                         if(msgType == 1 || msgType == 2) {
-                            //place_holder_id1##替换内容|@|place_holder_id2##替换内容
-                            String placeHolderContent = "{[placeholder:url]}##"+ mSMSClockURL +"?uid="+ userInfo.getUid()
-                                +"|@|{[placeholder:remark]}##，目前只支持4G环境打卡\n如遇到IOS终端无法登录，请关闭“设置-safari浏览器-阻止跨网站跟踪”按钮或使用其它浏览器\n退订请在和飞信考勤应用设置";
+                            String placeHolderContent = "{[placeholder:url]}##" + mSMSClockURL + "?uid=" + userInfo.getUid()
+                                + "|@|{[placeholder:remark]}##";
+                            if (userInfo.getFirstSend()==1) {
+                                //place_holder_id1##替换内容|@|place_holder_id2##替换内容
+                                placeHolderContent = "{[placeholder:url]}##" + mSMSClockURL + "?uid=" + userInfo.getUid()
+                                    + "|@|{[placeholder:remark]}##，目前只支持4G环境打卡\n如遇到IOS终端无法登录，请关闭“设置-safari浏览器-阻止跨网站跟踪”按钮或使用其它浏览器\n退订请在和飞信考勤应用设置";
+                            }
                             //手机
 //                            boolean sendResult = SmsSendUtil.sendSmsWithOutAddressBook(userInfo.getPhone(),
 //                                userInfo.getEmployeeName(), userInfo.getEnterName(), placeHolderContent, 3, false, msgType);
                             //contactId
-                            boolean sendResult = SmsSendUtil.sendSmsWithInAddressBook(userInfo.getEnterId(), userInfo.getContactId(),
-                                AttendanceConfig.getInstance().getProperty("attend.qytxl.appkey", "9fdcd721d954456b8c7ea53f80635456"), placeHolderContent, 3, false, msgType);
 
+                            boolean sendResult = SmsSendUtil.sendSmsWithInAddressBook(userInfo.getEnterId(), userInfo.getContactId(),
+                                AttendanceConfig.getInstance().getProperty("attend.qytxl.appid", "9fdcd721d954456b8c7ea53f80635456"), placeHolderContent, 3, false, msgType);
+
+                            if (sendResult == true && userInfo.getFirstSend()==1){
+                                employeeDao.updateEmployeeFirstSend(userInfo.getUid());
+                            }
                             logger.info("send user data : {}, sms sendResult : {}",userInfo, sendResult);
                         }
 

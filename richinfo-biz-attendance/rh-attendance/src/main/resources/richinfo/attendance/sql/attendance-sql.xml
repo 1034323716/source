@@ -4020,10 +4020,19 @@
     SELECT
     e.uid,
     e.employeeName as employeeName,e.roleType,e.contactId,
-    e.phone,e.enterId,e.enterName,e.deptId,e.deptName,e.attendanceId,e.status,e.email,e.position
+    e.phone,e.enterId,e.enterName,e.deptId,e.deptName,e.attendanceId,e.status,e.email,e.position,e.firstSend
     FROM attendance_employee_info e
     WHERE e.uid = #uid#
     AND e.status = #status#
     </select>
 
+    <!-- 更新员工首次发送短信标识 -->
+    <update id="updateEmployeeFirstSend" parameterClass="java.util.Map">
+        update
+        attendance_employee_info
+        set
+        firstSend=#firstSend#
+        where
+        uid=#uid#
+    </update>
 </sqlMap>

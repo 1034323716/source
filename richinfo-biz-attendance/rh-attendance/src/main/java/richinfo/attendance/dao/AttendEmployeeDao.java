@@ -877,4 +877,20 @@ public class AttendEmployeeDao extends BaseAttendanceDao
         }
         return SMSSwitchStatum;
     }
+
+    /**
+     * 更新用户信息首次短信发送标识
+     * @param uid
+     */
+    public void updateEmployeeFirstSend(String uid) {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("uid", uid);
+        params.put("firstSend",0);
+        try {
+            attendanceDao.update("attendance.updateEmployeeFirstSend",params);
+        } catch (PersistException e) {
+            e.printStackTrace();
+            logger.error("updateEmployee error params : {}, exception : {}", params, e.toString());
+        }
+    }
 }
