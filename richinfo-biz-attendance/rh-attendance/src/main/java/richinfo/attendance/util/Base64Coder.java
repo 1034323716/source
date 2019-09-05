@@ -118,7 +118,12 @@ public class Base64Coder
      */
     public static String decodeString(String s)
     {
-        return new String(decode(s));
+        try {
+            return new String(decode(s), "UTF-8");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /**
