@@ -237,14 +237,8 @@ public class AttendLoginAction extends BaseAttendanceAction {
                         //先从缓存中通过Usessionid获取缓存的用户信息
                         UserInfo userInfo = userInfoCache.get(res.getUsessionid());
 
-                        List<AttendDepartmentChooser> attendDepartmentChoosers = groupService.detectionJoinGroup(employee, userInfo);
-                        if (AssertUtil.isNotEmpty(attendDepartmentChoosers)) {
-                            String departmentJson = JSON.toJSONString(attendDepartmentChoosers);
-                            logger.info("response attendDepartmentChoosers = {}", departmentJson);
-                            departmentJson = gbEncoding(departmentJson);
-                            logger.info("response 编码后 attendDepartmentChoosers = {}", departmentJson);
-                            saveCookie("departments", departmentJson, response);
-                        }
+                        groupService.detectionJoinGroup(employee, userInfo);
+
                     }
                 }
             }
