@@ -2732,6 +2732,8 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         }
         Map jsonObject = (Map) itemMap.get("item");
         String name = (String) jsonObject.get("name");
+        String departmentName = (String) jsonObject.get("departmentName");
+        String departmentId = (String) jsonObject.get("departmentId");
         try {
             name = AesUtils.decrypt(name, AttendanceConfig.getInstance()
                 .getProperty("attend.qytxl.aes_key",
@@ -2750,8 +2752,8 @@ public class AttendGroupServiceImpl extends ServiceObject implements
                 //更新
                 attendEmployee.setModifyTime(new Date());
                 attendEmployee.setStatus(employee.getStatus());
-                attendEmployee.setDeptId((String) itemMap.get("departmentId"));
-                attendEmployee.setDeptName((String) itemMap.get("departmentName"));
+                attendEmployee.setDeptId(departmentId);
+                attendEmployee.setDeptName(departmentName);
                 //查询是否是考勤组负责人: RoleType为1则为考勤组负责人
                 //查询负责的考勤组
                 List<String> groupIds = groupDao.queryGroupPrincipalByUid(attendEmployee.getUid());
@@ -2772,8 +2774,8 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         employee.setAttendanceId(attendanceId);
         employee.setCreateTime(new Date());
         employee.setModifyTime(new Date());
-        employee.setDeptId((String) itemMap.get("departmentId"));
-        employee.setDeptName((String) itemMap.get("departmentName"));
+        employee.setDeptId(departmentId);
+        employee.setDeptName(departmentName);
         //查询是否是考勤组负责人
         //查询负责的考勤组
         List<String> groupIds = groupDao.queryGroupPrincipalByUid(employee.getUid());
