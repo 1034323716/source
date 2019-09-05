@@ -664,7 +664,7 @@
 		attendance_employee_info
 		set
 		attendanceId=#attendanceId#,contactId=#contactId#,employeeName=#employeeName#,enterName=#enterName#,
-		enterId=#enterId#,status=#status#,modifyTime=#modifyTime#
+		enterId=#enterId#,status=#status#,modifyTime=#modifyTime#,deptId=#deptId#,deptName=#deptName#
 		where
 		uid=#uid#
 	</update>
