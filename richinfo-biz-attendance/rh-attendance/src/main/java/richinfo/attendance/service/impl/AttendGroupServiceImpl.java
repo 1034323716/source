@@ -2616,8 +2616,8 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             return null;
         }*/
         if( userInfo.getWhitelistStatus() == 1){
-            return null;
             logger.info("白名单用户直接退出",userInfo);
+            return null;
         }
 
             //获取企业下所有部门的考勤组的部门选择器
@@ -2712,29 +2712,6 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             return null;
         }*/
 
-        //如果用户已加入考勤组,更新用户的考勤组信息,否则用户不在考勤组,添加进考勤组
-        if (AssertUtil.isNotEmpty(attendEmployee)){
-            if(attendEmployee.getStatus() == EmployeeStatus.Abnormal.getValue()||attendEmployee.getAttendanceId() != attendanceId) {
-                logger.info("更新考勤组====>>attendanceId={}",attendanceId);
-                attendEmployee.setAttendanceId(attendanceId);
-                //更新
-                attendEmployee.setModifyTime(new Date());
-                attendEmployee.setStatus(employee.getStatus());
-                //查询是否是考勤组负责人: RoleType为1则为考勤组负责人
-                //查询负责的考勤组
-                List<String> groupIds = groupDao.queryGroupPrincipalByUid(attendEmployee.getUid());
-                attendEmployee.setRoleType(groupIds != null && groupIds.size() > 0 ? 1 : 0);
-
-                //只存在一个考勤组时,将用户考勤组信息更新
-                employeeDao.updateEmployee(attendEmployee);
-
-                //第二次缓存用户信息
-                againCacheUser(userInfo);
-                logger.info("更新部门成功==>attendEmployee={}", attendEmployee);
-                return null;
-            }
-
-        }
         //由于用户跳转过来没有带用户名  所以需要查询企业通讯录获取用户名
         Map<String, Object> itemMap ;
         try {
@@ -2757,17 +2734,46 @@ public class AttendGroupServiceImpl extends ServiceObject implements
         String name = (String) jsonObject.get("name");
         try {
             name = AesUtils.decrypt(name, AttendanceConfig.getInstance()
-                    .getProperty("attend.qytxl.aes_key",
-                            "6af15ca383ee45dd"));
+                .getProperty("attend.qytxl.aes_key",
+                    "6af15ca383ee45dd"));
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("AES 解密异常 name={}|e={}",name,e);
             return null;
         }
+
+        //如果用户已加入考勤组,更新用户的考勤组信息,否则用户不在考勤组,添加进考勤组
+        if (AssertUtil.isNotEmpty(attendEmployee)){
+            if(attendEmployee.getStatus() == EmployeeStatus.Abnormal.getValue()||attendEmployee.getAttendanceId() != attendanceId) {
+                logger.info("更新考勤组====>>attendanceId={}",attendanceId);
+                attendEmployee.setAttendanceId(attendanceId);
+                //更新
+                attendEmployee.setModifyTime(new Date());
+                attendEmployee.setStatus(employee.getStatus());
+                attendEmployee.setDeptId((String) itemMap.get("departmentId"));
+                attendEmployee.setDeptName((String) itemMap.get("departmentName"));
+                //查询是否是考勤组负责人: RoleType为1则为考勤组负责人
+                //查询负责的考勤组
+                List<String> groupIds = groupDao.queryGroupPrincipalByUid(attendEmployee.getUid());
+                attendEmployee.setRoleType(groupIds != null && groupIds.size() > 0 ? 1 : 0);
+
+                //只存在一个考勤组时,将用户考勤组信息更新
+                employeeDao.updateEmployee(attendEmployee);
+
+                //第二次缓存用户信息
+                againCacheUser(userInfo);
+                logger.info("更新部门成功==>attendEmployee={}", attendEmployee);
+                return null;
+            }
+
+        }
+
         employee.setEmployeeName(name);
         employee.setAttendanceId(attendanceId);
         employee.setCreateTime(new Date());
         employee.setModifyTime(new Date());
+        employee.setDeptId((String) itemMap.get("departmentId"));
+        employee.setDeptName((String) itemMap.get("departmentName"));
         //查询是否是考勤组负责人
         //查询负责的考勤组
         List<String> groupIds = groupDao.queryGroupPrincipalByUid(employee.getUid());
