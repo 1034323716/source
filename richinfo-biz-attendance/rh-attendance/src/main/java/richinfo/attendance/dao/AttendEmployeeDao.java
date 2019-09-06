@@ -888,7 +888,7 @@ public class AttendEmployeeDao extends BaseAttendanceDao
         params.put("firstSend",0);
         try {
             int update = attendanceDao.update("attendance.updateEmployeeFirstSend", params);
-            logger.info("数据库更新成功数量：{},{}",update,uid);
+            logger.info(update>0 ? "数据库更新成功数量：{},{}":"数据库更新失败：{},{}",update,uid);
         } catch (PersistException e) {
             e.printStackTrace();
             logger.error("updateEmployee error params : {}, exception : {}", params, e.toString());
