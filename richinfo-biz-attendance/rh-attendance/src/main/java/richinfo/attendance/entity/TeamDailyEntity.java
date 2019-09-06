@@ -72,6 +72,16 @@ public class TeamDailyEntity implements Serializable
     private String contactId;
     /** 企业联系人ID */
     private String uid;
+    /** 部门名 */
+    private String deptName;
+
+    public String getDeptName() {
+        return deptName;
+    }
+
+    public void setDeptName(String deptName) {
+        this.deptName = deptName;
+    }
 
     public String getUid() {
         return uid;

@@ -316,7 +316,7 @@
         aei.employeeName, att.attendanceName,
 		att.attendanceId,
 		mon.attendanceDate,
-        aei.contactId,aei.uid,aei.phone
+        aei.contactId,aei.uid,aei.phone,aei.deptName
 		FROM
 		employee_month_detail AS mon
 		INNER JOIN

@@ -579,7 +579,7 @@ public class AttendReportServiceImpl implements AttendReportService
      */
     private String exportTeamMonthlyExecl(String enterName, String month, List<TeamMonthEntity> list) {
         String title = "【" + enterName + "】 打卡统计团队月报-" + month;
-        String[] rowsName = new String[] { "部门", "员工","contractId" ,"手机号码","正常", "外勤", "迟到", "早退",
+        String[] rowsName = new String[] { "部门","考勤组", "员工","contractId" ,"手机号码","正常", "外勤", "迟到", "早退",
             "未打卡","已申诉" };
 
         List<Object[]> dataList = new ArrayList<Object[]>();
@@ -587,16 +587,17 @@ public class AttendReportServiceImpl implements AttendReportService
         // 循环组装单元格数据
         for (TeamMonthEntity entity : list) {
             objs = new Object[rowsName.length];
-            objs[0] = entity.getAttendanceName();
-            objs[1] = entity.getEmployeeName();
-            objs[2] = (entity.getContactId());
-            objs[3] = entity.getPhone()==null || entity.getPhone().equals("") ?"-":entity.getPhone();
-            objs[4] = entity.getNormalDays();
-            objs[5] = entity.getOutsideDays();
-            objs[6] = entity.getLateDays();
-            objs[7] = entity.getEarlyDays();
-            objs[8] = entity.getNotClockedDays();
-            objs[9] = entity.getAppealDays();
+            objs[0] = entity.getDeptName() == null ? " " : entity.getDeptName();
+            objs[1] = entity.getAttendanceName();
+            objs[2] = entity.getEmployeeName();
+            objs[3] = (entity.getContactId());
+            objs[4] = entity.getPhone()==null || entity.getPhone().equals("") ?"-":entity.getPhone();
+            objs[5] = entity.getNormalDays();
+            objs[6] = entity.getOutsideDays();
+            objs[7] = entity.getLateDays();
+            objs[8] = entity.getEarlyDays();
+            objs[9] = entity.getNotClockedDays();
+            objs[10] = entity.getAppealDays();
             dataList.add(objs);
         }
 
@@ -616,7 +617,7 @@ public class AttendReportServiceImpl implements AttendReportService
      */
     private String exportTeamMonthlyExeclNew(String enterName, String month, List<TeamMonthEntity> list) {
         String title = "【" + enterName + "】 打卡统计团队月报-" + month;
-        String[] rowsName = new String[] { "部门", "员工" ,"手机号码", "正常", "外勤", "迟到", "早退",
+        String[] rowsName = new String[] { "部门","考勤组", "员工" ,"手机号码", "正常", "外勤", "迟到", "早退",
             "上午未打卡","下午未打卡","contractId" };
 
         List<Object[]> dataList = new ArrayList<Object[]>();
@@ -624,16 +625,17 @@ public class AttendReportServiceImpl implements AttendReportService
         // 循环组装单元格数据
         for (TeamMonthEntity entity : list) {
             objs = new Object[rowsName.length];
-            objs[0] = entity.getAttendanceName();
-            objs[1] = entity.getEmployeeName();
-            objs[2] = entity.getPhone()==null || entity.getPhone().equals("") ? "-" : entity.getPhone();
-            objs[3] = entity.getNormalDays();
-            objs[4] = entity.getOutsideDays();
-            objs[5] = entity.getLateDays();
-            objs[6] = entity.getEarlyDays();
-            objs[7] = entity.getGoNotClockedDays();
-            objs[8] = entity.getLeaveNotClockedDays();
-            objs[9] = entity.getContactId();
+            objs[0] = entity.getDeptName() == null ? " " : entity.getDeptName();
+            objs[1] = entity.getAttendanceName();
+            objs[2] = entity.getEmployeeName();
+            objs[3] = entity.getPhone()==null || entity.getPhone().equals("") ? "-" : entity.getPhone();
+            objs[4] = entity.getNormalDays();
+            objs[5] = entity.getOutsideDays();
+            objs[6] = entity.getLateDays();
+            objs[7] = entity.getEarlyDays();
+            objs[8] = entity.getGoNotClockedDays();
+            objs[9] = entity.getLeaveNotClockedDays();
+            objs[10] = entity.getContactId();
             dataList.add(objs);
         }
 
@@ -854,7 +856,7 @@ public class AttendReportServiceImpl implements AttendReportService
         String attendanceDate, List<TeamDailyEntity> list)
     {
         String title = "【" + enterName + "】 团队打卡明细日报-" + attendanceDate;
-        String[] rowsName = new String[] { "部门", "员工","contractId" ,"手机号码","最早打卡时间", "打卡状态描述",
+        String[] rowsName = new String[] { "部门","考勤组", "员工","contractId" ,"手机号码","最早打卡时间", "打卡状态描述",
             "打卡地点", "最晚打卡时间", "打卡状态描述", "打卡地点", "是否外勤打卡" };
 
         List<Object[]> dataList = new ArrayList<Object[]>();
@@ -863,17 +865,18 @@ public class AttendReportServiceImpl implements AttendReportService
         for (TeamDailyEntity entity : list)
         {
             objs = new Object[rowsName.length];
-            objs[0] = entity.getAttendanceName();
-            objs[1] = entity.getEmployeeName();
-            objs[2] = (entity.getContactId());
-            objs[3] =  entity.getPhone()==null || entity.getPhone().equals("") ? "-" : entity.getPhone();
-            objs[4] = (entity.getEarlyTime() == null ? "-" : TimeUtil.date2String(entity.getEarlyTime(), TimeUtil.BASE_TIME_FORMAT));
-            objs[5] = (entity.getEarlyTimeDesc() == null? entity.getRemark(): entity.getEarlyTimeDesc());
-            objs[6] = (entity.getEarlyTimeLocation() == null ? " " : entity.getEarlyTimeLocation());
-            objs[7] = (entity.getLastTime() == null ? "-" : TimeUtil.date2String(entity.getLastTime(), TimeUtil.BASE_TIME_FORMAT));
-            objs[8] = (entity.getLastTimeDesc() == null ? entity.getRemark() : entity.getLastTimeDesc());
-            objs[9] = (entity.getLastTimeLocation() == null ? " " : entity.getLastTimeLocation());
-            objs[10] = (entity.getRegionStatus() == 0 ? "否" : "是");
+            objs[0] = entity.getDeptName() == null ? " " : entity.getDeptName();
+            objs[1] = entity.getAttendanceName();
+            objs[2] = entity.getEmployeeName();
+            objs[3] = (entity.getContactId());
+            objs[4] =  entity.getPhone()==null || entity.getPhone().equals("") ? "-" : entity.getPhone();
+            objs[5] = (entity.getEarlyTime() == null ? "-" : TimeUtil.date2String(entity.getEarlyTime(), TimeUtil.BASE_TIME_FORMAT));
+            objs[6] = (entity.getEarlyTimeDesc() == null? entity.getRemark(): entity.getEarlyTimeDesc());
+            objs[7] = (entity.getEarlyTimeLocation() == null ? " " : entity.getEarlyTimeLocation());
+            objs[8] = (entity.getLastTime() == null ? "-" : TimeUtil.date2String(entity.getLastTime(), TimeUtil.BASE_TIME_FORMAT));
+            objs[9] = (entity.getLastTimeDesc() == null ? entity.getRemark() : entity.getLastTimeDesc());
+            objs[10] = (entity.getLastTimeLocation() == null ? " " : entity.getLastTimeLocation());
+            objs[11] = (entity.getRegionStatus() == 0 ? "否" : "是");
             dataList.add(objs);
         }
 
