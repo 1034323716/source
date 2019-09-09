@@ -43,8 +43,8 @@ public class SmsSendUtil {
     private static final String SECRET_KEY = AttendanceConfig.getInstance().getProperty("attend.qytxl.secretKey","EPRpv8IWpIPQSj1V24ZVS55nJv");
     private static final String TOKEN = "9adkcieiq907a2pmli09";
 
-    private static final String TEMPLATE_CONTENT = "小和提醒您 ：准备开始新一天的工作啦，不要忘记打卡哦~{[placeholder:url]}{[placeholder:remark]}";
-    private static final String GET_OFF_WORK_CONTENT= "小和提醒您 ：下班啦，快好好放松吧，不要忘记打卡哦~{[placeholder:url]}{[placeholder:remark]}";
+    private static final String TEMPLATE_CONTENT = "【和飞信-考勤打卡】小和提醒您 ：准备开始新一天的工作啦，不要忘记打卡哦~{[placeholder:url]}{[placeholder:remark]}";
+    private static final String GET_OFF_WORK_CONTENT= "【和飞信-考勤打卡】小和提醒您 ：下班啦，快好好放松吧，不要忘记打卡哦~{[placeholder:url]}{[placeholder:remark]}";
     private static final String TEMPLATE_HAS_PLACE_HOLDER = "1";
 
     private static int TEMPLATE_ID = 0x201901;
