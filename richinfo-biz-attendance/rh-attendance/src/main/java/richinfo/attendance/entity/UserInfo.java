@@ -357,6 +357,7 @@ public class UserInfo implements Serializable
             ", umcArtifactValidRes=" + umcArtifactValidRes +
             ", roleType=" + roleType +
             ", smsSwitch=" + smsSwitch +
+            ", firstSend=" + firstSend +
             '}';
     }
 
