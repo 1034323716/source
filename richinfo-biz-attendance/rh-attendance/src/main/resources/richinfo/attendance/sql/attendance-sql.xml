@@ -313,6 +313,7 @@
 		mon.remark AS remark,
 		mon.leaveLocation AS
 		lastTimeLocation,
+        mon.regionStatus,
         aei.employeeName, att.attendanceName,
 		att.attendanceId,
 		mon.attendanceDate,
