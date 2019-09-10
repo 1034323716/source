@@ -1282,7 +1282,7 @@ public class MessageServiceImpl extends ServiceObject implements MessageService
                         int msgType = msg.getMsgType();
                         if(msgType == 1 || msgType == 2) {
                             String placeHolderContent = "{[placeholder:url]}##" + mSMSClockURL + "?uid=" + userInfo.getUid()
-                                + "|@|{[placeholder:remark]}##";
+                                + "|@|{[placeholder:remark]}##  ";
                             if (userInfo.getFirstSend()==1) {
                                 //place_holder_id1##替换内容|@|place_holder_id2##替换内容
                                 placeHolderContent = "{[placeholder:url]}##" + mSMSClockURL + "?uid=" + userInfo.getUid()

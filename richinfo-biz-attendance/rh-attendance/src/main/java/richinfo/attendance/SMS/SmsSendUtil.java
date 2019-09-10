@@ -47,8 +47,10 @@ public class SmsSendUtil {
     private static final String GET_OFF_WORK_CONTENT= "【和飞信-考勤打卡】小和提醒您 ：下班啦，快好好放松吧，不要忘记打卡哦~{[placeholder:url]}{[placeholder:remark]}";
     private static final String TEMPLATE_HAS_PLACE_HOLDER = "1";
 
-    private static int TEMPLATE_ID = 0x201901;
-    private static int GET_OF_WORK_TEMPLATE_ID = 0x201902;
+//    private static int TEMPLATE_ID = 0x201901;
+//    private static int GET_OF_WORK_TEMPLATE_ID = 0x201902;
+    private static int TEMPLATE_ID = AttendanceConfig.getInstance().getPropertyInt("attend.qytxl.templateId");
+    private static int GET_OF_WORK_TEMPLATE_ID = AttendanceConfig.getInstance().getPropertyInt("attend.qytxl.getOfWorkTemplateId");
     private static final int CODE_SEND_SUCCESS = 0;
     private static final int CODE_ID_NOT_EXISTS = -114;
 
@@ -66,29 +68,30 @@ public class SmsSendUtil {
         System.out.println("短信发送开始！");
         boolean sendResult = false;
         try {
+            //关闭创建模板功能 由于已经配置默认模板暂时关闭线上创建模板功能
             // 检查短信模板是否存在，模板不存在，创建模板
-            if(!isRetry){
-                boolean existTemplate = false;
-                if(msgType == 1) {
-                    existTemplate = SmsSendUtil.checkTemplate(TEMPLATE_ID);
-                } else if(msgType == 2) {
-                    existTemplate = SmsSendUtil.checkTemplate(GET_OF_WORK_TEMPLATE_ID);
-                }
-                if (!existTemplate) {
-                    System.out.println("模板不存在! ");
-                    Object templateId = SmsSendUtil.createTemplate(msgType);
-                    if (templateId != null && templateId instanceof Integer){
-                        System.out.println("重置模板Id! templateId : " + templateId);
-                        if(msgType == 1) {
-                            TEMPLATE_ID = ((Integer) templateId).intValue();
-                        } else if(msgType == 2) {
-                            GET_OF_WORK_TEMPLATE_ID = ((Integer) templateId).intValue();
-                        }
-                    } else{
-                        return sendResult;
-                    }
-                }
-            }
+//            if(!isRetry){
+//                boolean existTemplate = false;
+//                if(msgType == 1) {
+//                    existTemplate = SmsSendUtil.checkTemplate(TEMPLATE_ID);
+//                } else if(msgType == 2) {
+//                    existTemplate = SmsSendUtil.checkTemplate(GET_OF_WORK_TEMPLATE_ID);
+//                }
+//                if (!existTemplate) {
+//                    System.out.println("模板不存在! ");
+//                    Object templateId = SmsSendUtil.createTemplate(msgType);
+//                    if (templateId != null && templateId instanceof Integer){
+//                        System.out.println("重置模板Id! templateId : " + templateId);
+//                        if(msgType == 1) {
+//                            TEMPLATE_ID = ((Integer) templateId).intValue();
+//                        } else if(msgType == 2) {
+//                            GET_OF_WORK_TEMPLATE_ID = ((Integer) templateId).intValue();
+//                        }
+//                    } else{
+//                        return sendResult;
+//                    }
+//                }
+//            }
 
             // 发送短信消息
             String requestBody = null;
@@ -126,18 +129,21 @@ public class SmsSendUtil {
             } else if (resCode == CODE_ID_NOT_EXISTS) {
                 // 模板不存在，创建模板
                 System.out.println("模板不存在! ");
-                Object templateId = SmsSendUtil.createTemplate(msgType);
-                if (templateId != null && templateId instanceof Integer){
-                    // 重置模板Id，递归发送
-                    System.out.println("重置模板Id，递归发送! templateId : " + templateId);
-                    if(msgType == 1) {
-                        TEMPLATE_ID = ((Integer) templateId).intValue();
-                    } else if(msgType == 2) {
-                        GET_OF_WORK_TEMPLATE_ID = ((Integer) templateId).intValue();
-                    }
-
-                    sendResult = SmsSendUtil.sendSmsWithInAddressBook(enterDeptId, contactIds, appKey, placeHolderContent, retryNum, true, msgType);
-                }
+                //关闭创建模板功能 由于已经配置默认模板暂时关闭线上创建模板功能
+//                Object templateId = SmsSendUtil.createTemplate(msgType);
+//                if (templateId != null && templateId instanceof Integer){
+//                    // 重置模板Id，递归发送
+//                    System.out.println("重置模板Id，递归发送! templateId : " + templateId);
+//                    if(msgType == 1) {
+//                        TEMPLATE_ID = ((Integer) templateId).intValue();
+//                    } else if(msgType == 2) {
+//                        GET_OF_WORK_TEMPLATE_ID = ((Integer) templateId).intValue();
+//                    }
+//
+//                    sendResult = SmsSendUtil.sendSmsWithInAddressBook(enterDeptId, contactIds, appKey, placeHolderContent, retryNum, true, msgType);
+//                }
+                logger.info("短信发送失败! 模板不存在");
+               sendResult = false;
             } else {
                 System.out.println("短信发送失败! ResCode : " + resCode + ", ResMsg : " + resStatus.get("resMsg"));
             }
