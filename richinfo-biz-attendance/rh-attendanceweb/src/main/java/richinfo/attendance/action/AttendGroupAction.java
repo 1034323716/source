@@ -492,34 +492,12 @@ public class AttendGroupAction extends BaseAttendanceAction {
         }
         // RCS提供的新选择器不能提供企业名称、用户号码等基本信息，员工企业名称信息直接使用考勤管理员企业名称2017-11-09
         UserInfo userInfo = req.getUserInfo();
-        String enterName = userInfo.getEnterName();
+        String enterName = (String) reqMap.get("enterName");
         String enterId = userInfo.getEnterId();
         List<Object> employees = (List<Object>) reqMap.get("employees");
         int count = employees.size();
         // uidSet用于uid去重，防止前端重复提交用户信息
         Set<String> uidSet = new HashSet<String>();
-        for (int i = 0; i < count; i++) {
-            LinkedTreeMap<String, String> employee = (LinkedTreeMap<String, String>) employees
-                .get(i);
-            UserInfo user = new UserInfo();
-            user.setUid(employee.get("euserId"));
-//            user.setUid(employee.get("userId"));
-            // 添加失败，即uid重复，则忽略
-            if (!uidSet.add(user.getUid())) {
-                logger.info("uid repeated,ignore it.uid={}", user.getUid());
-                continue;
-            }
-            user.setEmployeeName(employee.get("name"));
-            user.setContactId(employee.get("contactId"));
-            user.setPhone(employee.get("phone"));
-            user.setDeptId(employee.get("deptId"));
-            user.setDeptName(employee.get("department"));
-            user.setEmail(employee.get("email"));
-            user.setPosition(employee.get("position"));
-            user.setEnterId(employee.get("enterpriseId"));
-            user.setEnterName(enterName);
-            users.add(user);
-        }
         if (AssertUtil.isNotEmpty(reqMap.get("userMapList"))){
             List<Map<String,Object>> userMapList = (List<Map<String,Object>>)reqMap.get("userMapList");
             for (Map<String,Object> objectMap : userMapList){
@@ -566,7 +544,28 @@ public class AttendGroupAction extends BaseAttendanceAction {
                 }
             }
         }
-
+        for (int i = 0; i < count; i++) {
+            LinkedTreeMap<String, String> employee = (LinkedTreeMap<String, String>) employees
+                .get(i);
+            UserInfo user = new UserInfo();
+            user.setUid(employee.get("euserId"));
+//            user.setUid(employee.get("userId"));
+            // 添加失败，即uid重复，则忽略
+            if (!uidSet.add(user.getUid())) {
+                logger.info("uid repeated,ignore it.uid={}", user.getUid());
+                continue;
+            }
+            user.setEmployeeName(employee.get("name"));
+            user.setContactId(employee.get("contactId"));
+            user.setPhone(employee.get("phone"));
+            user.setDeptId(employee.get("deptId"));
+            user.setDeptName(employee.get("department"));
+            user.setEmail(employee.get("email"));
+            user.setPosition(employee.get("position"));
+            user.setEnterId(employee.get("enterpriseId"));
+            user.setEnterName(enterName);
+            users.add(user);
+        }
         // uidSet强制回收
         uidSet = null;
         return users;
