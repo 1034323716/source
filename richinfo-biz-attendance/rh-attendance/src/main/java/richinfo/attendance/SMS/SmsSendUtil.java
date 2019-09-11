@@ -65,8 +65,9 @@ public class SmsSendUtil {
      */
     public static boolean sendSmsWithInAddressBook(String enterDeptId, String contactIds, String appKey,
                                                    String placeHolderContent, int retryNum, boolean isRetry, int msgType){
-        System.out.println("短信发送开始！");
+        logger.info("短信发送开始！");
         boolean sendResult = false;
+        logger.info("TemplateId:{},getTemplateId:{}",TEMPLATE_ID,GET_OF_WORK_TEMPLATE_ID);
         try {
             //关闭创建模板功能 由于已经配置默认模板暂时关闭线上创建模板功能
             // 检查短信模板是否存在，模板不存在，创建模板
