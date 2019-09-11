@@ -430,14 +430,17 @@ public class AttendGroupAction extends BaseAttendanceAction {
     private void gainDepartmentStaff(List<Map<String, Object>> userMapList ,List<AttendDepartmentChooser> attendDepartmentChoosers,boolean result) {
         List<Map<String,Object>> mapList = new ArrayList<>();
         Map<String,Object> objectMap = new HashMap<>();
+        List<AttendDepartmentChooser> addDepartmentChoosers = new ArrayList<>();
         for (AttendDepartmentChooser attendDepartmentChooser : attendDepartmentChoosers){
             try {
                 objectMap = QytxlUtil.getInstance().gainDepartmentStaff(attendDepartmentChooser.getDepartmentId(),attendDepartmentChooser.getEnterpriseId());
+                addSubordinateDept(userMapList,objectMap,attendDepartmentChooser,addDepartmentChoosers);
                 //调用失败重试
             } catch (Exception e) {
                 logger.info("调用企业通讯录获取直属联系人一次失败 e={}",e);
                 try {
                     objectMap = QytxlUtil.getInstance().gainDepartmentStaff(attendDepartmentChooser.getDepartmentId(),attendDepartmentChooser.getEnterpriseId());
+                    addSubordinateDept(userMapList,objectMap,attendDepartmentChooser,addDepartmentChoosers);
                 } catch (Exception e1) {
                     result = false;
                     logger.info("调用企业通讯录获取直属联系人二次失败 e={}",e);
@@ -449,11 +452,49 @@ public class AttendGroupAction extends BaseAttendanceAction {
                 logger.error(" gainDepartmentStaff Qytxl error objectMapJson = {}",objectMap);
                 return ;
             }
-           // logger.info("==================objectMap={}",objectMap);
+            // logger.info("==================objectMap={}",objectMap);
             objectMap.put("departmentName",attendDepartmentChooser.getDepartmentName());
             userMapList.add(objectMap);
         }
+        attendDepartmentChoosers.removeAll(addDepartmentChoosers);
+        attendDepartmentChoosers.addAll(addDepartmentChoosers);
     }
+
+    /**
+     * 循环遍历得到各部门的下级部门,并添加到userMapList中
+     * */
+    private void addSubordinateDept(List<Map<String, Object>> userMapList,Map<String,Object> objectMap,
+                                    AttendDepartmentChooser attendDepartmentChooser,List<AttendDepartmentChooser> addDepartmentChoosers){
+
+        List<Map<String, Object>> departments = (List<Map<String, Object>>) objectMap.get("departments");
+        if (AssertUtil.isNotEmpty(departments)){
+            for (Map<String, Object> department : departments) {
+                Map<String, Object> objectMapSub = null;
+                try {
+                    objectMapSub = QytxlUtil.getInstance().gainDepartmentStaff((String) department.get("departmentId"), attendDepartmentChooser.getEnterpriseId());
+                    addSubordinateDept(userMapList,objectMapSub,attendDepartmentChooser,addDepartmentChoosers);
+                } catch (Exception e) {
+                    logger.info("调用企业通讯录获取直属联系人一次失败 e={}",e);
+                    try {
+                        objectMapSub = QytxlUtil.getInstance().gainDepartmentStaff((String) department.get("departmentId"), attendDepartmentChooser.getEnterpriseId());
+                        addSubordinateDept(userMapList,objectMapSub,attendDepartmentChooser,addDepartmentChoosers);
+                    } catch (Exception e1) {
+                        logger.info("调用企业通讯录获取直属联系人二次失败 e={}",e);
+                        return;
+                    }
+                }
+                AttendDepartmentChooser attendDepartmentChooserSub = new AttendDepartmentChooser();
+                attendDepartmentChooserSub.setDepartmentId((String) department.get("departmentId"));
+                attendDepartmentChooserSub.setDepartmentName((String) department.get("name"));
+                attendDepartmentChooserSub.setEnterpriseId((String) department.get("enterpriseId"));
+                addDepartmentChoosers.add(attendDepartmentChooserSub);
+                objectMapSub.put("departmentName",department.get("name"));
+                userMapList.add(objectMapSub);
+
+            }
+        }
+    }
+
     /**
      * 解析获取部门
      * @param reqMap
