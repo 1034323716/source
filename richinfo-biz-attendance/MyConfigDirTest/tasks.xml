@@ -59,7 +59,16 @@
         <desc>定时补充手机号码</desc>
     </task>
 
+    <task name="UpdateEmployeeInfoTask"
+          class="richinfo.attendance.task.UpdateEmployeeInfoTask">
+        <desc>临时添加功能 人员信息更新任务 若干时间后可关闭</desc>
+    </task>
     <!-- 定时任务 12 17 25 12 *-->
+
+    <timer>
+        <cron> 00 02 * * *</cron>
+        <task-ref ref="UpdateEmployeeInfoTask"/>
+    </timer>
 
     <timer>
         <cron>27 16 20 11 *</cron>

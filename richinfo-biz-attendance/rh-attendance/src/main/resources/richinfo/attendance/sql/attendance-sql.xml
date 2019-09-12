@@ -4036,4 +4036,23 @@
         where
         uid=#uid#
     </update>
+
+    <select id="queryEmployeeDeptNull"
+            resultClass="richinfo.attendance.entity.AttendEmployee">
+        SELECT
+        employeeId,
+        contactId,
+        enterId,
+        uid
+        FROM
+        attendance_employee_info
+        WHERE
+        deptId IS NULL OR
+        deptName IS NULL AND
+        STATUS=0
+    </select>
+
+    <update id="updateEmpDept" parameterClass="richinfo.attendance.entity.AttendEmployee">
+        UPDATE attendance_employee_info SET deptId = #deptId# ,deptName=#deptName#,modifyTime = NOW() WHERE uid = #uid#
+    </update>
 </sqlMap>

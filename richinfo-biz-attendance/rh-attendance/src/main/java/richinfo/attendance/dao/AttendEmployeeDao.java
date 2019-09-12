@@ -894,4 +894,29 @@ public class AttendEmployeeDao extends BaseAttendanceDao
             logger.error("updateEmployee error params : {}, exception : {}", params, e.toString());
         }
     }
+    /**
+     * 查询考勤组用户部门信息为空的所有人员
+     *
+     */
+    public List<AttendEmployee> queryEmployeeDeptNull(){
+        try {
+            return (List<AttendEmployee>) attendanceDao.queryForList("attendance.queryEmployeeDeptNull", null);
+        } catch (PersistException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * 更新考勤用户部门信息临时定时任务
+     * @param employee
+     */
+    public void updateEmployeeDept(AttendEmployee employee) {
+        try {
+            attendanceDao.update("attendance.updateEmpDept",employee);
+        } catch (PersistException e) {
+            e.printStackTrace();
+            logger.error("updateEmployeeDept error employee={}",employee);
+        }
+    }
 }
