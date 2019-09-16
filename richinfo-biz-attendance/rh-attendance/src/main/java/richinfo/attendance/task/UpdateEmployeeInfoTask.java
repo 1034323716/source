@@ -3,6 +3,7 @@ package richinfo.attendance.task;
 
 import richinfo.attendance.dao.AttendEmployeeDao;
 import richinfo.attendance.entity.AttendEmployee;
+import richinfo.attendance.util.AssertUtil;
 import richinfo.attendance.util.AttendanceConfig;
 import richinfo.attendance.util.AttendanceUtil;
 import richinfo.attendance.util.QytxlUtil;
@@ -49,7 +50,11 @@ public class UpdateEmployeeInfoTask extends Task {
                 continue;
             }
             if ((double) empMap.get("error_code") != 0.0) {
-                logger.info("查询失败{}", empMap);
+                logger.info("企业不存在{}", empMap);
+                continue;
+            }
+            if (AssertUtil.isEmpty((Map<String, Object>) empMap.get("item"))){
+                logger.info("通讯录此人员不存在{}", empMap);
                 continue;
             }
             Map<String, Object> item = (Map<String, Object>) empMap.get("item");
