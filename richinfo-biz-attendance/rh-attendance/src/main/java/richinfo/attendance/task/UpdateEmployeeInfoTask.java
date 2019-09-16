@@ -70,7 +70,7 @@ public class UpdateEmployeeInfoTask extends Task {
                 logger.debug("查询通讯录人员信息失败");
                 continue;
             }
-            if ((int) empMap.get("error_code") != 0) {
+            if ((double) empMap.get("error_code") != 0.0) {
                 logger.info("查询失败{}", empMap);
                 continue;
             }
