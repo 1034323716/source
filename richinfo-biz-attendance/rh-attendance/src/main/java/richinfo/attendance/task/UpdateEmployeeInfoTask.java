@@ -37,10 +37,11 @@ public class UpdateEmployeeInfoTask extends Task {
     private boolean updateEmployeeInfo() {
 
         List<AttendEmployee> attendEmployees = employeeDao.queryEmployeeDeptNull();
+        logger.info("获取部门为空的全部人员");
         List<List<AttendEmployee>> lists = AttendanceUtil.splitList(attendEmployees, 500);
-
+        logger.info("分割集合");
         ExecutorService fixedThreadPool = Executors.newFixedThreadPool(AttendanceConfig.getInstance().getMultiThreadedPool());
-
+        logger.info("线程池创建");
         try {
             for (List<AttendEmployee> list : lists) {
                 fixedThreadPool.execute(new Runnable() {
@@ -51,6 +52,7 @@ public class UpdateEmployeeInfoTask extends Task {
                 });
             }
             fixedThreadPool.shutdown();
+            logger.info("多线程执行完毕");
         } catch (Exception e) {
             fixedThreadPool.shutdown();
             logger.info("updateEmployeeInfo ThreadPool {}|{}", e.getMessage(), e);
@@ -66,6 +68,7 @@ public class UpdateEmployeeInfoTask extends Task {
             Map<String, Object> empMap = null;
             try {
                 empMap = QytxlUtil.getInstance().getItem(emp.getEnterId(), emp.getContactId());
+                logger.info("通讯录人员查询成功");
             } catch (Exception e) {
                 logger.debug("查询通讯录人员信息失败");
                 continue;
