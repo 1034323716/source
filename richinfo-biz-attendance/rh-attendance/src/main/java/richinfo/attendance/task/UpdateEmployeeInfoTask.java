@@ -46,7 +46,7 @@ public class UpdateEmployeeInfoTask extends Task {
                 empMap = QytxlUtil.getInstance().getItem(emp.getEnterId(), emp.getContactId());
                 logger.info("通讯录人员查询成功");
             } catch (Exception e) {
-                logger.debug("查询通讯录人员信息失败");
+                logger.info("查询通讯录人员信息失败");
                 continue;
             }
             if ((double) empMap.get("error_code") != 0.0) {
