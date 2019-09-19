@@ -369,6 +369,7 @@ public class AttendServiceImpl implements AttendService
                                     return attendDao.saveAttendRecord(attendRecord);
                                 } else {
                                     flag = false;
+                                    break;
                                 }
                             }
                         }
