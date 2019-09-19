@@ -1275,6 +1275,7 @@ public class MessageServiceImpl extends ServiceObject implements MessageService
                 }
 
                 //短信推送
+                logger.debug("短信推送smsSwitch:" + msg.getSmsSwitch());
                 if(msg.getSmsSwitch() == 1) {
                     UserInfo userInfo = loginDao.queryUserInfoByUid(msg.getUid(), 0);
                     logger.info("sms userInfo : {}", userInfo);

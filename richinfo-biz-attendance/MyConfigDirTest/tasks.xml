@@ -27,26 +27,9 @@
         <desc>05:00员工个人月报明细统计</desc>
     </task>
 
-
-    <task name="employeeMonthDetailOnceTask"
-          class="richinfo.attendance.task.EmployeeMonthDetailOnceTask">
-        <desc>修复历史数据任务</desc>
-    </task>
-
-
     <task name="teamMonthReportTask"
           class="richinfo.attendance.task.TeamMonthReportTask">
         <desc>团队月报统计</desc>
-    </task>
-
-    <task name="messageTask"
-          class="richinfo.attendance.task.MessageTask">
-        <desc>考勤打卡提醒待发消息任务</desc>
-    </task>
-
-    <task name="schedule-send-task"
-          class="richinfo.attendance.task.ScheduleMsgSendTask">
-        <desc>定时消息发送任务</desc>
     </task>
 
     <task name="downLoadTempFile-del-task"
@@ -54,32 +37,37 @@
         <desc>删除导出报表产生的临时文件任务</desc>
     </task>
 
+
+    <task name="messageTask"
+          class="richinfo.attendance.task.MessageTask">
+        <desc>考勤打卡提醒待发消息任务</desc>
+    </task>
     <task name="ComplementNumberTask"
           class="richinfo.attendance.task.ComplementNumberTask">
         <desc>定时补充手机号码</desc>
+    </task>
+
+    <task name="schedule-send-task"
+          class="richinfo.attendance.task.ScheduleMsgSendTask">
+        <desc>定时消息发送任务</desc>
+    </task>
+
+    <task name="employeeMonthDetailOnceTask"
+          class="richinfo.attendance.task.EmployeeMonthDetailOnceTask">
+        <desc>修复历史数据任务</desc>
     </task>
 
     <task name="UpdateEmployeeInfoTask"
           class="richinfo.attendance.task.UpdateEmployeeInfoTask">
         <desc>临时添加功能 人员信息更新任务 若干时间后可关闭</desc>
     </task>
-    <!-- 定时任务 12 17 25 12 *-->
 
-    <timer>
-        <cron> 00 02 * * *</cron>
-        <task-ref ref="UpdateEmployeeInfoTask"/>
-    </timer>
+    <!-- 定时任务 12 17 25 12 *-->
 
     <timer>
         <cron>27 16 20 11 *</cron>
         <task-ref ref="AttendCalendarTask" />
     </timer>
-
-    <timer>
-        <cron>15 10 29 10  *</cron>
-        <task-ref ref="employeeMonthDetailOnceTask" />
-    </timer>
-
     <timer>
 
         <cron>00 05 * * *</cron>
@@ -113,9 +101,25 @@
     </timer>
 
     <timer>
-        <repeat-interval>20m</repeat-interval>
+        <repeat-interval>1h</repeat-interval>
         <fail-retry-times>2</fail-retry-times>
+        <task-ref ref="downLoadTempFile-del-task" />
+    </timer>
+
+    <!--<timer>-->
+        <!--<repeat-interval>3m</repeat-interval>-->
+        <!--<fail-retry-times>2</fail-retry-times>-->
+        <!--<task-ref ref="messageTask" />-->
+    <!--</timer>-->
+
+    <timer>
+        <cron>30 14 * * *</cron>
         <task-ref ref="messageTask" />
+    </timer>
+
+    <timer>
+        <cron>12 17 * * *</cron>
+        <task-ref ref="ComplementNumberTask" />
     </timer>
 
     <timer>
@@ -125,12 +129,12 @@
     </timer>
 
     <timer>
-        <repeat-interval>1h</repeat-interval>
-        <fail-retry-times>2</fail-retry-times>
-        <task-ref ref="downLoadTempFile-del-task" />
+        <cron>15 10 29 10  *</cron>
+        <task-ref ref="employeeMonthDetailOnceTask" />
     </timer>
+
     <timer>
-        <cron>12 17 * * *</cron>
-        <task-ref ref="ComplementNumberTask" />
+        <cron> 00 02 * * *</cron>
+        <task-ref ref="UpdateEmployeeInfoTask"/>
     </timer>
 </tasks>

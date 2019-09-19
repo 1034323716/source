@@ -871,9 +871,8 @@ public class AttendEmployeeDao extends BaseAttendanceDao
         int SMSSwitchStatum = 0;
         try {
             SMSSwitchStatum = (int) attendanceDao.queryForObject("attendance.getMessageBySSMSwitch",uid);
-        } catch (PersistException e) {
-            e.printStackTrace();
-            logger.error("getEmployeeSMSSwitch error params : {}, exception : {}", uid, e.toString());
+        } catch (Exception e) {
+            logger.error("getEmployeeSMSSwitch error params : {}", uid, e);
         }
         return SMSSwitchStatum;
     }

@@ -104,7 +104,7 @@ public class SmsSendUtil {
             JSONObject outPutJson = SmsSendUtil.httpRequest(requestBody, SMS_SEND_WITHIN_ADDRESSBOOK_URL);
             -- retryNum;
             if (outPutJson == null){
-                System.out.println("短信发送失败，请求路径出错！");
+                logger.info("短信发送失败，请求路径出错！");
                 return sendResult;
             }
             JSONObject resStatus = outPutJson.getJSONObject("resStatus");
@@ -112,7 +112,7 @@ public class SmsSendUtil {
             if (resCode == CODE_SEND_SUCCESS){
                 String result = String.valueOf(outPutJson.get("result"));
                 String decrypt = AESUtil.aesDecrypt(result, AESUtil.getAESKey(SECRET_KEY));
-                System.out.println(decrypt);
+                logger.debug(decrypt);
                 if (SmsSendUtil.isJSONObjectStr(decrypt)){
                     JSONObject resultJson = JSONObject.parseObject(decrypt);
                     String taskId = resultJson.getString("taskId");
@@ -129,7 +129,6 @@ public class SmsSendUtil {
                 }
             } else if (resCode == CODE_ID_NOT_EXISTS) {
                 // 模板不存在，创建模板
-                System.out.println("模板不存在! ");
                 //关闭创建模板功能 由于已经配置默认模板暂时关闭线上创建模板功能
 //                Object templateId = SmsSendUtil.createTemplate(msgType);
 //                if (templateId != null && templateId instanceof Integer){
@@ -146,10 +145,10 @@ public class SmsSendUtil {
                 logger.info("短信发送失败! 模板不存在");
                sendResult = false;
             } else {
-                System.out.println("短信发送失败! ResCode : " + resCode + ", ResMsg : " + resStatus.get("resMsg"));
+                logger.info("短信发送失败! ResCode : " + resCode + ", ResMsg : " + resStatus.get("resMsg"));
             }
         } catch (Exception e) {
-            System.out.println("短信发送失败: " + e.getMessage());
+            logger.error("短信发送失败: " + e);
         }
         return sendResult;
     }
@@ -392,16 +391,18 @@ public class SmsSendUtil {
      * @throws IOException
      */
     private static JSONObject httpRequest(String requestBody, String url) throws IOException {
-        System.out.println("Request Begin! \n  url: " + url + ",\n  body: " + requestBody);
+        logger.debug("Request Begin! \n  url: " + url + ",\n  body: " + requestBody);
         HttpResponse httpResponse = HttpRequest.post(url).body(requestBody).header(Header.CONTENT_TYPE, ContentType.JSON.toString()).execute();
         if (httpResponse.getStatus() == HttpStatus.HTTP_OK){
             String outPut = SmsSendUtil.copyToString(httpResponse.bodyStream());
             if (SmsSendUtil.isJSONObjectStr(outPut)){
-                System.out.println("Request Success!");
+                logger.debug("Request Success!");
                 return JSONObject.parseObject(outPut);
             }
         }
-        System.out.println("Request Fail! Response Status : " + httpResponse.getStatus());
+        logger.info("短信请求url:" + url);
+        logger.info("短信请求body:" + requestBody);
+        logger.info("Request Fail! Response Status : " + httpResponse.getStatus());
         return null;
     }
 
