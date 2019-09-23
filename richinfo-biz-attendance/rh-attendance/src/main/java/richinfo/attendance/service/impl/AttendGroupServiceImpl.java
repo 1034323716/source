@@ -2542,7 +2542,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
 
         //没有符合对应的部门
         if (conformChoosers.size() == 0) {
-        //从旧部门移动到新部门而新部门没有设置考勤组的情况下,将该人员的考勤部门置为空而不是使用旧部门数据
+        /*//从旧部门移动到新部门而新部门没有设置考勤组的情况下,将该人员的考勤部门置为空而不是使用旧部门数据
             if (AssertUtil.isNotEmpty(attendEmployee)){
                 attendEmployee.setAttendanceId(0);
                 attendEmployee.setDeptId(null);
@@ -2550,7 +2550,7 @@ public class AttendGroupServiceImpl extends ServiceObject implements
                 attendEmployee.setModifyTime(new Date());
                 attendEmployee.setStatus(1);
                 employeeDao.updateEmployee(attendEmployee);
-            }
+            }*/
             return null;
         }
         //多个考勤组
