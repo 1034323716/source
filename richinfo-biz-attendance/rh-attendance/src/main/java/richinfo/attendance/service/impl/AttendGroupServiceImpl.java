@@ -2620,9 +2620,9 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             return null;
         }
 
-        //如果用户已加入考勤组,更新用户的考勤组信息,否则用户不在考勤组,添加进考勤组
+        //状态异常则更新
         if (AssertUtil.isNotEmpty(attendEmployee)) {
-            if (attendEmployee.getStatus() == EmployeeStatus.Abnormal.getValue() || attendEmployee.getAttendanceId() != attendanceId) {
+            if (attendEmployee.getStatus() == EmployeeStatus.Abnormal.getValue()) {
                 logger.info("更新考勤组====>>attendanceId={}", attendanceId);
                 attendEmployee.setAttendanceId(attendanceId);
                 //更新
