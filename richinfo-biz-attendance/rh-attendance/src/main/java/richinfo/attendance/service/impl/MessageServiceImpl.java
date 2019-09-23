@@ -20,6 +20,7 @@ import richinfo.attendance.SMS.SmsSendUtil;
 import richinfo.attendance.asyn.HistoryMessageAsynTask;
 import richinfo.attendance.asyn.MessageAsynTask;
 import richinfo.attendance.asyn.SendMessageAsynTask;
+import richinfo.attendance.common.PublicConstant;
 import richinfo.attendance.common.ServiceObject;
 import richinfo.attendance.dao.*;
 import richinfo.attendance.entity.*;
@@ -1295,7 +1296,7 @@ public class MessageServiceImpl extends ServiceObject implements MessageService
                             //contactId
 
                             boolean sendResult = SmsSendUtil.sendSmsWithInAddressBook(userInfo.getEnterId(), userInfo.getContactId(),
-                                AttendanceConfig.getInstance().getProperty("attend.qytxl.appid", "9fdcd721d954456b8c7ea53f80635456"), placeHolderContent, 3, false, msgType);
+                                PublicConstant.APP_KEY, placeHolderContent, 3, false, msgType);
 
                             if (sendResult == true && userInfo.getFirstSend()==1){
                                 employeeDao.updateEmployeeFirstSend(userInfo.getUid());
