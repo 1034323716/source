@@ -81,8 +81,7 @@ public class AttendGroupAction extends BaseAttendanceAction {
         //调用和通讯录获取部门下的员工
         if (AssertUtil.isNotEmpty(attendDepartmentChoosers)){
             List<Map<String, Object>> userMapList = new ArrayList<>();
-            boolean result = true;
-             gainDepartmentStaff(userMapList,attendDepartmentChoosers,result);
+            boolean result = gainDepartmentStaff(userMapList,attendDepartmentChoosers);
              if (!result){
                  AttendGroupRes groupRes = new AttendGroupRes();
                  groupRes.setCode(ResultCode.S_ERROR);
@@ -128,8 +127,7 @@ public class AttendGroupAction extends BaseAttendanceAction {
         //调用和通讯录获取部门下的员工
         if (AssertUtil.isNotEmpty(attendDepartmentChoosers)){
             List<Map<String, Object>> userMapList = new ArrayList<>();
-            boolean result =true;
-            gainDepartmentStaff(userMapList,attendDepartmentChoosers,result);
+            boolean result = gainDepartmentStaff(userMapList,attendDepartmentChoosers);
             if (!result){
                 AttendGroupRes groupRes = new AttendGroupRes();
                 groupRes.setCode(ResultCode.S_ERROR);
@@ -208,8 +206,7 @@ public class AttendGroupAction extends BaseAttendanceAction {
         //调用和通讯录获取部门下的员工
         if (AssertUtil.isNotEmpty(attendDepartmentChoosers)){
             List<Map<String, Object>> userMapList = new ArrayList<>();
-            boolean result = true;
-            gainDepartmentStaff(userMapList,attendDepartmentChoosers,result);
+            boolean result = gainDepartmentStaff(userMapList,attendDepartmentChoosers);
             if (!result){
                 AttendGroupRes groupRes = new AttendGroupRes();
                 groupRes.setCode(ResultCode.S_ERROR);
@@ -427,7 +424,7 @@ public class AttendGroupAction extends BaseAttendanceAction {
      * @param attendDepartmentChoosers
      * @return
      */
-    private void gainDepartmentStaff(List<Map<String, Object>> userMapList ,List<AttendDepartmentChooser> attendDepartmentChoosers,boolean result) {
+    private boolean gainDepartmentStaff(List<Map<String, Object>> userMapList ,List<AttendDepartmentChooser> attendDepartmentChoosers) {
         List<Map<String,Object>> mapList = new ArrayList<>();
         Map<String,Object> objectMap = new HashMap<>();
         List<AttendDepartmentChooser> addDepartmentChoosers = new ArrayList<>();
@@ -442,15 +439,13 @@ public class AttendGroupAction extends BaseAttendanceAction {
                     objectMap = QytxlUtil.getInstance().gainDepartmentStaff(attendDepartmentChooser.getDepartmentId(),attendDepartmentChooser.getEnterpriseId());
                     addSubordinateDept(userMapList,objectMap,attendDepartmentChooser,addDepartmentChoosers);
                 } catch (Exception e1) {
-                    result = false;
                     logger.info("调用企业通讯录获取直属联系人二次失败 e={}",e);
-                    return;
+                    return false;
                 }
             }
             if (0 != (int)objectMap.get("error_code")){
-                result = false;
                 logger.error(" gainDepartmentStaff Qytxl error objectMapJson = {}",objectMap);
-                return ;
+                return false;
             }
             // logger.info("==================objectMap={}",objectMap);
             objectMap.put("departmentName",attendDepartmentChooser.getDepartmentName());
@@ -458,6 +453,7 @@ public class AttendGroupAction extends BaseAttendanceAction {
         }
         attendDepartmentChoosers.removeAll(addDepartmentChoosers);
         attendDepartmentChoosers.addAll(addDepartmentChoosers);
+        return true;
     }
 
     /**
