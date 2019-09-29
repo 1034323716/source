@@ -56,6 +56,8 @@ public class AttendDao extends BaseAttendanceDao
 
     private AttendanceConfig config = AttendanceConfig.getInstance();
 
+    /**补班临时规则*/
+    private Map attendRuleMapTem = new HashMap<Object,Object>();
     /**
      * 查询员工一天的考勤记录列表，顺序排列
      * @param uid 企业联系人ID
@@ -497,6 +499,7 @@ public class AttendDao extends BaseAttendanceDao
         if (rowday) {
             Map jsonObject = JSON.parseObject(attendGroup.getFixedAttendRule());
             if (AssertUtil.isNotEmpty(jsonObject)) {
+                attendRuleMapTem.put("rowday",true);
                 List dayNum = new ArrayList(jsonObject.keySet());
                 day = AtdcTimeUtil.getWeekNum(attendCalendar.getWeek());
                 //周六按固定班最后一个工作日计算 周日按第一个工作日计算
@@ -508,6 +511,9 @@ public class AttendDao extends BaseAttendanceDao
             }
         }
         Map attendRuleMap = JSON.parseObject(jsonMap.get(day).toString());
+        if (AssertUtil.isNotEmpty(attendRuleMapTem.get("rowday"))) {
+            attendRuleMapTem.put("attendRuleMap", attendRuleMap);
+        }
         String amTime = (String)attendRuleMap.get("amTime");
         String pmTime = (String)attendRuleMap.get("pmTime");
         this.amTime = amTime;
@@ -649,10 +655,15 @@ public class AttendDao extends BaseAttendanceDao
             }
             return realDistance<worktimeDistance;
         } else {
-            String fixedAttendRule = attendGroup.getFixedAttendRule();
-            Map jsonMap = JSON.parseObject(fixedAttendRule);
-            int day = AtdcTimeUtil.getWeekNum(attendCalendar.getWeek());
-            Map attendRuleMap = JSON.parseObject(jsonMap.get(day).toString());
+            Map attendRuleMap ;
+            if (AssertUtil.isNotEmpty(attendRuleMapTem.get("rowday"))){
+                attendRuleMap = (Map) attendRuleMapTem.get("attendRuleMap");
+            }else {
+                String fixedAttendRule = attendGroup.getFixedAttendRule();
+                Map jsonMap = JSON.parseObject(fixedAttendRule);
+                int day = AtdcTimeUtil.getWeekNum(attendCalendar.getWeek());
+                attendRuleMap = JSON.parseObject(jsonMap.get(day).toString());
+            }
             String pmTime = (String)attendRuleMap.get("pmTime");
             this.pmTime = pmTime;
             this.afternoonEndTime = AtdcTimeUtil.getEndTime(pmTime) + ":00";
