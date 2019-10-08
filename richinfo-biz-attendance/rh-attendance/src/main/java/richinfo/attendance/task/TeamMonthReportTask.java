@@ -86,8 +86,8 @@ public class TeamMonthReportTask extends Task
             logger.info("TeamMonthReportTask can't find enterIds");
             return;
         }
-        //多线程执行插入导致部分数据插入失败,暂时更改线程池为1
-        ExecutorService fixedThreadPool = Executors.newFixedThreadPool(1);
+        //创建一个线程数默认为20的线程池
+        ExecutorService fixedThreadPool = Executors.newFixedThreadPool(AttendanceConfig.getInstance().getMultiThreadedPool());
         try {
 
             for (String enterId : enterIds) {
