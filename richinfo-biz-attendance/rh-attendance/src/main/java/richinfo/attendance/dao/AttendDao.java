@@ -56,8 +56,7 @@ public class AttendDao extends BaseAttendanceDao
 
     private AttendanceConfig config = AttendanceConfig.getInstance();
 
-    /**补班临时规则*/
-    private Map attendRuleMapTem = new HashMap<Object,Object>();
+
     /**
      * 查询员工一天的考勤记录列表，顺序排列
      * @param uid 企业联系人ID
@@ -499,7 +498,6 @@ public class AttendDao extends BaseAttendanceDao
         if (rowday) {
             Map jsonObject = JSON.parseObject(attendGroup.getFixedAttendRule());
             if (AssertUtil.isNotEmpty(jsonObject)) {
-                attendRuleMapTem.put("rowday",true);
                 List dayNum = new ArrayList(jsonObject.keySet());
                 day = AtdcTimeUtil.getWeekNum(attendCalendar.getWeek());
                 //周六按固定班最后一个工作日计算 周日按第一个工作日计算
@@ -511,9 +509,6 @@ public class AttendDao extends BaseAttendanceDao
             }
         }
         Map attendRuleMap = JSON.parseObject(jsonMap.get(day).toString());
-        if (AssertUtil.isNotEmpty(attendRuleMapTem.get("rowday"))) {
-            attendRuleMapTem.put("attendRuleMap", attendRuleMap);
-        }
         String amTime = (String)attendRuleMap.get("amTime");
         String pmTime = (String)attendRuleMap.get("pmTime");
         this.amTime = amTime;
@@ -531,25 +526,25 @@ public class AttendDao extends BaseAttendanceDao
 
         //说明是最新打卡
         if (AssertUtil.isEmpty(attendList)){
-            monthDetail = handleSingleAttendanceCase(monthDetail, attendRecord,attendGroup,attendCalendar);
+            monthDetail = handleSingleAttendanceCase(monthDetail, attendRecord,attendGroup,attendCalendar,rowday);
             monthDetail.setRegionStatus(attendRecord.getStatus());
             monthDetail.setRecordState(2);
             //已经存在多次打卡
         }else {
             // 多次打卡记录
-            monthDetail = handleMultipleAttendanceCase(monthDetail, attendList.get(0),attendRecord, attendGroup,attendCalendar);
+            monthDetail = handleMultipleAttendanceCase(monthDetail, attendList.get(0),attendRecord, attendGroup,attendCalendar,rowday);
         }
         return monthDetail;
     }
 
     // 固定班多次打卡记录
-    private EmployeeMonthDetail handleMultipleAttendanceCase(EmployeeMonthDetail monthDetail, AttendEntity firstAttend, AttendEntity lastAttend,AttendGroup attendGroup,AttendCalendar attendCalendar) {
+    private EmployeeMonthDetail handleMultipleAttendanceCase(EmployeeMonthDetail monthDetail, AttendEntity firstAttend, AttendEntity lastAttend, AttendGroup attendGroup, AttendCalendar attendCalendar, boolean rowday) {
         // 首次、尾次打卡均在下午班次，相当于只有一次下午打卡记录
         if (!isMorningHours(firstAttend.getAttendanceTime(),attendGroup)
                 && !isMorningHours(lastAttend.getAttendanceTime(),attendGroup))
         {
             // 对尾次打卡记录进行判断
-            handleSingleAttendanceCase(monthDetail, lastAttend, attendGroup,attendCalendar);
+            handleSingleAttendanceCase(monthDetail, lastAttend, attendGroup,attendCalendar,rowday);
             monthDetail.setRegionStatus(lastAttend.getStatus());
             monthDetail.setRecordState(2);
             return monthDetail;
@@ -560,7 +555,7 @@ public class AttendDao extends BaseAttendanceDao
         handleMorningAttend(monthDetail, firstAttend,attendGroup);
         isFlexible = true;
         // 记录下午考勤状态
-        handleAfternoonAttend(monthDetail, lastAttend,attendGroup,attendCalendar);
+        handleAfternoonAttend(monthDetail, lastAttend,attendGroup,attendCalendar,rowday);
 
         monthDetail.setRegionStatus((firstAttend.getStatus() + lastAttend.getStatus()) == 0 ? 0 : 1);
 
@@ -585,14 +580,14 @@ public class AttendDao extends BaseAttendanceDao
     }
 
     //固定班只有一次打卡
-    private EmployeeMonthDetail handleSingleAttendanceCase(EmployeeMonthDetail monthDetail, AttendEntity attendRecord,AttendGroup attendGroup,AttendCalendar attendCalendar) {
+    private EmployeeMonthDetail handleSingleAttendanceCase(EmployeeMonthDetail monthDetail, AttendEntity attendRecord,AttendGroup attendGroup,AttendCalendar attendCalendar,boolean rowday) {
         // 判断是否为上午班次
         if (isMorningHours(attendRecord.getAttendanceTime(),attendGroup)) {
             // 判断上午的考勤状态
             handleMorningAttend(monthDetail, attendRecord, attendGroup);
         } else {
             // 记录下午打卡时间、地点
-            handleAfternoonAttend(monthDetail, attendRecord, attendGroup,attendCalendar);
+            handleAfternoonAttend(monthDetail, attendRecord, attendGroup,attendCalendar,rowday);
             monthDetail.setGoWork(null);
             monthDetail.setGoWorkDate(null);
             monthDetail.setGoLocation(null);
@@ -604,7 +599,7 @@ public class AttendDao extends BaseAttendanceDao
     }
 
     // 记录下午打卡时间、地点
-    private void handleAfternoonAttend(EmployeeMonthDetail monthDetail, AttendEntity attendRecord,AttendGroup attendGroup,AttendCalendar attendCalendar) {
+    private void handleAfternoonAttend(EmployeeMonthDetail monthDetail, AttendEntity attendRecord,AttendGroup attendGroup,AttendCalendar attendCalendar,boolean rowday) {
         // 记录下午打卡时间、地点
         monthDetail.setLeaveWork(attendRecord.getAttendanceTime());
         monthDetail.setLeaveWorkDate(attendRecord.getAttendanceDate());
@@ -613,7 +608,7 @@ public class AttendDao extends BaseAttendanceDao
         monthDetail.setLeaveRegionStatus(attendRecord.getStatus());
         monthDetail.setAmPmStatue(1);
         // 判断下午是否早退
-        if (isEarlyClocked(attendRecord.getAttendanceTime(),attendGroup,monthDetail,attendCalendar)) {
+        if (isEarlyClocked(attendRecord.getAttendanceTime(),attendGroup,monthDetail,attendCalendar,rowday)) {
             //  计算早退时长，排班时还需再优化
             String pmTime = this.pmTime.substring(6);
             Date date = TimeUtil.string2Date(pmTime, "HH:mm");
@@ -630,7 +625,7 @@ public class AttendDao extends BaseAttendanceDao
     }
 
     // 判断下午是否早退
-    private boolean isEarlyClocked(Date attendanceTime,AttendGroup attendGroup,EmployeeMonthDetail monthDetail,AttendCalendar attendCalendar) {
+    private boolean isEarlyClocked(Date attendanceTime,AttendGroup attendGroup,EmployeeMonthDetail monthDetail,AttendCalendar attendCalendar,boolean rowday) {
         // 截取时间
         String time = TimeUtil.date2String(attendanceTime,
                 TimeUtil.BASE_TIME_FORMAT);
@@ -655,15 +650,20 @@ public class AttendDao extends BaseAttendanceDao
             }
             return realDistance<worktimeDistance;
         } else {
-            Map attendRuleMap ;
-            if (AssertUtil.isNotEmpty(attendRuleMapTem.get("rowday"))){
-                attendRuleMap = (Map) attendRuleMapTem.get("attendRuleMap");
-            }else {
-                String fixedAttendRule = attendGroup.getFixedAttendRule();
-                Map jsonMap = JSON.parseObject(fixedAttendRule);
-                int day = AtdcTimeUtil.getWeekNum(attendCalendar.getWeek());
-                attendRuleMap = JSON.parseObject(jsonMap.get(day).toString());
+            Map jsonObject = JSON.parseObject(attendGroup.getFixedAttendRule());
+            int day = AtdcTimeUtil.getWeekNum(attendCalendar.getWeek());
+            if (rowday) {
+                if (AssertUtil.isNotEmpty(jsonObject) && jsonObject.get(day) == null) {
+                    List dayNum = new ArrayList(jsonObject.keySet());
+                    //周六按固定班最后一个工作日计算 周日按第一个工作日计算
+                    if (day == 6) {
+                        day = Integer.parseInt(dayNum.get(dayNum.size() - 1).toString());
+                    } else if (day == 7) {
+                        day = Integer.parseInt(dayNum.get(0).toString());
+                    }
+                }
             }
+            Map attendRuleMap = JSON.parseObject(jsonObject.get(day).toString());
             String pmTime = (String)attendRuleMap.get("pmTime");
             this.pmTime = pmTime;
             this.afternoonEndTime = AtdcTimeUtil.getEndTime(pmTime) + ":00";
