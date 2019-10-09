@@ -25,6 +25,7 @@ import richinfo.bcomponet.tasks.Task;
 import richinfo.bcomponet.tasks.TaskContext;
 import richinfo.bcomponet.tasks.exception.TaskException;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -57,7 +58,16 @@ public class TeamMonthReportTask extends Task
 
         //调用统计方法   参数为null  代表获取当前时间统计
         statistics(null);
-
+        String pro = AttendanceConfig.getInstance().getProperty("attend.qytxl.repairTime");
+        if (!pro.equals("0")) {
+            String[] property = pro.split("/");
+            if (property[0] != "0" && property[1].equals(new SimpleDateFormat("yyyy-MM-dd").format(new Date()))) {
+                String[] split = property[0].split("-");
+                Calendar instance = Calendar.getInstance();
+                instance.set(Integer.parseInt(split[0]), Integer.parseInt(split[1]) - 1, Integer.parseInt(split[2]));
+                statistics(instance.getTime());
+            }
+        }
 
     }
 
