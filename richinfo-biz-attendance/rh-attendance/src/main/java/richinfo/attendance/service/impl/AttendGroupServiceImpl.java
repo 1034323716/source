@@ -2477,13 +2477,13 @@ public class AttendGroupServiceImpl extends ServiceObject implements
             return null;
             //为空判断 则进行部门选择器操作
         }*/
-      /*  if(userInfo.getAttendanceId() != 0 || userInfo.getWhitelistStatus() == 1){
-            return null;
-        }*/
-        if (userInfo.getWhitelistStatus() == 1) {
-            logger.info("白名单用户直接退出", userInfo);
+        if(userInfo.getAttendanceId() != 0 || userInfo.getWhitelistStatus() == 1){
             return null;
         }
+//        if (userInfo.getWhitelistStatus() == 1) {
+//            logger.info("白名单用户直接退出", userInfo);
+//            return null;
+//        }
 
         //获取企业下所有部门的考勤组的部门选择器
         List<AttendDepartmentChooser> attendDepartmentChoosers = attendDepartmentDao.queryEnterDepartmentChooser(enterId);
