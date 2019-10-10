@@ -75,6 +75,7 @@ public class AttendLoginAction extends BaseAttendanceAction {
      */
     @RequestMapping(value = "/ssoAttendance", method = RequestMethod.GET)
     public void ssoAttendance(HttpServletRequest request, HttpServletResponse response){
+        long t1 = System.currentTimeMillis();
         try {
             Map<String, String> reqMap = parserReqParam(request);
             String isAdmin = (String) reqMap.get("isAdmin");
@@ -224,20 +225,22 @@ public class AttendLoginAction extends BaseAttendanceAction {
                         }
                     }else {
                         //用户不是第一次登陆
-                        // 用户只有一个考勤组条件下:未加入考勤组则添加进考勤组,已加入考勤组如果再次匹配成功则更新考勤组
                         logger.info("用户不是第一次登陆");
-                        AttendEmployee employee = new AttendEmployee();
-                        employee.setEnterId(req.getEnterId());
-                        employee.setStatus(AttendEmployee.EmployeeStatus.Normal.getValue());
-                        employee.setContactId(reqMap.get("contactId"));
-                        employee.setEnterName(enterName);
-                        employee.setPhone(res.getPhone());
-                        employee.setUid(uid);
 
                         //先从缓存中通过Usessionid获取缓存的用户信息
                         UserInfo userInfo = userInfoCache.get(res.getUsessionid());
 
-                        groupService.detectionJoinGroup(employee, userInfo);
+                        if(userInfo.getAttendanceId() == 0 && userInfo.getWhitelistStatus() != 1){
+                            AttendEmployee employee = new AttendEmployee();
+                            employee.setEnterId(req.getEnterId());
+                            employee.setStatus(AttendEmployee.EmployeeStatus.Normal.getValue());
+                            employee.setContactId(reqMap.get("contactId"));
+                            employee.setEnterName(enterName);
+                            employee.setPhone(res.getPhone());
+                            employee.setUid(uid);
+                            // 用户只有一个考勤组条件下:未加入考勤组则添加进考勤组,已加入考勤组如果再次匹配成功则更新考勤组
+                            groupService.detectionJoinGroup(employee, userInfo);
+                        }
 
                     }
                 }
@@ -248,6 +251,8 @@ public class AttendLoginAction extends BaseAttendanceAction {
                 uid, reqMap.get("contactId"), reqMap.get("enterId"),
                 res.getPhone(), jumpToUrl);
             redirect(request, response, jumpToUrl);
+            long t2 = System.currentTimeMillis();
+            logger.debug("登陆耗时：" + (t2-t1));
         }catch (Exception e){
             logger.error("全局异常  认证失败 e{}",e);
             redirect(request,response,AttendanceConfig.getInstance().getProperty("attend.login.failUrl", ""));
