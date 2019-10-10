@@ -66,6 +66,7 @@ public class TeamMonthReportTask extends Task
                 Calendar instance = Calendar.getInstance();
                 instance.set(Integer.parseInt(split[0]), Integer.parseInt(split[1]) - 1, Integer.parseInt(split[2]));
                 statistics(instance.getTime());
+                logger.info("指定时间修复团队月报任务执行完毕");
             }
         }
 
