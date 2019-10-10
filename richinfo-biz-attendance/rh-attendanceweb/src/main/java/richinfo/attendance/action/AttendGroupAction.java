@@ -428,16 +428,20 @@ public class AttendGroupAction extends BaseAttendanceAction {
         List<Map<String,Object>> mapList = new ArrayList<>();
         Map<String,Object> objectMap = new HashMap<>();
         List<AttendDepartmentChooser> addDepartmentChoosers = new ArrayList<>();
+        HashSet<Object> departmentId = new HashSet<>();
+        for (AttendDepartmentChooser oldDepId : attendDepartmentChoosers) {
+            departmentId.add(oldDepId.getDepartmentId());
+        }
         for (AttendDepartmentChooser attendDepartmentChooser : attendDepartmentChoosers){
             try {
                 objectMap = QytxlUtil.getInstance().gainDepartmentStaff(attendDepartmentChooser.getDepartmentId(),attendDepartmentChooser.getEnterpriseId());
-                addSubordinateDept(userMapList,objectMap,attendDepartmentChooser,addDepartmentChoosers);
+                addSubordinateDept(userMapList,objectMap,attendDepartmentChooser,addDepartmentChoosers,departmentId);
                 //调用失败重试
             } catch (Exception e) {
                 logger.info("调用企业通讯录获取直属联系人一次失败 e={}",e);
                 try {
                     objectMap = QytxlUtil.getInstance().gainDepartmentStaff(attendDepartmentChooser.getDepartmentId(),attendDepartmentChooser.getEnterpriseId());
-                    addSubordinateDept(userMapList,objectMap,attendDepartmentChooser,addDepartmentChoosers);
+                    addSubordinateDept(userMapList,objectMap,attendDepartmentChooser,addDepartmentChoosers,departmentId);
                 } catch (Exception e1) {
                     logger.info("调用企业通讯录获取直属联系人二次失败 e={}",e);
                     return false;
@@ -451,7 +455,6 @@ public class AttendGroupAction extends BaseAttendanceAction {
             objectMap.put("departmentName",attendDepartmentChooser.getDepartmentName());
             userMapList.add(objectMap);
         }
-        attendDepartmentChoosers.removeAll(addDepartmentChoosers);
         attendDepartmentChoosers.addAll(addDepartmentChoosers);
         return true;
     }
@@ -459,34 +462,37 @@ public class AttendGroupAction extends BaseAttendanceAction {
     /**
      * 循环遍历得到各部门的下级部门,并添加到userMapList中
      * */
-    private void addSubordinateDept(List<Map<String, Object>> userMapList,Map<String,Object> objectMap,
-                                    AttendDepartmentChooser attendDepartmentChooser,List<AttendDepartmentChooser> addDepartmentChoosers){
+    private void addSubordinateDept(List<Map<String, Object>> userMapList, Map<String, Object> objectMap,
+                                    AttendDepartmentChooser attendDepartmentChooser, List<AttendDepartmentChooser> addDepartmentChoosers, HashSet<Object> departmentId){
 
         List<Map<String, Object>> departments = (List<Map<String, Object>>) objectMap.get("departments");
         if (AssertUtil.isNotEmpty(departments)){
             for (Map<String, Object> department : departments) {
-                Map<String, Object> objectMapSub = null;
-                try {
-                    objectMapSub = QytxlUtil.getInstance().gainDepartmentStaff((String) department.get("departmentId"), attendDepartmentChooser.getEnterpriseId());
-                    addSubordinateDept(userMapList,objectMapSub,attendDepartmentChooser,addDepartmentChoosers);
-                } catch (Exception e) {
-                    logger.info("调用企业通讯录获取直属联系人一次失败 e={}",e);
+                if (departmentId.add((String) department.get("departmentId"))) {
+                    Map<String, Object> objectMapSub = null;
                     try {
                         objectMapSub = QytxlUtil.getInstance().gainDepartmentStaff((String) department.get("departmentId"), attendDepartmentChooser.getEnterpriseId());
-                        addSubordinateDept(userMapList,objectMapSub,attendDepartmentChooser,addDepartmentChoosers);
-                    } catch (Exception e1) {
-                        logger.info("调用企业通讯录获取直属联系人二次失败 e={}",e);
-                        return;
+                        addSubordinateDept(userMapList, objectMapSub, attendDepartmentChooser, addDepartmentChoosers, departmentId);
+                    } catch (Exception e) {
+                        logger.info("调用企业通讯录获取直属联系人一次失败 e={}", e);
+                        try {
+                            objectMapSub = QytxlUtil.getInstance().gainDepartmentStaff((String) department.get("departmentId"), attendDepartmentChooser.getEnterpriseId());
+                            addSubordinateDept(userMapList, objectMapSub, attendDepartmentChooser, addDepartmentChoosers, departmentId);
+                        } catch (Exception e1) {
+                            logger.info("调用企业通讯录获取直属联系人二次失败 e={}", e);
+                            return;
+                        }
                     }
-                }
-                AttendDepartmentChooser attendDepartmentChooserSub = new AttendDepartmentChooser();
-                attendDepartmentChooserSub.setDepartmentId((String) department.get("departmentId"));
-                attendDepartmentChooserSub.setDepartmentName((String) department.get("name"));
-                attendDepartmentChooserSub.setEnterpriseId((String) department.get("enterpriseId"));
-                addDepartmentChoosers.add(attendDepartmentChooserSub);
-                objectMapSub.put("departmentName",department.get("name"));
-                userMapList.add(objectMapSub);
 
+                    AttendDepartmentChooser attendDepartmentChooserSub = new AttendDepartmentChooser();
+                    attendDepartmentChooserSub.setDepartmentId((String) department.get("departmentId"));
+                    attendDepartmentChooserSub.setDepartmentName((String) department.get("name"));
+                    attendDepartmentChooserSub.setEnterpriseId((String) department.get("enterpriseId"));
+                    addDepartmentChoosers.add(attendDepartmentChooserSub);
+                    objectMapSub.put("departmentName", department.get("name"));
+                    userMapList.add(objectMapSub);
+
+                }
             }
         }
     }
