@@ -540,8 +540,8 @@ public class AttendDao extends BaseAttendanceDao
     // 固定班多次打卡记录
     private EmployeeMonthDetail handleMultipleAttendanceCase(EmployeeMonthDetail monthDetail, AttendEntity firstAttend, AttendEntity lastAttend, AttendGroup attendGroup, AttendCalendar attendCalendar, boolean rowday) {
         // 首次、尾次打卡均在下午班次，相当于只有一次下午打卡记录
-        if (!isMorningHours(firstAttend.getAttendanceTime(),attendGroup)
-                && !isMorningHours(lastAttend.getAttendanceTime(),attendGroup))
+        if (!isMorningHours(firstAttend.getAttendanceTime(),attendGroup,rowday)
+                && !isMorningHours(lastAttend.getAttendanceTime(),attendGroup,rowday))
         {
             // 对尾次打卡记录进行判断
             handleSingleAttendanceCase(monthDetail, lastAttend, attendGroup,attendCalendar,rowday);
@@ -582,7 +582,7 @@ public class AttendDao extends BaseAttendanceDao
     //固定班只有一次打卡
     private EmployeeMonthDetail handleSingleAttendanceCase(EmployeeMonthDetail monthDetail, AttendEntity attendRecord,AttendGroup attendGroup,AttendCalendar attendCalendar,boolean rowday) {
         // 判断是否为上午班次
-        if (isMorningHours(attendRecord.getAttendanceTime(),attendGroup)) {
+        if (isMorningHours(attendRecord.getAttendanceTime(),attendGroup,rowday)) {
             // 判断上午的考勤状态
             handleMorningAttend(monthDetail, attendRecord, attendGroup);
         } else {
@@ -784,13 +784,13 @@ public class AttendDao extends BaseAttendanceDao
     }
 
     // 判断是否为上午班次
-    private boolean isMorningHours(Date attendanceTime,AttendGroup attendGroup) {
+    private boolean isMorningHours(Date attendanceTime,AttendGroup attendGroup,boolean rowday) {
         // 截取时间
         String time = TimeUtil.date2String(attendanceTime, TimeUtil.BASE_TIME_FORMAT);
        //判断是否使用了弹性班制规则
         if (AssertUtil.isNotEmpty(attendGroup.getUseFlexibleRule())) {
             if (attendGroup.getUseFlexibleRule()==0) {
-                setStartAndEndTimeInFlexibleRule(attendGroup);
+                setStartAndEndTimeInFlexibleRule(attendGroup,rowday);
                 log.info("this.morningEndTime={}",this.morningEndTime);
                 log.info("this.morningStartTime={}",this.morningStartTime);
                 log.info("this.afternoonEndTime={}",this.afternoonEndTime);
@@ -1014,10 +1014,20 @@ public class AttendDao extends BaseAttendanceDao
     /**
      * 初始化弹性班制时间属性
      */
-    private void setStartAndEndTimeInFlexibleRule(AttendGroup attendGroup) {
+    private void setStartAndEndTimeInFlexibleRule(AttendGroup attendGroup,boolean rowday) {
         String fixedAttendRule = attendGroup.getFixedAttendRule();
         Map jsonMap = JSON.parseObject(fixedAttendRule);
         int day = AtdcTimeUtil.getWeekNum("星期"+TimeUtil.getWeekDay());
+        if (rowday){
+            if (AssertUtil.isNotEmpty(jsonMap) && jsonMap.get(day) == null) {
+                List dayNum = new ArrayList(jsonMap.keySet());
+                if (day == 6) {
+                    day = Integer.parseInt(dayNum.get(dayNum.size() - 1).toString());
+                } else if (day == 7) {
+                    day = Integer.parseInt(dayNum.get(0).toString());
+                }
+            }
+        }
         String attendRule = jsonMap.get(day).toString();
         pmTime = attendRule.substring(attendRule.indexOf(",")+11,attendRule.indexOf("}")-1);
         amTime = attendRule.substring(attendRule.indexOf(":")+2,attendRule.indexOf(",")-1);
