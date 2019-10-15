@@ -103,7 +103,7 @@ public class ComplementNumberTask extends Task {
 
                         } catch (Exception e) {
                             e.printStackTrace();
-                            logger.error("getItem==========》ContactId={}|enterId={}|msg={}", attendEmployee.getContactId(), attendEmployee.getEnterId(), e.getMessage());
+                            logger.error("getItem==========》ContactId={}|enterId={}|msg={}", attendEmployee.getContactId(), attendEmployee.getEnterId(), e);
 
                         }
                     }
